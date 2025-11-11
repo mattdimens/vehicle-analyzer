@@ -50,19 +50,20 @@ export async function createSignedUploadUrl(fileName: string, fileType: string) 
 // Function 2: Analyze Image
 export async function analyzeVehicleImage(publicImageUrl: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' }) 
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
 
-    const prompt =
+const prompt =
   'You are an expert vehicle mechanic. Identify the vehicle\'s year, make, model, type (e.g., "SUV", "Sedan", "Pickup Truck"), color, and condition (e.g., "new", "used", "damaged"). Also list 3-5 recommended aftermarket accessories as a simple array of strings. Respond ONLY with a valid, minified JSON object with this exact structure: { "year": number | null, "make": string, "model": string, "vehicleType": string, "color": string, "condition": string, "recommendedAccessories": [string] }'
 
-    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg') 
+const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
 
-    const result = await model.generateContent([prompt, imagePart])
-    const response = result.response
-    const text = response.text()
+// This is the correct way to send a prompt with an image
+const result = await model.generateContent([prompt, imagePart])
+const response = result.response
+const text = response.text()
 
-    // Parse the JSON
-    const jsonData = JSON.parse(text)
+// Parse the JSON
+const jsonData = JSON.parse(text)
 
     // Save to Supabase
 const { data: dbData, error: dbError } = await supabase

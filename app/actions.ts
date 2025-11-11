@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/genai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Initialize the server-side Supabase client
 const supabase = createClient(

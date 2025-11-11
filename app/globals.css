@@ -7,17 +7,7 @@
 /* This line is from your original file to keep animations working */
 @import "tw-animate-css";
 
-/* THIS IS THE NEW FIX:
-  We are telling Tailwind about our custom fonts.
-  - 'sans' will use the CSS variable --font-sans (from app/layout.tsx)
-  - 'heading' will use the CSS variable --font-heading (from app/layout.tsx)
-*/
-@theme {
-  fontFamily: {
-    sans: 'var(--font-sans)',
-    heading: 'var(--font-heading)',
-  },
-}
+/* The failing @theme block has been REMOVED */
 
 @layer base {
   :root {
@@ -52,10 +42,6 @@
     --ring: 260 80% 60%; /* Accent color */
 
     --radius: 0.75rem; /* 12px */
-
-    /* The font variables are REMOVED from here 
-      because app/layout.tsx is handling them.
-    */
   }
 
   .dark {
@@ -67,22 +53,18 @@
 }
 
 @layer base {
-  * {
-    /* The bad @apply is gone */
-  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+
+    /* THIS IS THE FIX: We apply the font directly. */
+    /* This uses the --font-sans variable from app/layout.tsx */
+    font-family: var(--font-sans);
   }
 
-  /* This part is now correct!
-    Tailwind now knows what 'font-heading' and 'font-sans' are
-    because of the new @theme block we added above.
-  */
+  /* THIS IS THE FIX: We apply the heading font directly. */
+  /* This uses the --font-heading variable from app/layout.tsx */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
-  }
-  body, input, button, textarea, select {
-    @apply font-sans;
+    font-family: var(--font-heading);
   }
 }

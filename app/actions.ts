@@ -53,7 +53,7 @@ export async function analyzeVehicleImage(publicImageUrl: string) {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' }) 
 
     const prompt =
-      'You are an expert vehicle mechanic. Identify the exact year, make, and model. Also list any visible aftermarket accessories. Respond ONLY with a valid, minified JSON object with this structure: { "vehicle": { "year": number, "make": string, "model": string }, "accessories": [ { "name": string, "search_query": string } ] }'
+  'You are an expert vehicle mechanic. Identify the vehicle\'s year, make, model, type (e.g., "SUV", "Sedan", "Pickup Truck"), color, and condition (e.g., "new", "used", "damaged"). Also list 3-5 recommended aftermarket accessories as a simple array of strings. Respond ONLY with a valid, minified JSON object with this exact structure: { "year": number | null, "make": string, "model": string, "vehicleType": string, "color": string, "condition": string, "recommendedAccessories": [string] }'
 
     const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg') 
 
@@ -65,9 +65,12 @@ export async function analyzeVehicleImage(publicImageUrl: string) {
     const jsonData = JSON.parse(text)
 
     // Save to Supabase
-    const { data: dbData, error: dbError } = await supabase
+const { data: dbData, error: dbError } = await supabase
    .from('analysis_results')
-   .insert()
+   .insert({ 
+      analysis_data: jsonData, // This is the JSON from the AI
+      image_url: publicImageUrl // This is the URL of the image
+    })
    .select()
 
     if (dbError) {

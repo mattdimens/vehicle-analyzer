@@ -92,7 +92,7 @@ export default function VehicleAccessoryFinder() {
       console.log("[v0] Analysis completed successfully")
 
       // Step 5: Extract and display results
-      const analysisData = analysisResponse.data?.analysis_data
+      const analysisData = analysisResponse.data
       setResults({
         vehicleType: analysisData.vehicleType,
         make: analysisData.make,

@@ -70,7 +70,7 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 const prompt =
   'You are an expert vehicle mechanic. Identify the vehicle\'s year, make, model, type (e.g., "SUV", "Sedan", "Pickup Truck"), color, and condition (e.g., "new", "used", "damaged"). Also list 3-5 recommended aftermarket accessories as a simple array of strings. Respond ONLY with a valid, minified JSON object with this exact structure: { "year": number | null, "make": string, "model": string, "vehicleType": string, "color": string, "condition": string, "recommendedAccessories": [string] }'

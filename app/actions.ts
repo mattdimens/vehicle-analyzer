@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI } from '@google/generative-ai' // <--- This is the new, correct import
 
 // Initialize the server-side Supabase client
 const supabase = createClient(
@@ -10,7 +10,7 @@ const supabase = createClient(
 )
 
 // Initialize the Google AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!) // <--- This is the new, correct constructor
 
 // Helper function to fetch an image from a URL and convert it to base64
 async function urlToGenerativePart(url: string, mimeType: string) {

@@ -11,8 +11,8 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, CheckCircle, Loader, X } from "lucide-react"
-import { createSignedUploadUrl, analyzeVehicleImage } from "@/app/actions"
+import { Upload, CheckCircle, Loader, X, ExternalLink } from "lucide-react"
+import { createSignedUploadUrl, analyzeVehicleImage, analyzeProductsOnVehicle } from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 
 // --- v2: Define new interfaces to match the server action response ---
@@ -42,6 +42,12 @@ interface AnalysisResults {
   otherPossibilities: OtherPossibility[]
   recommendedAccessories: string[]
 }
+
+interface DetectedProduct {
+  productType: string
+  brandModel: string
+  confidence: number
+}
 // --- End of new interfaces ---
 
 export default function VehicleAccessoryFinder() {
@@ -51,6 +57,10 @@ export default function VehicleAccessoryFinder() {
   // --- v2: Update the 'results' state to use the new interface ---
   const [results, setResults] = useState<AnalysisResults | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [publicImageUrl, setPublicImageUrl] = useState<string | null>(null)
+const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[] | null>(null)
+const [isDetectingProducts, setIsDetectingProducts] = useState(false)
+const [productError, setProductError] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -82,6 +92,9 @@ const clearPreview = (e: React.MouseEvent) => {
   setPreview(null)
   setResults(null)
   setError(null)
+  setPublicImageUrl(null)
+  setDetectedProducts(null)
+  setProductError(null)
 }
 // --- END OF NEW FUNCTION ---
 
@@ -128,6 +141,7 @@ const clearPreview = (e: React.MouseEvent) => {
         ? supabase.storage.getPublicUrl("vehicle_images", path) // This is the new way
         : supabase.storage.from("vehicle_images").getPublicUrl(path) // This is the old way
       const publicImageUrl = publicUrlData.publicUrl
+      setPublicImageUrl(publicImageUrl)
       console.log("[v2] Public URL obtained:", publicImageUrl)
 
       // Step 4: Call server action to analyze image
@@ -156,6 +170,35 @@ const clearPreview = (e: React.MouseEvent) => {
       setIsAnalyzing(false)
     }
   }
+
+const handleProductDetection = async () => {
+if (!results || !publicImageUrl) return
+
+setIsDetectingProducts(true)
+setProductError(null)
+setDetectedProducts(null)
+
+const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
+
+try {
+  const response = await analyzeProductsOnVehicle(
+    publicImageUrl,
+    vehicleDetails
+  )
+
+  if (response.success) {
+    setDetectedProducts(response.data)
+  } else {
+    setProductError(response.error || "Failed to detect products.")
+  }
+} catch (err) {
+  const errorMessage =
+    err instanceof Error ? err.message : "An error occurred"
+  setProductError(errorMessage)
+} finally {
+  setIsDetectingProducts(false)
+}
+}
 
   function cn(...classes: Array<string | false | null | undefined>): string {
     return classes.filter(Boolean).map(String).join(" ")
@@ -400,6 +443,104 @@ const clearPreview = (e: React.MouseEvent) => {
                     </CardContent>
                   </Card>
                   {/* --- End of new v2 UI --- */}
+                  {/* --- PASTE ALL THIS NEW UI CODE HERE --- */}
+
+              {/* "Detect Products" Button */}
+              <div className="mt-8">
+                <Button
+                  onClick={handleProductDetection}
+                  disabled={isDetectingProducts}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isDetectingProducts ? (
+                    <div className="flex items-center gap-2">
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Detecting Products...
+                    </div>
+                  ) : (
+                    "Detect Products on Vehicle"
+                  )}
+                </Button>
+              </div>
+
+              {/* Product Loading/Error State */}
+              {isDetectingProducts && (
+                <div className="flex flex-col items-center mt-8">
+                  <Loader className="h-10 w-10 animate-spin text-primary" />
+                  <p className="mt-4 text-muted-foreground">
+                    Scanning for products...
+                  </p>
+                </div>
+              )}
+
+              {productError && (
+                <div className="mt-8 p-4 bg-destructive/10 border border-destructive rounded-lg">
+                  <p className="text-sm text-destructive">{productError}</p>
+                </div>
+              )}
+
+              {/* "Detected Products" Table */}
+              {detectedProducts && (
+                <div className="mt-8">
+                  <h2 className="font-heading text-2xl font-bold mb-4">
+                    Detected Products
+                  </h2>
+                  <div className="overflow-x-auto rounded-lg border">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Product</th>
+                          <th className="px-4 py-3 font-medium">
+                            Brand / Model
+                          </th>
+                          <th className="px-4 py-3 font-medium">Link</th>
+                          <th className="px-4 py-3 font-medium text-right">
+                            Confidence
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detectedProducts.map((item, index) => (
+                          <tr key={index} className="border-t">
+                            <td className="px-4 py-3 font-medium">
+                              {item.productType}
+                            </td>
+                            <td className="px-4 py-3">
+                              {item.brandModel}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                              >
+                                <a
+                                  href={`https://www.amazon.com/s?k=${encodeURIComponent(
+                                    results.primary.make
+                                  )} ${encodeURIComponent(
+                                    results.primary.model
+                                  )} ${encodeURIComponent(item.brandModel)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  Search
+                                </a>
+                              </Button>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {item.confidence}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {/* --- END OF NEW UI CODE --- */}
                 </div>
                 <div className="flex flex-col text-left">
                   <h2 className="font-heading text-2xl font-bold">

@@ -82,8 +82,14 @@ const result = await model.generateContent([prompt, imagePart])
 const response = result.response
 const text = response.text()
 
+// Clean the AI's response to remove the markdown wrapper
+const cleanedText = text
+  .replace("```json", "")
+  .replace("```", "")
+  .trim()
+
 // Parse the JSON
-const jsonData = JSON.parse(text)
+const jsonData = JSON.parse(cleanedText)
 
     // Save to Supabase
 const { data: dbData, error: dbError } = await supabase

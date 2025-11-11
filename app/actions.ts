@@ -10,7 +10,7 @@ const supabase = createClient(
 )
 
 // Initialize the Google AI client
-const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY!)
+const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY!})
 
 // Helper function to fetch an image from a URL and convert it to base64
 async function urlToGenerativePart(url: string, mimeType: string) {

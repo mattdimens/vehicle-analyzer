@@ -119,7 +119,7 @@ export default function VehicleAccessoryFinder() {
   }
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
+      {/* Hero Section (Already Centered) */}
       <section
         id="hero"
         className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center px-4 py-24 text-center"
@@ -133,7 +133,7 @@ export default function VehicleAccessoryFinder() {
             fitment and compatible accessories.
           </p>
 
-          {/* This is your existing Dropzone, with new styles */}
+          {/* Dropzone */}
           <div
             {...getRootProps()}
             className={cn(
@@ -151,9 +151,8 @@ export default function VehicleAccessoryFinder() {
               </p>
             </div>
           </div>
-          {/* End of Dropzone */}
 
-          {/* --- THIS IS THE PREVIEW SECTION WE FORGOT --- */}
+          {/* Preview */}
           {preview && (
             <div className="mt-6">
               <p className="text-sm font-medium mb-3">Image Preview</p>
@@ -163,9 +162,8 @@ export default function VehicleAccessoryFinder() {
               <p className="text-xs text-muted-foreground mt-2">{uploadedFile?.name}</p>
             </div>
           )}
-          {/* --- END OF PREVIEW SECTION --- */}
 
-          {/* --- THIS IS THE BUTTON WE FORGOT --- */}
+          {/* Button */}
           <div className="flex justify-center mt-8">
             <Button 
               onClick={handleAnalysis} 
@@ -183,8 +181,8 @@ export default function VehicleAccessoryFinder() {
               )}
             </Button>
           </div>
-          {/* --- END OF BUTTON --- */}
 
+          {/* Pills */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Badge variant="secondary">Instant Identification</Badge>
             <Badge variant="secondary">Accessory Matching</Badge>
@@ -193,12 +191,11 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* Loading & Results Section */}
+      {/* Loading & Results Section (Already Centered) */}
       {(isAnalyzing || error || results) && (
-        <section id="results" className="w-full bg-white py-24">
-          <div className="container max-w-4xl">
+        <section id="results" className="w-full bg-white py-24 flex flex-col items-center">
+          <div className="container max-w-4xl px-4">
 
-            {/* Your existing loading state */}
             {isAnalyzing && (
               <div className="flex flex-col items-center">
                 <Loader className="h-12 w-12 animate-spin text-primary" />
@@ -208,18 +205,15 @@ export default function VehicleAccessoryFinder() {
               </div>
             )}
 
-            {/* Your existing error state */}
             {error && (
               <div className="mb-8 p-4 bg-destructive/10 border border-destructive rounded-lg">
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
 
-            {/* Your existing results state, but redesigned */}
             {results && !isAnalyzing && (
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="flex flex-col">
-                  {/* We use your existing 'preview' state for the image! */}
+                <div className="flex flex-col text-left"> {/* Keep results text left-aligned */}
                   {preview && (
                     <img
                       src={preview}
@@ -259,7 +253,7 @@ export default function VehicleAccessoryFinder() {
                     </CardContent>
                   </Card>
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col text-left"> {/* Keep results text left-aligned */}
                   <h2 className="font-heading text-2xl font-bold">
                     Recommended Accessories
                   </h2>
@@ -299,10 +293,13 @@ export default function VehicleAccessoryFinder() {
         </section>
       )}
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="w-full bg-muted/50 py-24">
-        <div className="container max-w-6xl">
-          <div className="mb-12 text-center">
+      {/* === THIS SECTION IS UPDATED === */}
+      <section 
+        id="how-it-works" 
+        className="w-full bg-muted/50 py-24 flex flex-col items-center text-center"
+      >
+        <div className="max-w-6xl px-4"> {/* Use max-w-6xl and px-4 instead of 'container' */}
+          <div className="mb-12"> {/* 'text-center' is removed, parent provides it */}
             <h2 className="font-heading text-4xl font-bold">How It Works</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Get from image to analysis in three simple steps.
@@ -371,10 +368,13 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* Use Cases Section */}
-      <section id="use-cases" className="w-full py-24">
-        <div className="container max-w-6xl">
-          <div className="mb-12 text-center">
+      {/* === THIS SECTION IS UPDATED === */}
+      <section 
+        id="use-cases" 
+        className="w-full py-24 flex flex-col items-center text-center"
+      >
+        <div className="max-w-6xl px-4"> {/* Use max-w-6xl and px-4 instead of 'container' */}
+          <div className="mb-12"> {/* 'text-center' is removed, parent provides it */}
             <h2 className="font-heading text-4xl font-bold">Use Cases</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Perfect for enthusiasts, shoppers, and professionals.

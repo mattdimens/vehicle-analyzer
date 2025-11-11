@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-// THIS IS THE FIX for "Export doesn't exist"
 import { GoogleGenAI } from '@google/genai'
 
 // Initialize the server-side Supabase client
@@ -10,8 +9,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// THIS IS THE SECOND FIX for "Export doesn't exist"
-const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY!)
+// THIS IS THE FIX: Initialize the Google AI client with an object
+const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY!})
 
 // Helper function to fetch an image from a URL and convert it to base64
 async function urlToGenerativePart(url: string, mimeType: string) {
@@ -32,10 +31,10 @@ async function urlToGenerativePart(url: string, mimeType: string) {
 // Function 1: Get Signed URL
 export async function createSignedUploadUrl(fileName: string, fileType: string) {
   const { data, error } = await supabase.storage
-.from('vehicle_images')
-.createSignedUploadUrl(fileName, 60, {
+ .from('vehicle_images')
+ .createSignedUploadUrl(fileName, 60, {
       contentType: fileType,
-    }) [4]
+    }) 
 
   if (error) {
     console.error('Error creating signed URL:', error.message)
@@ -47,13 +46,12 @@ export async function createSignedUploadUrl(fileName: string, fileType: string) 
 // Function 2: Analyze Image
 export async function analyzeVehicleImage(publicImageUrl: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' }) [5]
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' }) 
 
     const prompt =
       'You are an expert vehicle mechanic. Identify the exact year, make, and model. Also list any visible aftermarket accessories. Respond ONLY with a valid, minified JSON object with this structure: { "vehicle": { "year": number, "make": string, "model": string }, "accessories": [ { "name": string, "search_query": string } ] }'
 
-    // The Vision API needs the image as a base64 string, not a URL [6, 7]
-    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg') [6]
+    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg') 
 
     const result = await model.generateContent([prompt, imagePart])
     const response = result.response
@@ -62,11 +60,11 @@ export async function analyzeVehicleImage(publicImageUrl: string) {
     // Parse the JSON
     const jsonData = JSON.parse(text)
 
-    // This is the fix from the previous step (correctly inserting data)
+    // Save to Supabase
     const { data: dbData, error: dbError } = await supabase
-  .from('analysis_results')
-  .insert()
-  .select()
+   .from('analysis_results')
+   .insert()
+   .select()
 
     if (dbError) {
       console.error('Supabase DB error:', dbError.message)

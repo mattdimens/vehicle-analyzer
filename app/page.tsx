@@ -133,7 +133,7 @@ export default function VehicleAccessoryFinder() {
             fitment and compatible accessories.
           </p>
 
-          {/* This is your existing Dropzone, but with new styles */}
+          {/* This is your existing Dropzone, with new styles */}
           <div
             {...getRootProps()}
             className={cn(
@@ -153,6 +153,38 @@ export default function VehicleAccessoryFinder() {
           </div>
           {/* End of Dropzone */}
 
+          {/* --- THIS IS THE PREVIEW SECTION WE FORGOT --- */}
+          {preview && (
+            <div className="mt-6">
+              <p className="text-sm font-medium mb-3">Image Preview</p>
+              <div className="relative w-full max-w-md mx-auto rounded-lg overflow-hidden border border-border">
+                <img src={preview} alt="Vehicle preview" className="w-full h-auto object-cover" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{uploadedFile?.name}</p>
+            </div>
+          )}
+          {/* --- END OF PREVIEW SECTION --- */}
+
+          {/* --- THIS IS THE BUTTON WE FORGOT --- */}
+          <div className="flex justify-center mt-8">
+            <Button 
+              onClick={handleAnalysis} 
+              disabled={!uploadedFile || isAnalyzing} 
+              size="lg" 
+              className="min-w-xs"
+            >
+              {isAnalyzing ? (
+                <div className="flex items-center gap-2">
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </div>
+              ) : (
+                "Analyze Vehicle"
+              )}
+            </Button>
+          </div>
+          {/* --- END OF BUTTON --- */}
+
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Badge variant="secondary">Instant Identification</Badge>
             <Badge variant="secondary">Accessory Matching</Badge>
@@ -161,8 +193,7 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* Loading & Results Section - This only appears *after* an upload */}
-      {/* This part uses your *existing* logic! */}
+      {/* Loading & Results Section */}
       {(isAnalyzing || error || results) && (
         <section id="results" className="w-full bg-white py-24">
           <div className="container max-w-4xl">

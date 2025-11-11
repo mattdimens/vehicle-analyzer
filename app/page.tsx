@@ -3,25 +3,53 @@
 import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Upload, CheckCircle, Loader } from "lucide-react"
 import { createSignedUploadUrl, analyzeVehicleImage } from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 
+// --- v2: Define new interfaces to match the server action response ---
+interface PrimaryVehicle {
+  make: string
+  model: string
+  year: string
+  trim: string
+  cabStyle: string | null
+  bedLength: string | null
+  vehicleType: string
+  color: string
+  condition: string
+  confidence: number
+}
+
+interface OtherPossibility {
+  vehicle: string
+  yearRange: string
+  trim: string
+  confidence: number
+}
+
+interface AnalysisResults {
+  primary: PrimaryVehicle
+  engineDetails: string | null
+  otherPossibilities: OtherPossibility[]
+  recommendedAccessories: string[]
+}
+// --- End of new interfaces ---
+
 export default function VehicleAccessoryFinder() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [results, setResults] = useState<{
-    vehicleType: string
-    make: string
-    model: string
-    year: number | null
-    color: string
-    condition: string
-    recommendedAccessories: string[]
-  } | null>(null)
+  // --- v2: Update the 'results' state to use the new interface ---
+  const [results, setResults] = useState<AnalysisResults | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -29,6 +57,7 @@ export default function VehicleAccessoryFinder() {
       const file = acceptedFiles[0]
       setUploadedFile(file)
       setError(null)
+      setResults(null) // Clear previous results on new upload
 
       // Create preview
       const reader = new FileReader()
@@ -51,17 +80,23 @@ export default function VehicleAccessoryFinder() {
 
     setIsAnalyzing(true)
     setError(null)
+    setResults(null)
 
     try {
-      console.log("[v0] Starting analysis for file:", uploadedFile.name)
+      console.log("[v2] Starting analysis for file:", uploadedFile.name)
 
       // Step 1: Get signed upload URL
-      const signedUrlResponse = await createSignedUploadUrl(uploadedFile.name, uploadedFile.type)
+      const signedUrlResponse = await createSignedUploadUrl(
+        uploadedFile.name,
+        uploadedFile.type
+      )
       if (!signedUrlResponse.success) {
-        throw new Error(signedUrlResponse.error || "Failed to get signed upload URL")
+        throw new Error(
+          signedUrlResponse.error || "Failed to get signed upload URL"
+        )
       }
       const { signedUrl, path } = signedUrlResponse.data
-      console.log("[v0] Signed URL obtained")
+      console.log("[v2] Signed URL obtained")
 
       // Step 2: Upload file to signed URL
       const uploadResponse = await fetch(signedUrl, {
@@ -75,15 +110,15 @@ export default function VehicleAccessoryFinder() {
       if (!uploadResponse.ok) {
         throw new Error("Failed to upload file to storage")
       }
-      console.log("[v0] File uploaded successfully")
+      console.log("[v2] File uploaded successfully")
 
       // Step 3: Get public URL
       const supabase = getBrowserClient()
       const { data: publicUrlData } = supabase.storage.getPublicUrl
-  ? supabase.storage.getPublicUrl("vehicle_images", path) // This is the new way
-  : supabase.storage.from("vehicle_images").getPublicUrl(path) // This is the old way
+        ? supabase.storage.getPublicUrl("vehicle_images", path) // This is the new way
+        : supabase.storage.from("vehicle_images").getPublicUrl(path) // This is the old way
       const publicImageUrl = publicUrlData.publicUrl
-      console.log("[v0] Public URL obtained:", publicImageUrl)
+      console.log("[v2] Public URL obtained:", publicImageUrl)
 
       // Step 4: Call server action to analyze image
       const analysisResponse = await analyzeVehicleImage(publicImageUrl)
@@ -91,23 +126,21 @@ export default function VehicleAccessoryFinder() {
         throw new Error(analysisResponse.error || "Failed to analyze vehicle")
       }
 
-      console.log("[v0] Analysis completed successfully")
+      console.log("[v2] Analysis completed successfully")
 
       // Step 5: Extract and display results
       const analysisData = analysisResponse.data
+      // --- v2: Set the new results structure ---
       setResults({
-        vehicleType: analysisData.vehicleType,
-        make: analysisData.make,
-        model: analysisData.model,
-        // keep as number | null to match state type
-        year: analysisData.year,
-        color: analysisData.color,
-        condition: analysisData.condition,
+        primary: analysisData.primary,
+        engineDetails: analysisData.engineDetails,
+        otherPossibilities: analysisData.otherPossibilities,
         recommendedAccessories: analysisData.recommendedAccessories,
       })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis"
-      console.error("[v0] Error during analysis:", errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred during analysis"
+      console.error("[v2] Error during analysis:", errorMessage)
       setError(errorMessage)
     } finally {
       setIsAnalyzing(false)
@@ -115,11 +148,11 @@ export default function VehicleAccessoryFinder() {
   }
 
   function cn(...classes: Array<string | false | null | undefined>): string {
-    return classes.filter(Boolean).map(String).join(' ')
+    return classes.filter(Boolean).map(String).join(" ")
   }
   return (
     <div className="flex flex-col">
-      {/* Hero Section (Already Centered) */}
+      {/* Hero Section (No changes) */}
       <section
         id="hero"
         className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center px-4 py-24 text-center"
@@ -137,8 +170,8 @@ export default function VehicleAccessoryFinder() {
           <div
             {...getRootProps()}
             className={cn(
-              'mt-10 min-h-48 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-12 shadow-inner transition-colors hover:bg-accent/10',
-              isDragActive ? 'border-accent' : ''
+              "mt-10 min-h-48 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-12 shadow-inner transition-colors hover:bg-accent/10",
+              isDragActive ? "border-accent" : ""
             )}
           >
             <input {...getInputProps()} />
@@ -146,7 +179,7 @@ export default function VehicleAccessoryFinder() {
               <Upload className="h-10 w-10 text-muted-foreground" />
               <p className="text-lg font-medium text-muted-foreground">
                 {isDragActive
-                  ? 'Drop the image here ...'
+                  ? "Drop the image here ..."
                   : "Drag 'n' drop an image, or click to select"}
               </p>
             </div>
@@ -157,18 +190,24 @@ export default function VehicleAccessoryFinder() {
             <div className="mt-6">
               <p className="text-sm font-medium mb-3">Image Preview</p>
               <div className="relative w-full max-w-md mx-auto rounded-lg overflow-hidden border border-border">
-                <img src={preview} alt="Vehicle preview" className="w-full h-auto object-cover" />
+                <img
+                  src={preview}
+                  alt="Vehicle preview"
+                  className="w-full h-auto object-cover"
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{uploadedFile?.name}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {uploadedFile?.name}
+              </p>
             </div>
           )}
 
           {/* Button */}
           <div className="flex justify-center mt-8">
-            <Button 
-              onClick={handleAnalysis} 
-              disabled={!uploadedFile || isAnalyzing} 
-              size="lg" 
+            <Button
+              onClick={handleAnalysis}
+              disabled={!uploadedFile || isAnalyzing}
+              size="lg"
               className="min-w-xs"
             >
               {isAnalyzing ? (
@@ -194,9 +233,7 @@ export default function VehicleAccessoryFinder() {
       {/* Loading & Results Section */}
       {(isAnalyzing || error || results) && (
         <section id="results" className="w-full bg-white py-24">
-          {/* --- THIS DIV IS NOW FIXED --- */}
           <div className="container max-w-4xl">
-
             {isAnalyzing && (
               <div className="flex flex-col items-center">
                 <Loader className="h-12 w-12 animate-spin text-primary" />
@@ -214,7 +251,7 @@ export default function VehicleAccessoryFinder() {
 
             {results && !isAnalyzing && (
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="flex flex-col text-left"> 
+                <div className="flex flex-col text-left">
                   {preview && (
                     <img
                       src={preview}
@@ -222,57 +259,162 @@ export default function VehicleAccessoryFinder() {
                       className="mb-6 aspect-video w-full rounded-lg object-cover border"
                     />
                   )}
+
+                  {/* --- v2: This is the new UI for fitment details --- */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Vehicle Details</CardTitle>
+                      <CardTitle>Primary Vehicle Identification</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Make:</span>
-                        <span className="font-medium">{results.make}</span>
+                    <CardContent>
+                      {/* Grid for primary details */}
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-6 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Make</div>
+                          <div className="font-medium">
+                            {results.primary.make}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Model</div>
+                          <div className="font-medium">
+                            {results.primary.model}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Year</div>
+                          <div className="font-medium">
+                            {results.primary.year}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Trim</div>
+                          <div className="font-medium">
+                            {results.primary.trim}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Cab Style</div>
+                          <div className="font-medium">
+                            {results.primary.cabStyle || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">
+                            Bed Length
+                          </div>
+                          <div className="font-medium">
+                            {results.primary.bedLength || "N/A"}
+                          </div>
+                        </div>
+                        <div className="col-span-3">
+                          <div className="text-muted-foreground">
+                            Confidence
+                          </div>
+                          <div className="font-medium">
+                            {results.primary.confidence}%
+                          </div>
+                        </div>
+                        {/* Other details */}
+                        <div>
+                          <div className="text-muted-foreground">Type</div>
+                          <div className="font-medium">
+                            {results.primary.vehicleType}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Color</div>
+                          <div className="font-medium">
+                            {results.primary.color}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">
+                            Condition
+                          </div>
+                          <div className="font-medium capitalize">
+                            {results.primary.condition}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Model:</span>
-                        <span className="font-medium">{results.model}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Year:</span>
-                        <span className="font-medium">{results.year}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Type:</span>
-                        <span className="font-medium">{results.vehicleType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Color:</span>
-                        <span className="font-medium">{results.color}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Condition:</span>
-                        <span className="font-medium capitalize">{results.condition}</span>
+
+                      {/* Engine Details */}
+                      <h3 className="font-semibold mt-8 mb-3">
+                        Engine Details
+                      </h3>
+                      <p className="text-sm">
+                        {results.engineDetails || "No details available."}
+                      </p>
+
+                      {/* Other Possibilities */}
+                      <h3 className="font-semibold mt-8 mb-3">
+                        Other Possibilities
+                      </h3>
+                      <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full text-sm text-left">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="px-4 py-3 font-medium">
+                                Vehicle
+                              </th>
+                              <th className="px-4 py-3 font-medium">
+                                Year Range
+                              </th>
+                              <th className="px-4 py-3 font-medium">Trim</th>
+                              <th className="px-4 py-3 font-medium text-right">
+                                Confidence
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.otherPossibilities.map((item, index) => (
+                              <tr key={index} className="border-t">
+                                <td className="px-4 py-3 font-medium">
+                                  {item.vehicle}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {item.yearRange}
+                                </td>
+                                <td className="px-4 py-3">{item.trim}</td>
+                                <td className="px-4 py-3 text-right">
+                                  {item.confidence}%
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </CardContent>
                   </Card>
+                  {/* --- End of new v2 UI --- */}
                 </div>
                 <div className="flex flex-col text-left">
                   <h2 className="font-heading text-2xl font-bold">
                     Recommended Accessories
                   </h2>
                   <div className="mt-4 space-y-4">
+                    {/* --- v2: Update Amazon search to use new 'primary' object --- */}
                     {results.recommendedAccessories.map((accessory, index) => {
-                      const vehicleDetails = `${results.year} ${results.make} ${results.model}`
+                      const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
                       const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
-                        vehicleDetails,
+                        vehicleDetails
                       )}+${encodeURIComponent(accessory)}`
 
                       return (
-                        <Card key={index} className="transition-all hover:shadow-md">
+                        <Card
+                          key={index}
+                          className="transition-all hover:shadow-md"
+                        >
                           <CardHeader>
                             <div className="flex items-center justify-between gap-4">
                               <CardTitle className="text-lg">
                                 {accessory}
                               </CardTitle>
-                              <Button asChild variant="outline" size="sm" className="shrink-0">
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className="shrink-0"
+                              >
                                 <a
                                   href={amazonSearchUrl}
                                   target="_blank"
@@ -294,13 +436,10 @@ export default function VehicleAccessoryFinder() {
         </section>
       )}
 
-      {/* --- THIS SECTION IS NOW FIXED --- */}
-      <section 
-        id="how-it-works" 
-        className="w-full bg-muted/50 py-24"
-      >
+      {/* How It Works & Use Cases Sections (No changes) */}
+      <section id="how-it-works" className="w-full bg-muted/50 py-24">
         <div className="container max-w-6xl">
-          <div className="mb-12 text-center"> {/* The heading is centered */}
+          <div className="mb-12 text-center">
             <h2 className="font-heading text-4xl font-bold">How It Works</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Get from image to analysis in three simple steps.
@@ -369,13 +508,9 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* --- THIS SECTION IS NOW FIXED --- */}
-      <section 
-        id="use-cases" 
-        className="w-full py-24"
-      >
+      <section id="use-cases" className="w-full py-24">
         <div className="container max-w-6xl">
-          <div className="mb-12 text-center"> {/* The heading is centered */}
+          <div className="mb-12 text-center">
             <h2 className="font-heading text-4xl font-bold">Use Cases</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Perfect for enthusiasts, shoppers, and professionals.
@@ -384,33 +519,33 @@ export default function VehicleAccessoryFinder() {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: 'Accessory Shoppers',
-                desc: 'Find parts you know will fit your car or truck.',
+                title: "Accessory Shoppers",
+                desc: "Find parts you know will fit your car or truck.",
               },
               {
-                title: 'Enthusiasts',
-                desc: 'Identify that cool mod you saw on a car at a show.',
+                title: "Enthusiasts",
+                desc: "Identify that cool mod you saw on a car at a show.",
               },
               {
-                title: 'Marketplace Sellers',
-                desc: 'Quickly find parts to list for a vehicle you are parting out.',
+                title: "Marketplace Sellers",
+                desc: "Quickly find parts to list for a vehicle you are parting out.",
               },
               {
-                title: 'Detailers & Shops',
-                desc: 'Keep a quick visual record of customer vehicles.',
+                title: "Detailers & Shops",
+                desc: "Keep a quick visual record of customer vehicles.",
               },
               {
-                title: 'Inspiration',
-                desc: 'See a setup you like? Find out what it is in seconds.',
+                title: "Inspiration",
+                desc: "See a setup you like? Find out what it is in seconds.",
               },
               {
-                title: 'Affiliate Marketers',
-                desc: 'Generate product links from any user-submitted image.',
+                title: "Affiliate Marketers",
+                desc: "Generate product links from any user-submitted image.",
               },
             ].map((item) => (
               <Card
                 key={item.title}
-                className="transition-all hover:scale-[1.03] hover:shadow-lg text-left" /* Text-left added here */
+                className="transition-all hover:scale-[1.03] hover:shadow-lg text-left"
               >
                 <CardHeader>
                   <CardTitle>{item.title}</CardTitle>

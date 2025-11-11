@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai' // <--- This is the new, correct import
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Initialize the server-side Supabase client
 const supabase = createClient(
@@ -10,7 +10,7 @@ const supabase = createClient(
 )
 
 // Initialize the Google AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!) // <--- This is the new, correct constructor
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // Helper function to fetch an image from a URL and convert it to base64
 async function urlToGenerativePart(url: string, mimeType: string) {
@@ -28,7 +28,7 @@ async function urlToGenerativePart(url: string, mimeType: string) {
   }
 }
 
-// Function 1: Get Signed URL
+// Function 1: Get Signed URL (No changes needed here)
 export async function createSignedUploadUrl(
   fileName: string,
   fileType: string
@@ -53,71 +53,117 @@ export async function createSignedUploadUrl(
   return { success: true, data: { signedUrl: data.signedUrl, path: data.path } }
 }
 
-// Function 2: Analyze Image
+// --- v2: Define new interfaces for the analysis data ---
+interface PrimaryVehicle {
+  make: string
+  model: string
+  year: string // Using string to allow for ranges like "2021-2024"
+  trim: string
+  cabStyle: string | null
+  bedLength: string | null
+  vehicleType: string
+  color: string
+  condition: string
+  confidence: number
+}
+
+interface OtherPossibility {
+  vehicle: string // e.g., "Ford F-150"
+  yearRange: string
+  trim: string
+  confidence: number
+}
+
+interface VehicleAnalysis {
+  primary: PrimaryVehicle
+  engineDetails: string | null
+  otherPossibilities: OtherPossibility[]
+  recommendedAccessories: string[]
+}
+// --- End of new interfaces ---
+
+// Function 2: Analyze Image (Updated)
 export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   | {
       success: true
-      data: {
-        vehicleType: string
-        make: string
-        model: string
-        year: number | null
-        color: string
-        condition: string
-        recommendedAccessories: string[]
-      }
+      data: VehicleAnalysis // Use the new interface
     }
   | { success: false; error: string }
 > {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-const prompt =
-  'You are an expert vehicle mechanic. Identify the vehicle\'s year, make, model, type (e.g., "SUV", "Sedan", "Pickup Truck"), color, and condition (e.g., "new", "used", "damaged"). Also list 3-5 recommended aftermarket accessories as a simple array of strings. Respond ONLY with a valid, minified JSON object with this exact structure: { "year": number | null, "make": string, "model": string, "vehicleType": string, "color": string, "condition": string, "recommendedAccessories": [string] }'
+    // --- v2: This is the new, more detailed prompt ---
+    const prompt =
+      'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle in the image. ' +
+      'Identify the following for the **primary, most likely vehicle**: ' +
+      '1. `make` (string) ' +
+      '2. `model` (string) ' +
+      '3. `year` (string, use a range like "2021-2024" if exact year is uncertain) ' +
+      '4. `trim` (string, e.g., "XLT", "Lariat", "Base") ' +
+      '5. `cabStyle` (string, e.g., "SuperCrew", "Quad Cab", or null if not applicable/visible) ' +
+      '6. `bedLength` (string, e.g., "67.1\\" (Short)", or null if not applicable/visible) ' +
+      '7. `vehicleType` (string, e.g., "SUV", "Sedan", "Pickup Truck") ' +
+      '8. `color` (string) ' +
+      '9. `condition` (string, e.g., "new", "used", "damaged") ' +
+      '10. `confidence` (number, 0-100, representing your confidence in this primary identification) ' +
+      'Also identify: ' +
+      '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
+      '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
+      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings) ' +
+      'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
+      '{' +
+      '"primary": {' +
+      '"make": string, "model": string, "year": string, "trim": string, "cabStyle": string | null, "bedLength": string | null, ' +
+      '"vehicleType": string, "color": string, "condition": string, "confidence": number' +
+      '}, ' +
+      '"engineDetails": string | null, ' +
+      '"otherPossibilities": [' +
+      '{ "vehicle": string, "yearRange": string, "trim": string, "confidence": number }' +
+      '], ' +
+      '"recommendedAccessories": [string]' +
+      '}'
 
-const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
+    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
 
-// This is the correct way to send a prompt with an image
-const result = await model.generateContent([prompt, imagePart])
-const response = result.response
-const text = response.text()
+    const result = await model.generateContent([prompt, imagePart])
+    const response = result.response
+    const text = response.text()
 
-// Clean the AI's response to remove the markdown wrapper
-const cleanedText = text
-  .replace("```json", "")
-  .replace("```", "")
-  .trim()
+    // Clean the AI's response to remove the markdown wrapper
+    const cleanedText = text.replace('```json', '').replace('```', '').trim()
 
-// Parse the JSON
-const jsonData = JSON.parse(cleanedText)
+    // Parse the JSON
+    const jsonData: VehicleAnalysis = JSON.parse(cleanedText) // Cast to our new interface
 
     // Save to Supabase
-const { data: dbData, error: dbError } = await supabase
-   .from('analysis_results')
-   .insert({ 
-      analysis_data: jsonData, // This is the JSON from the AI
-      image_url: publicImageUrl // This is the URL of the image
-    })
-   .select()
+    const { error: dbError } = await supabase
+      .from('analysis_results')
+      .insert({
+        analysis_data: jsonData, // This is the full JSON from the AI
+        image_url: publicImageUrl,
+      })
+      .select()
 
     if (dbError) {
       console.error('Supabase DB error:', dbError.message)
       throw new Error(dbError.message)
     }
 
+    // --- v2: Return the new data structure ---
     return {
       success: true,
       data: {
-        vehicleType: jsonData.vehicleType,
-        make: jsonData.make,
-        model: jsonData.model,
-        year: jsonData.year,
-        color: jsonData.color,
-        condition: jsonData.condition,
+        primary: jsonData.primary,
+        engineDetails: jsonData.engineDetails,
+        otherPossibilities: jsonData.otherPossibilities,
         recommendedAccessories: jsonData.recommendedAccessories,
       },
     }
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
   }
 }

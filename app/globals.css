@@ -65,5 +65,11 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+  /* --- THIS IS THE NEW CODE --- */
+  /* This defines the 'container' class */
+  .container {
+    @apply w-full max-w-6xl mx-auto px-4;
+  }
+  /* --- END OF NEW CODE --- */
   }
 }

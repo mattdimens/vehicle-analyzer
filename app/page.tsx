@@ -191,10 +191,11 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* Loading & Results Section (Already Centered) */}
+      {/* Loading & Results Section */}
       {(isAnalyzing || error || results) && (
-        <section id="results" className="w-full bg-white py-24 flex flex-col items-center">
-          <div className="container max-w-4xl px-4">
+        <section id="results" className="w-full bg-white py-24">
+          {/* --- THIS DIV IS NOW FIXED --- */}
+          <div className="container max-w-4xl">
 
             {isAnalyzing && (
               <div className="flex flex-col items-center">
@@ -213,7 +214,7 @@ export default function VehicleAccessoryFinder() {
 
             {results && !isAnalyzing && (
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                <div className="flex flex-col text-left"> {/* Keep results text left-aligned */}
+                <div className="flex flex-col text-left"> 
                   {preview && (
                     <img
                       src={preview}
@@ -253,7 +254,7 @@ export default function VehicleAccessoryFinder() {
                     </CardContent>
                   </Card>
                 </div>
-                <div className="flex flex-col text-left"> {/* Keep results text left-aligned */}
+                <div className="flex flex-col text-left">
                   <h2 className="font-heading text-2xl font-bold">
                     Recommended Accessories
                   </h2>
@@ -293,13 +294,13 @@ export default function VehicleAccessoryFinder() {
         </section>
       )}
 
-      {/* === THIS SECTION IS UPDATED === */}
+      {/* --- THIS SECTION IS NOW FIXED --- */}
       <section 
         id="how-it-works" 
-        className="w-full bg-muted/50 py-24 flex flex-col items-center text-center"
+        className="w-full bg-muted/50 py-24"
       >
-        <div className="max-w-6xl px-4"> {/* Use max-w-6xl and px-4 instead of 'container' */}
-          <div className="mb-12"> {/* 'text-center' is removed, parent provides it */}
+        <div className="container max-w-6xl">
+          <div className="mb-12 text-center"> {/* The heading is centered */}
             <h2 className="font-heading text-4xl font-bold">How It Works</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Get from image to analysis in three simple steps.
@@ -368,13 +369,13 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* === THIS SECTION IS UPDATED === */}
+      {/* --- THIS SECTION IS NOW FIXED --- */}
       <section 
         id="use-cases" 
-        className="w-full py-24 flex flex-col items-center text-center"
+        className="w-full py-24"
       >
-        <div className="max-w-6xl px-4"> {/* Use max-w-6xl and px-4 instead of 'container' */}
-          <div className="mb-12"> {/* 'text-center' is removed, parent provides it */}
+        <div className="container max-w-6xl">
+          <div className="mb-12 text-center"> {/* The heading is centered */}
             <h2 className="font-heading text-4xl font-bold">Use Cases</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Perfect for enthusiasts, shoppers, and professionals.
@@ -409,7 +410,7 @@ export default function VehicleAccessoryFinder() {
             ].map((item) => (
               <Card
                 key={item.title}
-                className="transition-all hover:scale-[1.03] hover:shadow-lg"
+                className="transition-all hover:scale-[1.03] hover:shadow-lg text-left" /* Text-left added here */
               >
                 <CardHeader>
                   <CardTitle>{item.title}</CardTitle>

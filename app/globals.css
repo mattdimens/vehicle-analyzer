@@ -1,69 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* This line is from your original file to keep animations working */
+@import "tailwindcss";
 @import "tw-animate-css";
 
-/* The failing @theme block has been REMOVED */
+@custom-variant dark (&:is(.dark *));
 
-@layer base {
-  :root {
-    /* Your new warm, minimal color palette */
-    --background: 251 20% 98%; /* #faf9f8 - (Similar to F9F8F6) */
-    --foreground: 240 10% 3.9%; /* #111 */
+/* This @theme block is the correct way to define colors for v4 */
+@theme inline {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Manrope", sans-serif;
+  --color-ring: oklch(0.708 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-accent: 260 80% 60%; /* This is our custom purple */
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-popover-foreground: oklch(0.145 0 0);
+  --color-popover: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --radius: 0.75rem; /* 12px */
+}
 
-    --card: 251 20% 98%;
-    --card-foreground: 240 10% 3.9%;
+/* This block defines the actual colors */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: 260 80% 60%;
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+}
 
-    --popover: 251 20% 98%;
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 240 5.9% 10%; /* #111 */
-    --primary-foreground: 60 9.1% 97.8%; /* #fcfcfb */
-
-    /* This is your single "Accent" color */
-    --accent: 260 80% 60%; /* A nice, confident purple */
-    --accent-foreground: 60 9.1% 97.8%;
-
-    --muted: 240 4.8% 95.9%; /* #f5f5f4 */
-    --muted-foreground: 240 3.8% 46.1%; /* #666 */
-
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-
-    --border: 240 5.9% 90%; /* #e5e5e4 */
-    --input: 240 5.9% 90%;
-    --ring: 260 80% 60%; /* Accent color */
-
-    --radius: 0.75rem; /* 12px */
-  }
-
-  .dark {
-    /* You can add dark mode colors here later */
-    --background: 240 10% 3.9%;
-    --foreground: 60 9.1% 97.8%;
-    /* ...etc */
-  }
+.dark {
+  /* Dark mode colors go here */
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-
-    /* THIS IS THE FIX: We apply the font directly. */
-    /* This uses the --font-sans variable from app/layout.tsx */
     font-family: var(--font-sans);
   }
-
-  /* THIS IS THE FIX: We apply the heading font directly. */
-  /* This uses the --font-heading variable from app/layout.tsx */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
   }

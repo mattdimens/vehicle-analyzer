@@ -252,14 +252,6 @@ export default function VehicleAccessoryFinder() {
             {results && !isAnalyzing && (
               <div className="grid grid-cols-1 gap-8">
                 <div className="flex flex-col text-left">
-                  {preview && (
-                    <img
-                      src={preview}
-                      alt="Uploaded Vehicle"
-                      className="mb-6 aspect-video w-full rounded-lg object-cover border"
-                    />
-                  )}
-
                   {/* --- v2: This is the new UI for fitment details --- */}
                   <Card>
                     <CardHeader>

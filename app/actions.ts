@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// THIS IS THE FIX: Initialize the Google AI client with an object
+// Initialize the Google AI client
 const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY!})
 
 // Helper function to fetch an image from a URL and convert it to base64
@@ -30,11 +30,14 @@ async function urlToGenerativePart(url: string, mimeType: string) {
 
 // Function 1: Get Signed URL
 export async function createSignedUploadUrl(fileName: string, fileType: string) {
+
+  // THIS IS THE FIX: The expiresIn and contentType are both in the second argument
   const { data, error } = await supabase.storage
- .from('vehicle_images')
- .createSignedUploadUrl(fileName, 60, {
+   .from('vehicle_images')
+   .createSignedUploadUrl(fileName, {
+      expiresIn: 60,
       contentType: fileType,
-    }) 
+    }) [1]
 
   if (error) {
     console.error('Error creating signed URL:', error.message)
@@ -62,9 +65,9 @@ export async function analyzeVehicleImage(publicImageUrl: string) {
 
     // Save to Supabase
     const { data: dbData, error: dbError } = await supabase
-   .from('analysis_results')
-   .insert()
-   .select()
+     .from('analysis_results')
+     .insert()
+     .select()
 
     if (dbError) {
       console.error('Supabase DB error:', dbError.message)

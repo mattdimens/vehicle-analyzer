@@ -31,13 +31,14 @@ async function urlToGenerativePart(url: string, mimeType: string) {
 // Function 1: Get Signed URL
 export async function createSignedUploadUrl(fileName: string, fileType: string) {
 
-  // THIS IS THE FIX: The expiresIn and contentType are both in the second argument
+  // THIS IS THE FIX: 
+  // The 'expiresIn' and 'contentType' parameters are not valid here.
+  // The only valid option is 'upsert'.
   const { data, error } = await supabase.storage
-  .from('vehicle_images')
-  .createSignedUploadUrl(fileName, {
-      expiresIn: 60,
-      contentType: fileType,
-    }) 
+ .from('vehicle_images')
+ .createSignedUploadUrl(fileName, {
+      upsert: true, // This is the only valid option
+    })
 
   if (error) {
     console.error('Error creating signed URL:', error.message)
@@ -65,9 +66,9 @@ export async function analyzeVehicleImage(publicImageUrl: string) {
 
     // Save to Supabase
     const { data: dbData, error: dbError } = await supabase
-    .from('analysis_results')
-    .insert()
-    .select()
+   .from('analysis_results')
+   .insert()
+   .select()
 
     if (dbError) {
       console.error('Supabase DB error:', dbError.message)

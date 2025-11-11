@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai' // <--- This is the n
 // Initialize the server-side Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 // Initialize the Google AI client

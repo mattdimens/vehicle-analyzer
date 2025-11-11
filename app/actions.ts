@@ -29,26 +29,46 @@ async function urlToGenerativePart(url: string, mimeType: string) {
 }
 
 // Function 1: Get Signed URL
-export async function createSignedUploadUrl(fileName: string, fileType: string) {
-
-  // THIS IS THE FIX: 
-  // The 'expiresIn' and 'contentType' parameters are not valid here.
-  // The only valid option is 'upsert'.
+export async function createSignedUploadUrl(
+  fileName: string,
+  fileType: string
+): Promise<
+  | { success: true; data: { signedUrl: string; path: string } }
+  | { success: false; error: string }
+> {
   const { data, error } = await supabase.storage
- .from('vehicle_images')
- .createSignedUploadUrl(fileName, {
-      upsert: true, // This is the only valid option
+    .from('vehicle_images')
+    .createSignedUploadUrl(fileName, {
+      upsert: true,
     })
 
   if (error) {
-    console.error('Error creating signed URL:', error.message)
-    return { failure: error.message }
+    return { success: false, error: error.message ?? String(error) }
   }
-  return { success: data }
+
+  if (!data) {
+    return { success: false, error: 'No data returned from storage API' }
+  }
+
+  return { success: true, data: { signedUrl: data.signedUrl, path: data.path } }
 }
 
 // Function 2: Analyze Image
-export async function analyzeVehicleImage(publicImageUrl: string) {
+export async function analyzeVehicleImage(publicImageUrl: string): Promise<
+  | {
+      success: true
+      data: {
+        vehicleType: string
+        make: string
+        model: string
+        year: number | null
+        color: string
+        condition: string
+        recommendedAccessories: string[]
+      }
+    }
+  | { success: false; error: string }
+> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
 
@@ -79,9 +99,19 @@ const { data: dbData, error: dbError } = await supabase
       throw new Error(dbError.message)
     }
 
-    return { success: jsonData }
-  } catch (error: any) {
-    console.error('Error in analyzeVehicleImage:', error)
-    return { failure: error.message }
+    return {
+      success: true,
+      data: {
+        vehicleType: jsonData.vehicleType,
+        make: jsonData.make,
+        model: jsonData.model,
+        year: jsonData.year,
+        color: jsonData.color,
+        condition: jsonData.condition,
+        recommendedAccessories: jsonData.recommendedAccessories,
+      },
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
 }

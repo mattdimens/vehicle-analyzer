@@ -16,7 +16,7 @@ export default function VehicleAccessoryFinder() {
     vehicleType: string
     make: string
     model: string
-    year: string | null
+    year: number | null
     color: string
     condition: string
     recommendedAccessories: string[]
@@ -55,11 +55,10 @@ export default function VehicleAccessoryFinder() {
       console.log("[v0] Starting analysis for file:", uploadedFile.name)
 
       // Step 1: Get signed upload URL
-      const signedUrlResponse = await createSignedUploadUrl(uploadedFile.name)
+      const signedUrlResponse = await createSignedUploadUrl(uploadedFile.name, uploadedFile.type)
       if (!signedUrlResponse.success) {
         throw new Error(signedUrlResponse.error || "Failed to get signed upload URL")
       }
-
       const { signedUrl, path } = signedUrlResponse.data
       console.log("[v0] Signed URL obtained")
 
@@ -79,7 +78,9 @@ export default function VehicleAccessoryFinder() {
 
       // Step 3: Get public URL
       const supabase = getBrowserClient()
-      const { data: publicUrlData } = supabase.storage.from("vehicle_images").getPublicUrl(path)
+      const { data: publicUrlData } = supabase.storage.getPublicUrl
+  ? supabase.storage.getPublicUrl("vehicle_images", path) // This is the new way
+  : supabase.storage.from("vehicle_images").getPublicUrl(path) // This is the old way
       const publicImageUrl = publicUrlData.publicUrl
       console.log("[v0] Public URL obtained:", publicImageUrl)
 
@@ -97,6 +98,7 @@ export default function VehicleAccessoryFinder() {
         vehicleType: analysisData.vehicleType,
         make: analysisData.make,
         model: analysisData.model,
+        // keep as number | null to match state type
         year: analysisData.year,
         color: analysisData.color,
         condition: analysisData.condition,

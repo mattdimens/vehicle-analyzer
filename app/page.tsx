@@ -11,7 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, CheckCircle, Loader } from "lucide-react"
+import { Upload, CheckCircle, Loader, X } from "lucide-react"
 import { createSignedUploadUrl, analyzeVehicleImage } from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 
@@ -74,6 +74,16 @@ export default function VehicleAccessoryFinder() {
       "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
     },
   })
+
+  // --- PASTE THIS NEW FUNCTION HERE ---
+const clearPreview = (e: React.MouseEvent) => {
+  e.stopPropagation() // This stops the dropzone from opening
+  setUploadedFile(null)
+  setPreview(null)
+  setResults(null)
+  setError(null)
+}
+// --- END OF NEW FUNCTION ---
 
   const handleAnalysis = async () => {
     if (!uploadedFile) return
@@ -185,23 +195,6 @@ export default function VehicleAccessoryFinder() {
             </div>
           </div>
 
-          {/* Preview */}
-          {preview && (
-            <div className="mt-6">
-              <p className="text-sm font-medium mb-3">Image Preview</p>
-              <div className="relative w-full max-w-md mx-auto rounded-lg overflow-hidden border border-border">
-                <img
-                  src={preview}
-                  alt="Vehicle preview"
-                  className="w-full h-auto object-cover"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {uploadedFile?.name}
-              </p>
-            </div>
-          )}
-
           {/* Button */}
           <div className="flex justify-center mt-8">
             <Button
@@ -229,6 +222,35 @@ export default function VehicleAccessoryFinder() {
           </div>
         </div>
       </section>
+      {/* Image Preview */}
+{preview && (
+  <div className="mt-8">
+    <div className="relative w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-border bg-muted/50 p-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        <img
+          src={preview}
+          alt="Vehicle preview"
+          className="w-20 h-20 rounded-md object-cover border"
+        />
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-medium truncate">
+            {uploadedFile?.name}
+          </p>
+          <p className="text-xs text-muted-foreground">Ready to analyze</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={clearPreview}
+          aria-label="Remove image"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Loading & Results Section */}
       {(isAnalyzing || error || results) && (

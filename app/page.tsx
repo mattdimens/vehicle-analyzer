@@ -16,7 +16,7 @@ import {
   Loader,
   X,
   ExternalLink,
-  Send, // Using 'Send' icon for 'Start'
+  Send,
 } from "lucide-react"
 import {
   createSignedUploadUrl,
@@ -61,7 +61,6 @@ interface DetectedProduct {
 
 // --- State Types ---
 type AnalysisState = "idle" | "fitment" | "products" | "all"
-// --- v4: Add "default" state for the dropdown ---
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
 
 export default function VehicleAccessoryFinder() {
@@ -71,7 +70,6 @@ export default function VehicleAccessoryFinder() {
   // --- State Management ---
   const [analysisState, setAnalysisState] =
     useState<AnalysisState>("idle")
-  // --- v4: Change default state to "default" ---
   const [
     selectedAnalysis,
     setSelectedAnalysis,
@@ -93,7 +91,6 @@ export default function VehicleAccessoryFinder() {
     setDetectedProducts(null)
     setProductError(null)
     setAnalysisState("idle")
-    // --- v4: Reset dropdown to "default" ---
     setSelectedAnalysis("default")
   }
 
@@ -239,7 +236,6 @@ export default function VehicleAccessoryFinder() {
 
   // --- "Start" Button Handler ---
   const handleSend = () => {
-    // v4: Add check for "default"
     if (analysisState !== "idle" || !uploadedFile || selectedAnalysis === "default") return
 
     switch (selectedAnalysis) {
@@ -331,7 +327,7 @@ export default function VehicleAccessoryFinder() {
               )}
             </div>
 
-            {/* --- v4: MODIFIED CONTROL BAR --- */}
+            {/* --- CONTROL BAR --- */}
             <div className="flex items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
               {/* HTML Select, styled with Tailwind */}
               <select
@@ -340,24 +336,20 @@ export default function VehicleAccessoryFinder() {
                   setSelectedAnalysis(e.target.value as AnalysisSelection)
                 }
                 className="h-9 px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
-                // v4: Removed !uploadedFile check
                 disabled={analysisState !== "idle"}
               >
-                {/* v4: Added default disabled option */}
                 <option value="default" disabled>Choose Analysis...</option>
                 <option value="fitment">Analyze Fitment</option>
                 <option value="products">Detect Products</option>
-                {/* v4: Renamed "Run Both" */}
                 <option value="all">Fitment & Products</option>
               </select>
 
               {/* Spacer */}
               <div className="flex-1"></div>
 
-              {/* Send Button */}
+              {/* Start Button */}
               <Button
                 onClick={handleSend}
-                // v4: Updated disabled logic
                 disabled={
                   !uploadedFile ||
                   analysisState !== "idle" ||
@@ -367,7 +359,6 @@ export default function VehicleAccessoryFinder() {
               >
                 {analysisState === "idle" ? (
                   <>
-                    {/* v4: Changed text to "Start" */}
                     Start
                     <Send className="w-4 h-4" />
                   </>
@@ -391,7 +382,7 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
-      {/* --- MODIFIED UI: Loading & Results Section --- */}
+      {/* --- RESULTS SECTION --- */}
       {(analysisState !== "idle" ||
         results ||
         detectedProducts ||
@@ -408,7 +399,6 @@ export default function VehicleAccessoryFinder() {
                     "Analyzing vehicle fitment..."}
                   {analysisState === "products" &&
                     "Detecting visible products..."}
-                  {/* v4: Renamed loading text */}
                   {analysisState === "all" && "Running Fitment & Products..."}
                 </p>
               </div>
@@ -682,7 +672,7 @@ export default function VehicleAccessoryFinder() {
         </section>
       )}
 
-      {/* --- Other Sections (No Changes) --- */}
+      {/* --- v5: MODIFIED "How It Works" SECTION --- */}
       <section id="how-it-works" className="w-full bg-muted/50 py-24">
         <div className="container max-w-6xl">
           <div className="mb-12 text-center">
@@ -692,61 +682,42 @@ export default function VehicleAccessoryFinder() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            {/* Step 1 */}
             <Card>
-              <CardHeader className="items-center text-center">
-                <Upload className="h-10 w-10 text-accent mb-4" />
-                <CardTitle>1. Upload or Drop</CardTitle>
+              <CardHeader className="text-left">
+                <CardDescription className="font-medium text-primary">
+                  Step 1
+                </CardDescription>
+                <CardTitle>Upload Vehicle Image</CardTitle>
                 <CardDescription>
-                  Drag any vehicle image into the drop zone or click to select
+                  Drag any vehicle image into the dropzone, or click to select
                   one from your device.
                 </CardDescription>
               </CardHeader>
             </Card>
+            {/* Step 2 */}
             <Card>
-              <CardHeader className="items-center text-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-10 w-10 text-accent mb-4"
-                >
-                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />
-                </svg>
-                <CardTitle>2. AI Analyzes</CardTitle>
+              <CardHeader className="text-left">
+                <CardDescription className="font-medium text-primary">
+                  Step 2
+                </CardDescription>
+                <CardTitle>Choose Analysis</CardTitle>
                 <CardDescription>
-                  Our model identifies the vehicle's year, make, model, and
-                  visible accessories.
+                  Select what you want to find: "Analyze Fitment", "Detect
+                  Products", or "Fitment & Products".
                 </CardDescription>
               </CardHeader>
             </Card>
+            {/* Step 3 */}
             <Card>
-              <CardHeader className="items-center text-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-10 w-10 text-accent mb-4"
-                >
-                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-                  <path d="M9 18h6" />
-                  <path d="M10 22h4" />
-                </svg>
-                <CardTitle>3. Get Insights</CardTitle>
+              <CardHeader className="text-left">
+                <CardDescription className="font-medium text-primary">
+                  Step 3
+                </CardDescription>
+                <CardTitle>Get Instant Insights</CardTitle>
                 <CardDescription>
-                  Review the extracted data and get Amazon search links for
-                  matched products.
+                  Click "Start" to get a detailed, AI-powered breakdown of your
+                  vehicle and its parts.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -754,6 +725,7 @@ export default function VehicleAccessoryFinder() {
         </div>
       </section>
 
+      {/* --- v5: MODIFIED "Use Cases" SECTION --- */}
       <section id="use-cases" className="w-full py-24">
         <div className="container max-w-6xl">
           <div className="mb-12 text-center">
@@ -762,31 +734,24 @@ export default function VehicleAccessoryFinder() {
               Perfect for enthusiasts, shoppers, and professionals.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {/* v5: Updated grid columns and new items */}
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {[
               {
                 title: "Accessory Shoppers",
-                desc: "Find parts you know will fit your car or truck.",
+                desc: "Shopping for accessories? Upload a picture of your ride to instantly identify its exact fitment, ensuring you buy the right parts, hassle-free.",
               },
               {
                 title: "Enthusiasts",
-                desc: "Identify that cool mod you saw on a car at a show.",
-              },
-              {
-                title: "Marketplace Sellers",
-                desc: "Quickly find parts to list for a vehicle you are parting out.",
+                desc: "See a setup you love at a car show or online? Snap a photo, run the product detector, and get a list of the visible mods, from wheels to roof racks.",
               },
               {
                 title: "Detailers & Shops",
-                desc: "Keep a quick visual record of customer vehicles.",
+                desc: "Log customer vehicles as they arrive. Get an instant, AI-generated record of the vehicle's make, model, trim, and color for your files.",
               },
               {
                 title: "Inspiration",
-                desc: "See a setup you like? Find out what it is in seconds.",
-              },
-              {
-                title: "Affiliate Marketers",
-                desc: "Generate product links from any user-submitted image.",
+                desc: "Building your dream ride? Upload inspiration photos to identify parts and find out what's compatible with your own vehicle to replicate the look.",
               },
             ].map((item) => (
               <Card

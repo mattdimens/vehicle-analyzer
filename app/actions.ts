@@ -81,13 +81,6 @@ interface VehicleAnalysis {
   recommendedAccessories: string[]
 }
 
-interface VehicleAnalysis {
-  primary: PrimaryVehicle
-  engineDetails: string | null
-  otherPossibilities: OtherPossibility[]
-  recommendedAccessories: string[]
-}
-
 export interface DetectedProduct {
   productType: string
   brandModel: string

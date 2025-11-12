@@ -61,6 +61,13 @@
   * {
     @apply border-border;
   }
+  
+  /* --- THIS IS THE NEW PART --- */
+  html {
+    @apply scroll-smooth;
+  }
+  /* --- END OF NEW PART --- */
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);

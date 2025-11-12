@@ -10,7 +10,7 @@ export function SiteHeader() {
             href="/"
             className="text-lg font-bold text-primary"
           >
-            VehicleAnalyzer
+            Visual Fitment
           </Link>
           <Link
             href="#how-it-works"
@@ -23,12 +23,6 @@ export function SiteHeader() {
             className="text-muted-foreground transition-colors hover:text-primary"
           >
             Use Cases
-          </Link>
-          <Link
-            href="#footer"
-            className="text-muted-foreground transition-colors hover:text-primary"
-          >
-            Footer
           </Link>
         </nav>
         <div className="flex flex-1 items-center justify-end">

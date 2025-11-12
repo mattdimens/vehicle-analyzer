@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Manrope } from 'next/font/google'
+import Script from 'next/script' // <-- 1. IMPORT SCRIPT
 import './globals.css'
 import { cn } from '../lib/utils'
 import { SiteHeader } from '../components/ui/site-header'
@@ -18,8 +19,8 @@ const fontHeading = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'Image Analyzer for Vehicle Fitment, Parts, & Accessories | VisualFitment.com',
-  description: 'Instantly identify vehicle fitment and detected parts just from a photo! Upload an image of any car or truck to get a detailed analysis.',
+  title: 'AI Vehicle Analyzer for Fitment & Parts | Visual Fitment',
+  description: 'Instantly identify vehicle fitment and detected parts just from a photo. Upload an image of any car or truck to get a free AI analysis. No sign-up required.',
 }
 
 export default function RootLayout({
@@ -29,6 +30,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* --- 2. ADD YOUR GA4 TAGS HERE --- */}
+        <Script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=G-3B8VWT1E8G`}
+        />
+        <Script id="google-analytics">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-3B8VWT1E8G');
+          `}
+        </Script>
+        {/* --- END OF GA4 TAGS --- */}
+      </head>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',

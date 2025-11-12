@@ -16,6 +16,7 @@ import {
   Loader,
   X,
   ExternalLink,
+  Send, // <-- New Icon
 } from "lucide-react"
 import {
   createSignedUploadUrl,
@@ -58,15 +59,21 @@ interface DetectedProduct {
   confidence: number
 }
 
-// --- New State Type ---
+// --- State Types ---
 type AnalysisState = "idle" | "fitment" | "products" | "all"
+type AnalysisSelection = "fitment" | "products" | "all"
 
 export default function VehicleAccessoryFinder() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
 
-  // --- New State Management ---
-  const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
+  // --- State Management ---
+  const [analysisState, setAnalysisState] =
+    useState<AnalysisState>("idle")
+  const [
+    selectedAnalysis,
+    setSelectedAnalysis,
+  ] = useState<AnalysisSelection>("fitment")
   const [results, setResults] = useState<AnalysisResults | null>(null)
   const [detectedProducts, setDetectedProducts] = useState<
     DetectedProduct[] | null
@@ -84,6 +91,7 @@ export default function VehicleAccessoryFinder() {
     setDetectedProducts(null)
     setProductError(null)
     setAnalysisState("idle")
+    setSelectedAnalysis("fitment") // Reset dropdown
   }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -105,6 +113,8 @@ export default function VehicleAccessoryFinder() {
     accept: {
       "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
     },
+    noClick: !!preview, // Disable click if preview is shown
+    noKeyboard: !!preview,
   })
 
   const clearPreview = (e: React.MouseEvent) => {
@@ -112,17 +122,17 @@ export default function VehicleAccessoryFinder() {
     clearAll()
   }
 
-  // --- New Utility Function to Upload Image ---
+  // --- Utility Function to Upload Image ---
   const getOrUploadImage = async (): Promise<string> => {
     if (publicImageUrl) {
-      console.log("[v3] Using cached image URL")
+      console.log("[v4] Using cached image URL")
       return publicImageUrl
     }
     if (!uploadedFile) {
       throw new Error("No file uploaded.")
     }
 
-    console.log("[v3] Uploading file to get URL...")
+    console.log("[v4] Uploading file to get URL...")
     const signedUrlResponse = await createSignedUploadUrl(
       uploadedFile.name,
       uploadedFile.type
@@ -149,17 +159,16 @@ export default function VehicleAccessoryFinder() {
       : supabase.storage.from("vehicle_images").getPublicUrl(path)
 
     const newPublicUrl = publicUrlData.publicUrl
-    console.log("[v3] Public URL obtained:", newPublicUrl)
+    console.log("[v4] Public URL obtained:", newPublicUrl)
     setPublicImageUrl(newPublicUrl) // Cache it
     return newPublicUrl
   }
 
-  // --- New Handler for Fitment ---
+  // --- Individual Handlers ---
   const handleAnalyzeFitment = async () => {
     setAnalysisState("fitment")
     setError(null)
     setProductError(null)
-
     try {
       const url = await getOrUploadImage()
       const response = await analyzeVehicleImage(url)
@@ -169,25 +178,22 @@ export default function VehicleAccessoryFinder() {
       setResults(response.data)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v3] Fitment error:", msg)
+      console.error("[v4] Fitment error:", msg)
       setError(msg)
     } finally {
       setAnalysisState("idle")
     }
   }
 
-  // --- New Handler for Products ---
   const handleDetectProducts = async () => {
     setAnalysisState("products")
     setError(null)
     setProductError(null)
-
     try {
       const url = await getOrUploadImage()
       const vehicleDetails = results
         ? `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
         : null
-      
       const response = await analyzeProductsOnVehicle(url, vehicleDetails)
       if (!response.success) {
         throw new Error(response.error || "Failed to detect products")
@@ -195,46 +201,55 @@ export default function VehicleAccessoryFinder() {
       setDetectedProducts(response.data)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v3] Product error:", msg)
+      console.error("[v4] Product error:", msg)
       setProductError(msg)
     } finally {
       setAnalysisState("idle")
     }
   }
 
-  // --- New Handler for Both ---
   const handleAnalyzeAll = async () => {
     setAnalysisState("all")
     setError(null)
     setProductError(null)
-
     try {
-      // Step 1: Get URL & Analyze Fitment
       const url = await getOrUploadImage()
       const fitmentResponse = await analyzeVehicleImage(url)
       if (!fitmentResponse.success) {
         throw new Error(fitmentResponse.error || "Failed to analyze vehicle")
       }
       setResults(fitmentResponse.data)
-
-      // Step 2: Use Fitment Data to Analyze Products
       const vehicleDetails = `${fitmentResponse.data.primary.year} ${fitmentResponse.data.primary.make} ${fitmentResponse.data.primary.model} ${fitmentResponse.data.primary.trim}`
       const productResponse = await analyzeProductsOnVehicle(url, vehicleDetails)
-      
       if (!productResponse.success) {
         throw new Error(productResponse.error || "Failed to detect products")
       }
       setDetectedProducts(productResponse.data)
-
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v3] 'All' error:", msg)
-      setError(msg) // Set general error for 'All'
+      console.error("[v4] 'All' error:", msg)
+      setError(msg)
     } finally {
       setAnalysisState("idle")
     }
   }
 
+  // --- NEW: Single "Send" Handler ---
+  const handleSend = () => {
+    if (analysisState !== "idle" || !uploadedFile) return
+
+    switch (selectedAnalysis) {
+      case "fitment":
+        handleAnalyzeFitment()
+        break
+      case "products":
+        handleDetectProducts()
+        break
+      case "all":
+        handleAnalyzeAll()
+        break
+    }
+  }
 
   function cn(...classes: Array<string | false | null | undefined>): string {
     return classes.filter(Boolean).map(String).join(" ")
@@ -246,7 +261,7 @@ export default function VehicleAccessoryFinder() {
         id="hero"
         className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center px-4 py-24 text-center"
       >
-        <div className="max-w-4xl">
+        <div className="max-w-4xl w-full">
           <h1 className="font-heading text-5xl font-bold md:text-7xl">
             See the Parts. Find the Products.
           </h1>
@@ -255,107 +270,102 @@ export default function VehicleAccessoryFinder() {
             fitment and compatible accessories.
           </p>
 
-          {/* --- MODIFIED UI: Dropzone --- */}
-          <div
-            {...getRootProps()}
-            className={cn(
-              "mt-10 min-h-48 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-12 shadow-inner transition-colors hover:bg-primary/5",
-              isDragActive ? "border-primary" : ""
-            )}
-          >
-            <input {...getInputProps()} />
-            <div className="flex flex-col items-center justify-center gap-4">
-              <Upload className="h-10 w-10 text-muted-foreground" />
-              <p className="text-lg font-medium text-muted-foreground">
-                {isDragActive
-                  ? "Drop the image here ..."
-                  : "Drag 'n' drop an image, or click to select"}
-              </p>
+          {/* --- NEW PROMPT/DROPZONE AREA --- */}
+          <div className="mt-10 w-full max-w-2xl mx-auto rounded-2xl border bg-card shadow-lg">
+            {/* This is the dropzone part */}
+            <div
+              {...getRootProps()}
+              className={cn(
+                "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors rounded-t-2xl",
+                !preview &&
+                  (isDragActive
+                    ? "bg-primary/5 cursor-pointer"
+                    : "hover:bg-muted/50 cursor-pointer")
+              )}
+            >
+              <input {...getInputProps()} />
+
+              {!preview && (
+                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                  <Upload className="h-10 w-10 text-muted-foreground" />
+                  <p className="text-lg font-medium text-muted-foreground">
+                    {isDragActive
+                      ? "Drop the image here ..."
+                      : "Drag 'n' drop an image, or click to select"}
+                  </p>
+                </div>
+              )}
+
+              {preview && (
+                <div className="relative w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-border bg-background p-3 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={preview}
+                      alt="Vehicle preview"
+                      className="w-20 h-20 rounded-md object-cover border"
+                    />
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {uploadedFile?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Image selected
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={clearPreview}
+                      aria-label="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* --- NEW CONTROL BAR --- */}
+            <div className="flex items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
+              {/* HTML Select, styled with Tailwind */}
+              <select
+                value={selectedAnalysis}
+                onChange={(e) =>
+                  setSelectedAnalysis(e.target.value as AnalysisSelection)
+                }
+                className="h-9 px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={!uploadedFile || analysisState !== "idle"}
+              >
+                <option value="fitment">Analyze Fitment</option>
+                <option value="products">Detect Products</option>
+                <option value="all">Run Both</option>
+              </select>
+
+              {/* Spacer */}
+              <div className="flex-1"></div>
+
+              {/* Send Button */}
+              <Button
+                onClick={handleSend}
+                disabled={!uploadedFile || analysisState !== "idle"}
+                size="default"
+              >
+                {analysisState === "idle" ? (
+                  <>
+                    Send
+                    <Send className="w-4 h-4" />
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </div>
+                )}
+              </Button>
             </div>
           </div>
-
-          {/* --- NEW UI: Analysis Choice Buttons --- */}
-          {uploadedFile && (
-            <div className="mt-8 w-full max-w-sm mx-auto space-y-3">
-              <Button
-                onClick={handleAnalyzeFitment}
-                disabled={analysisState !== "idle"}
-                size="lg"
-                className="w-full"
-              >
-                {analysisState === "fitment" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </div>
-                ) : (
-                  "Analyze Vehicle Fitment"
-                )}
-              </Button>
-              <Button
-                onClick={handleDetectProducts}
-                disabled={analysisState !== "idle"}
-                size="lg"
-                className="w-full"
-              >
-                {analysisState === "products" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Detecting...
-                  </div>
-                ) : (
-                  "Detect Visible Products"
-                )}
-              </Button>
-              <Button
-                onClick={handleAnalyzeAll}
-                disabled={analysisState !== "idle"}
-                size="lg"
-                className="w-full"
-              >
-                {analysisState === "all" ? (
-                  <div className="flex items-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Running Both...
-                  </div>
-                ) : (
-                  "Run Both Analyses"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Image Preview */}
-          {preview && (
-            <div className="mt-8">
-              <div className="relative w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-border bg-card p-3 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <img
-                    src={preview}
-                    alt="Vehicle preview"
-                    className="w-20 h-20 rounded-md object-cover border"
-                  />
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {uploadedFile?.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Ready to analyze
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={clearPreview}
-                    aria-label="Remove image"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* --- END NEW PROMPT AREA --- */}
 
           {/* Pills */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -379,8 +389,10 @@ export default function VehicleAccessoryFinder() {
               <div className="flex flex-col items-center">
                 <Loader className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-lg text-muted-foreground">
-                  {analysisState === "fitment" && "Analyzing vehicle fitment..."}
-                  {analysisState === "products" && "Detecting visible products..."}
+                  {analysisState === "fitment" &&
+                    "Analyzing vehicle fitment..."}
+                  {analysisState === "products" &&
+                    "Detecting visible products..."}
                   {analysisState === "all" && "Running all analyses..."}
                 </p>
               </div>

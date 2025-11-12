@@ -19,8 +19,8 @@ const fontHeading = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'AI Vehicle Analyzer for Fitment & Parts | Visual Fitment',
-  description: 'Instantly identify vehicle fitment and detected parts just from a photo. Upload an image of any car or truck to get a free AI analysis. No sign-up required.',
+  title: 'Find Vehicle Fitment, Parts, & Accessories From an Image | Visual Fitment',
+  description: 'Instantly identify vehicle fitment, parts, and accessories just from a photo. Upload an image of any car or truck to get a detailed analysis.',
 }
 
 export default function RootLayout({

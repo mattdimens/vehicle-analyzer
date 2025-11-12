@@ -16,7 +16,7 @@ import {
   Loader,
   X,
   ExternalLink,
-  Send, // <-- New Icon
+  Send, // Using 'Send' icon for 'Start'
 } from "lucide-react"
 import {
   createSignedUploadUrl,
@@ -61,7 +61,8 @@ interface DetectedProduct {
 
 // --- State Types ---
 type AnalysisState = "idle" | "fitment" | "products" | "all"
-type AnalysisSelection = "fitment" | "products" | "all"
+// --- v4: Add "default" state for the dropdown ---
+type AnalysisSelection = "default" | "fitment" | "products" | "all"
 
 export default function VehicleAccessoryFinder() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -70,10 +71,11 @@ export default function VehicleAccessoryFinder() {
   // --- State Management ---
   const [analysisState, setAnalysisState] =
     useState<AnalysisState>("idle")
+  // --- v4: Change default state to "default" ---
   const [
     selectedAnalysis,
     setSelectedAnalysis,
-  ] = useState<AnalysisSelection>("fitment")
+  ] = useState<AnalysisSelection>("default")
   const [results, setResults] = useState<AnalysisResults | null>(null)
   const [detectedProducts, setDetectedProducts] = useState<
     DetectedProduct[] | null
@@ -91,7 +93,8 @@ export default function VehicleAccessoryFinder() {
     setDetectedProducts(null)
     setProductError(null)
     setAnalysisState("idle")
-    setSelectedAnalysis("fitment") // Reset dropdown
+    // --- v4: Reset dropdown to "default" ---
+    setSelectedAnalysis("default")
   }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -234,9 +237,10 @@ export default function VehicleAccessoryFinder() {
     }
   }
 
-  // --- NEW: Single "Send" Handler ---
+  // --- "Start" Button Handler ---
   const handleSend = () => {
-    if (analysisState !== "idle" || !uploadedFile) return
+    // v4: Add check for "default"
+    if (analysisState !== "idle" || !uploadedFile || selectedAnalysis === "default") return
 
     switch (selectedAnalysis) {
       case "fitment":
@@ -250,6 +254,7 @@ export default function VehicleAccessoryFinder() {
         break
     }
   }
+
 
   function cn(...classes: Array<string | false | null | undefined>): string {
     return classes.filter(Boolean).map(String).join(" ")
@@ -326,7 +331,7 @@ export default function VehicleAccessoryFinder() {
               )}
             </div>
 
-            {/* --- NEW CONTROL BAR --- */}
+            {/* --- v4: MODIFIED CONTROL BAR --- */}
             <div className="flex items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
               {/* HTML Select, styled with Tailwind */}
               <select
@@ -335,11 +340,15 @@ export default function VehicleAccessoryFinder() {
                   setSelectedAnalysis(e.target.value as AnalysisSelection)
                 }
                 className="h-9 px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
-                disabled={!uploadedFile || analysisState !== "idle"}
+                // v4: Removed !uploadedFile check
+                disabled={analysisState !== "idle"}
               >
+                {/* v4: Added default disabled option */}
+                <option value="default" disabled>Choose Analysis...</option>
                 <option value="fitment">Analyze Fitment</option>
                 <option value="products">Detect Products</option>
-                <option value="all">Run Both</option>
+                {/* v4: Renamed "Run Both" */}
+                <option value="all">Fitment & Products</option>
               </select>
 
               {/* Spacer */}
@@ -348,12 +357,18 @@ export default function VehicleAccessoryFinder() {
               {/* Send Button */}
               <Button
                 onClick={handleSend}
-                disabled={!uploadedFile || analysisState !== "idle"}
+                // v4: Updated disabled logic
+                disabled={
+                  !uploadedFile ||
+                  analysisState !== "idle" ||
+                  selectedAnalysis === "default"
+                }
                 size="default"
               >
                 {analysisState === "idle" ? (
                   <>
-                    Send
+                    {/* v4: Changed text to "Start" */}
+                    Start
                     <Send className="w-4 h-4" />
                   </>
                 ) : (
@@ -393,7 +408,8 @@ export default function VehicleAccessoryFinder() {
                     "Analyzing vehicle fitment..."}
                   {analysisState === "products" &&
                     "Detecting visible products..."}
-                  {analysisState === "all" && "Running all analyses..."}
+                  {/* v4: Renamed loading text */}
+                  {analysisState === "all" && "Running Fitment & Products..."}
                 </p>
               </div>
             )}

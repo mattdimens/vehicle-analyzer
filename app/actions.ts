@@ -185,7 +185,7 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
 // Function 3: Analyze Products on Vehicle (2-Stage)
 export async function analyzeProductsOnVehicle(
   publicImageUrl: string,
-  vehicleDetails: string
+  vehicleDetails: string | null
 ): Promise<
   | { success: true; data: DetectedProduct[] }
   | { success: false; error: string }
@@ -195,10 +195,14 @@ export async function analyzeProductsOnVehicle(
     const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
 
     // --- STAGE 1: Detect all visible products ---
-    const stage1Prompt =
-      `You are a vehicle product specialist. Given that this is a ${vehicleDetails}, scan the image and detect all visible aftermarket or OEM products (like Tonneau Cover, Wheels, Tires, Hitch, Roof Rack, Bumper, Side Steps, etc.). ` +
-      'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
-      'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
+    const vehicleContext = vehicleDetails
+  ? `Given that this is a ${vehicleDetails}`
+  : ""
+
+const stage1Prompt =
+  `You are a vehicle product specialist. ${vehicleContext}, scan the image and detect all visible aftermarket or OEM products (like Tonneau Cover, Wheels, Tires, Hitch, Roof Rack, Bumper, Side Steps, etc.). ` +
+  'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
+  'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
     const stage1Result = await model.generateContent([stage1Prompt, imagePart])
     const productTypes = JSON.parse(
@@ -211,14 +215,16 @@ export async function analyzeProductsOnVehicle(
 
     // --- STAGE 2: Refine each product in parallel ---
     const refinementPromises = productTypes.map(async (productType) => {
-      const stage2Prompt =
-        `I have detected a "${productType}" on this ${vehicleDetails}. Look very closely at just this product in the image. ` +
-        'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
-        'Also provide a confidence score (0-100) for your brand/model identification. ' +
-        'Respond ONLY with a valid, minified JSON object: {"productType": string, "brandModel": string, "confidence": number}. ' +
-        'If you can identify the type but not brand/model, return {"productType": "' +
-        productType +
-        '", "brandModel": "Unknown", "confidence": 50}.'
+      const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ""
+
+const stage2Prompt =
+  `I have detected a "${productType}" ${stage2Context}. Look very closely at just this product in the image. ` +
+  'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
+  'Also provide a confidence score (0-100) for your brand/model identification. ' +
+  'Respond ONLY with a valid, minified JSON object: {"productType": string, "brandModel": string, "confidence": number}. ' +
+  'If you can identify the type but not brand/model, return {"productType": "' +
+  productType +
+  '", "brandModel": "Unknown", "confidence": 50}.'
 
       try {
         const result = await model.generateContent([stage2Prompt, imagePart])
@@ -241,10 +247,10 @@ export async function analyzeProductsOnVehicle(
     const { error: dbError } = await supabase
       .from('product_analysis_results') // You might need to create this table in Supabase
       .insert({
-        analysis_data: refinedProducts,
-        image_url: publicImageUrl,
-        vehicle_details: vehicleDetails,
-      })
+  analysis_data: refinedProducts,
+  image_url: publicImageUrl,
+  vehicle_details: vehicleDetails, // This line is fine, just ensure it's there
+})
 
     if (dbError) {
       console.warn('Supabase DB error (products):', dbError.message)

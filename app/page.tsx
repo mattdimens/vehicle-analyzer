@@ -11,11 +11,20 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Upload, CheckCircle, Loader, X, ExternalLink } from "lucide-react"
-import { createSignedUploadUrl, analyzeVehicleImage, analyzeProductsOnVehicle } from "@/app/actions"
+import {
+  Upload,
+  Loader,
+  X,
+  ExternalLink,
+} from "lucide-react"
+import {
+  createSignedUploadUrl,
+  analyzeVehicleImage,
+  analyzeProductsOnVehicle,
+} from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 
-// --- v2: Define new interfaces to match the server action response ---
+// --- Interfaces ---
 interface PrimaryVehicle {
   make: string
   model: string
@@ -48,28 +57,41 @@ interface DetectedProduct {
   brandModel: string
   confidence: number
 }
-// --- End of new interfaces ---
+
+// --- New State Type ---
+type AnalysisState = "idle" | "fitment" | "products" | "all"
 
 export default function VehicleAccessoryFinder() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  // --- v2: Update the 'results' state to use the new interface ---
+
+  // --- New State Management ---
+  const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
   const [results, setResults] = useState<AnalysisResults | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [detectedProducts, setDetectedProducts] = useState<
+    DetectedProduct[] | null
+  >(null)
   const [publicImageUrl, setPublicImageUrl] = useState<string | null>(null)
-const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[] | null>(null)
-const [isDetectingProducts, setIsDetectingProducts] = useState(false)
-const [productError, setProductError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [productError, setProductError] = useState<string | null>(null)
+
+  const clearAll = () => {
+    setUploadedFile(null)
+    setPreview(null)
+    setResults(null)
+    setError(null)
+    setPublicImageUrl(null)
+    setDetectedProducts(null)
+    setProductError(null)
+    setAnalysisState("idle")
+  }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
+      clearAll() // Clear everything on new upload
       const file = acceptedFiles[0]
       setUploadedFile(file)
-      setError(null)
-      setResults(null) // Clear previous results on new upload
 
-      // Create preview
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreview(e.target?.result as string)
@@ -85,127 +107,141 @@ const [productError, setProductError] = useState<string | null>(null)
     },
   })
 
-  // --- PASTE THIS NEW FUNCTION HERE ---
-const clearPreview = (e: React.MouseEvent) => {
-  e.stopPropagation() // This stops the dropzone from opening
-  setUploadedFile(null)
-  setPreview(null)
-  setResults(null)
-  setError(null)
-  setPublicImageUrl(null)
-  setDetectedProducts(null)
-  setProductError(null)
-}
-// --- END OF NEW FUNCTION ---
+  const clearPreview = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    clearAll()
+  }
 
-  const handleAnalysis = async () => {
-    if (!uploadedFile) return
+  // --- New Utility Function to Upload Image ---
+  const getOrUploadImage = async (): Promise<string> => {
+    if (publicImageUrl) {
+      console.log("[v3] Using cached image URL")
+      return publicImageUrl
+    }
+    if (!uploadedFile) {
+      throw new Error("No file uploaded.")
+    }
 
-    setIsAnalyzing(true)
+    console.log("[v3] Uploading file to get URL...")
+    const signedUrlResponse = await createSignedUploadUrl(
+      uploadedFile.name,
+      uploadedFile.type
+    )
+    if (!signedUrlResponse.success) {
+      throw new Error(
+        signedUrlResponse.error || "Failed to get signed upload URL"
+      )
+    }
+    const { signedUrl, path } = signedUrlResponse.data
+
+    const uploadResponse = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": uploadedFile.type },
+      body: uploadedFile,
+    })
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload file to storage")
+    }
+
+    const supabase = getBrowserClient()
+    const { data: publicUrlData } = supabase.storage.getPublicUrl
+      ? supabase.storage.getPublicUrl("vehicle_images", path)
+      : supabase.storage.from("vehicle_images").getPublicUrl(path)
+
+    const newPublicUrl = publicUrlData.publicUrl
+    console.log("[v3] Public URL obtained:", newPublicUrl)
+    setPublicImageUrl(newPublicUrl) // Cache it
+    return newPublicUrl
+  }
+
+  // --- New Handler for Fitment ---
+  const handleAnalyzeFitment = async () => {
+    setAnalysisState("fitment")
     setError(null)
-    setResults(null)
+    setProductError(null)
 
     try {
-      console.log("[v2] Starting analysis for file:", uploadedFile.name)
-
-      // Step 1: Get signed upload URL
-      const signedUrlResponse = await createSignedUploadUrl(
-        uploadedFile.name,
-        uploadedFile.type
-      )
-      if (!signedUrlResponse.success) {
-        throw new Error(
-          signedUrlResponse.error || "Failed to get signed upload URL"
-        )
+      const url = await getOrUploadImage()
+      const response = await analyzeVehicleImage(url)
+      if (!response.success) {
+        throw new Error(response.error || "Failed to analyze vehicle")
       }
-      const { signedUrl, path } = signedUrlResponse.data
-      console.log("[v2] Signed URL obtained")
-
-      // Step 2: Upload file to signed URL
-      const uploadResponse = await fetch(signedUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": uploadedFile.type,
-        },
-        body: uploadedFile,
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload file to storage")
-      }
-      console.log("[v2] File uploaded successfully")
-
-      // Step 3: Get public URL
-      const supabase = getBrowserClient()
-      const { data: publicUrlData } = supabase.storage.getPublicUrl
-        ? supabase.storage.getPublicUrl("vehicle_images", path) // This is the new way
-        : supabase.storage.from("vehicle_images").getPublicUrl(path) // This is the old way
-      const publicImageUrl = publicUrlData.publicUrl
-      setPublicImageUrl(publicImageUrl)
-      console.log("[v2] Public URL obtained:", publicImageUrl)
-
-      // Step 4: Call server action to analyze image
-      const analysisResponse = await analyzeVehicleImage(publicImageUrl)
-      if (!analysisResponse.success) {
-        throw new Error(analysisResponse.error || "Failed to analyze vehicle")
-      }
-
-      console.log("[v2] Analysis completed successfully")
-
-      // Step 5: Extract and display results
-      const analysisData = analysisResponse.data
-      // --- v2: Set the new results structure ---
-      setResults({
-        primary: analysisData.primary,
-        engineDetails: analysisData.engineDetails,
-        otherPossibilities: analysisData.otherPossibilities,
-        recommendedAccessories: analysisData.recommendedAccessories,
-      })
+      setResults(response.data)
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An error occurred during analysis"
-      console.error("[v2] Error during analysis:", errorMessage)
-      setError(errorMessage)
+      const msg = err instanceof Error ? err.message : "An error occurred"
+      console.error("[v3] Fitment error:", msg)
+      setError(msg)
     } finally {
-      setIsAnalyzing(false)
+      setAnalysisState("idle")
     }
   }
 
-const handleProductDetection = async () => {
-if (!results || !publicImageUrl) return
+  // --- New Handler for Products ---
+  const handleDetectProducts = async () => {
+    setAnalysisState("products")
+    setError(null)
+    setProductError(null)
 
-setIsDetectingProducts(true)
-setProductError(null)
-setDetectedProducts(null)
-
-const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-
-try {
-  const response = await analyzeProductsOnVehicle(
-    publicImageUrl,
-    vehicleDetails
-  )
-
-  if (response.success) {
-    setDetectedProducts(response.data)
-  } else {
-    setProductError(response.error || "Failed to detect products.")
+    try {
+      const url = await getOrUploadImage()
+      const vehicleDetails = results
+        ? `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
+        : null
+      
+      const response = await analyzeProductsOnVehicle(url, vehicleDetails)
+      if (!response.success) {
+        throw new Error(response.error || "Failed to detect products")
+      }
+      setDetectedProducts(response.data)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "An error occurred"
+      console.error("[v3] Product error:", msg)
+      setProductError(msg)
+    } finally {
+      setAnalysisState("idle")
+    }
   }
-} catch (err) {
-  const errorMessage =
-    err instanceof Error ? err.message : "An error occurred"
-  setProductError(errorMessage)
-} finally {
-  setIsDetectingProducts(false)
-}
-}
+
+  // --- New Handler for Both ---
+  const handleAnalyzeAll = async () => {
+    setAnalysisState("all")
+    setError(null)
+    setProductError(null)
+
+    try {
+      // Step 1: Get URL & Analyze Fitment
+      const url = await getOrUploadImage()
+      const fitmentResponse = await analyzeVehicleImage(url)
+      if (!fitmentResponse.success) {
+        throw new Error(fitmentResponse.error || "Failed to analyze vehicle")
+      }
+      setResults(fitmentResponse.data)
+
+      // Step 2: Use Fitment Data to Analyze Products
+      const vehicleDetails = `${fitmentResponse.data.primary.year} ${fitmentResponse.data.primary.make} ${fitmentResponse.data.primary.model} ${fitmentResponse.data.primary.trim}`
+      const productResponse = await analyzeProductsOnVehicle(url, vehicleDetails)
+      
+      if (!productResponse.success) {
+        throw new Error(productResponse.error || "Failed to detect products")
+      }
+      setDetectedProducts(productResponse.data)
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "An error occurred"
+      console.error("[v3] 'All' error:", msg)
+      setError(msg) // Set general error for 'All'
+    } finally {
+      setAnalysisState("idle")
+    }
+  }
+
 
   function cn(...classes: Array<string | false | null | undefined>): string {
     return classes.filter(Boolean).map(String).join(" ")
   }
   return (
     <div className="flex flex-col">
-      {/* Hero Section (No changes) */}
+      {/* Hero Section */}
       <section
         id="hero"
         className="flex min-h-[calc(100vh-3.5rem)] w-full flex-col items-center justify-center px-4 py-24 text-center"
@@ -219,12 +255,12 @@ try {
             fitment and compatible accessories.
           </p>
 
-          {/* Dropzone */}
+          {/* --- MODIFIED UI: Dropzone --- */}
           <div
             {...getRootProps()}
             className={cn(
-              "mt-10 min-h-48 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-12 shadow-inner transition-colors hover:bg-accent/10",
-              isDragActive ? "border-accent" : ""
+              "mt-10 min-h-48 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-12 shadow-inner transition-colors hover:bg-primary/5",
+              isDragActive ? "border-primary" : ""
             )}
           >
             <input {...getInputProps()} />
@@ -238,24 +274,88 @@ try {
             </div>
           </div>
 
-          {/* Button */}
-          <div className="flex justify-center mt-8">
-            <Button
-              onClick={handleAnalysis}
-              disabled={!uploadedFile || isAnalyzing}
-              size="lg"
-              className="min-w-xs"
-            >
-              {isAnalyzing ? (
-                <div className="flex items-center gap-2">
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Analyzing...
+          {/* --- NEW UI: Analysis Choice Buttons --- */}
+          {uploadedFile && (
+            <div className="mt-8 w-full max-w-sm mx-auto space-y-3">
+              <Button
+                onClick={handleAnalyzeFitment}
+                disabled={analysisState !== "idle"}
+                size="lg"
+                className="w-full"
+              >
+                {analysisState === "fitment" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Analyzing...
+                  </div>
+                ) : (
+                  "Analyze Vehicle Fitment"
+                )}
+              </Button>
+              <Button
+                onClick={handleDetectProducts}
+                disabled={analysisState !== "idle"}
+                size="lg"
+                className="w-full"
+              >
+                {analysisState === "products" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Detecting...
+                  </div>
+                ) : (
+                  "Detect Visible Products"
+                )}
+              </Button>
+              <Button
+                onClick={handleAnalyzeAll}
+                disabled={analysisState !== "idle"}
+                size="lg"
+                className="w-full"
+              >
+                {analysisState === "all" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Running Both...
+                  </div>
+                ) : (
+                  "Run Both Analyses"
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Image Preview */}
+          {preview && (
+            <div className="mt-8">
+              <div className="relative w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-border bg-card p-3 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <img
+                    src={preview}
+                    alt="Vehicle preview"
+                    className="w-20 h-20 rounded-md object-cover border"
+                  />
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {uploadedFile?.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Ready to analyze
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={clearPreview}
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              ) : (
-                "Analyze Vehicle"
-              )}
-            </Button>
-          </div>
+              </div>
+            </div>
+          )}
 
           {/* Pills */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -265,333 +365,296 @@ try {
           </div>
         </div>
       </section>
-      {/* Image Preview */}
-{preview && (
-  <div className="mt-8">
-    <div className="relative w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-border bg-muted/50 p-3 shadow-sm">
-      <div className="flex items-start gap-3">
-        <img
-          src={preview}
-          alt="Vehicle preview"
-          className="w-20 h-20 rounded-md object-cover border"
-        />
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-sm font-medium truncate">
-            {uploadedFile?.name}
-          </p>
-          <p className="text-xs text-muted-foreground">Ready to analyze</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground hover:text-destructive"
-          onClick={clearPreview}
-          aria-label="Remove image"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
 
-      {/* Loading & Results Section */}
-      {(isAnalyzing || error || results) && (
-        <section id="results" className="w-full bg-white py-24">
+      {/* --- MODIFIED UI: Loading & Results Section --- */}
+      {(analysisState !== "idle" ||
+        results ||
+        detectedProducts ||
+        error ||
+        productError) && (
+        <section id="results" className="w-full bg-card py-24">
           <div className="container max-w-4xl">
-            {isAnalyzing && (
+            {/* Master Loading State */}
+            {analysisState !== "idle" && (
               <div className="flex flex-col items-center">
                 <Loader className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-lg text-muted-foreground">
-                  Analyzing image...
+                  {analysisState === "fitment" && "Analyzing vehicle fitment..."}
+                  {analysisState === "products" && "Detecting visible products..."}
+                  {analysisState === "all" && "Running all analyses..."}
                 </p>
               </div>
             )}
 
+            {/* Error States */}
             {error && (
               <div className="mb-8 p-4 bg-destructive/10 border border-destructive rounded-lg">
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
-
-            {results && !isAnalyzing && (
-              <div className="grid grid-cols-1 gap-8">
-                <div className="flex flex-col text-left">
-                  {/* --- v2: This is the new UI for fitment details --- */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Primary Vehicle Identification</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Grid for primary details */}
-                      <div className="grid grid-cols-3 gap-x-4 gap-y-6 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Make</div>
-                          <div className="font-medium">
-                            {results.primary.make}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Model</div>
-                          <div className="font-medium">
-                            {results.primary.model}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Year</div>
-                          <div className="font-medium">
-                            {results.primary.year}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Trim</div>
-                          <div className="font-medium">
-                            {results.primary.trim}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Cab Style</div>
-                          <div className="font-medium">
-                            {results.primary.cabStyle || "N/A"}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">
-                            Bed Length
-                          </div>
-                          <div className="font-medium">
-                            {results.primary.bedLength || "N/A"}
-                          </div>
-                        </div>
-                        <div className="col-span-3">
-                          <div className="text-muted-foreground">
-                            Confidence
-                          </div>
-                          <div className="font-medium">
-                            {results.primary.confidence}%
-                          </div>
-                        </div>
-                        {/* Other details */}
-                        <div>
-                          <div className="text-muted-foreground">Type</div>
-                          <div className="font-medium">
-                            {results.primary.vehicleType}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Color</div>
-                          <div className="font-medium">
-                            {results.primary.color}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">
-                            Condition
-                          </div>
-                          <div className="font-medium capitalize">
-                            {results.primary.condition}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Engine Details */}
-                      <h3 className="font-semibold mt-8 mb-3">
-                        Engine Details
-                      </h3>
-                      <p className="text-sm">
-                        {results.engineDetails || "No details available."}
-                      </p>
-
-                      {/* Other Possibilities */}
-                      <h3 className="font-semibold mt-8 mb-3">
-                        Other Possibilities
-                      </h3>
-                      <div className="overflow-x-auto rounded-lg border">
-                        <table className="w-full text-sm text-left">
-                          <thead className="bg-muted/50">
-                            <tr>
-                              <th className="px-4 py-3 font-medium">
-                                Vehicle
-                              </th>
-                              <th className="px-4 py-3 font-medium">
-                                Year Range
-                              </th>
-                              <th className="px-4 py-3 font-medium">Trim</th>
-                              <th className="px-4 py-3 font-medium text-right">
-                                Confidence
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {results.otherPossibilities.map((item, index) => (
-                              <tr key={index} className="border-t">
-                                <td className="px-4 py-3 font-medium">
-                                  {item.vehicle}
-                                </td>
-                                <td className="px-4 py-3">
-                                  {item.yearRange}
-                                </td>
-                                <td className="px-4 py-3">{item.trim}</td>
-                                <td className="px-4 py-3 text-right">
-                                  {item.confidence}%
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {/* --- End of new v2 UI --- */}
-                  {/* --- PASTE ALL THIS NEW UI CODE HERE --- */}
-
-              {/* "Detect Products" Button */}
-              <div className="mt-8">
-                <Button
-                  onClick={handleProductDetection}
-                  disabled={isDetectingProducts}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isDetectingProducts ? (
-                    <div className="flex items-center gap-2">
-                      <Loader className="w-4 h-4 animate-spin" />
-                      Detecting Products...
-                    </div>
-                  ) : (
-                    "Detect Products on Vehicle"
-                  )}
-                </Button>
+            {productError && (
+              <div className="mb-8 p-4 bg-destructive/10 border border-destructive rounded-lg">
+                <p className="text-sm text-destructive">{productError}</p>
               </div>
+            )}
 
-              {/* Product Loading/Error State */}
-              {isDetectingProducts && (
-                <div className="flex flex-col items-center mt-8">
-                  <Loader className="h-10 w-10 animate-spin text-primary" />
-                  <p className="mt-4 text-muted-foreground">
-                    Scanning for products...
-                  </p>
-                </div>
-              )}
-
-              {productError && (
-                <div className="mt-8 p-4 bg-destructive/10 border border-destructive rounded-lg">
-                  <p className="text-sm text-destructive">{productError}</p>
-                </div>
-              )}
-
-              {/* "Detected Products" Table */}
-              {detectedProducts && (
-                <div className="mt-8">
-                  <h2 className="font-heading text-2xl font-bold mb-4">
-                    Detected Products
-                  </h2>
-                  <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm text-left">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-4 py-3 font-medium">Product</th>
-                          <th className="px-4 py-3 font-medium">
-                            Brand / Model
-                          </th>
-                          <th className="px-4 py-3 font-medium">Link</th>
-                          <th className="px-4 py-3 font-medium text-right">
-                            Confidence
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detectedProducts.map((item, index) => (
-                          <tr key={index} className="border-t">
-                            <td className="px-4 py-3 font-medium">
-                              {item.productType}
-                            </td>
-                            <td className="px-4 py-3">
-                              {item.brandModel}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Button
-                                asChild
-                                variant="outline"
-                                size="sm"
-                                className="gap-1.5"
-                              >
-                                <a
-                                  href={`https://www.amazon.com/s?k=${encodeURIComponent(
-                                    results.primary.make
-                                  )} ${encodeURIComponent(
-                                    results.primary.model
-                                  )} ${encodeURIComponent(item.brandModel)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  Search
-                                </a>
-                              </Button>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              {item.confidence}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              {/* --- END OF NEW UI CODE --- */}
-                </div>
-                <div className="flex flex-col text-left">
-                  <h2 className="font-heading text-2xl font-bold">
-                    Recommended Accessories
-                  </h2>
-                  <div className="mt-4 space-y-4">
-                    {/* --- v2: Update Amazon search to use new 'primary' object --- */}
-                    {results.recommendedAccessories.map((accessory, index) => {
-                      const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-                      const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
-                        vehicleDetails
-                      )}+${encodeURIComponent(accessory)}`
-
-                      return (
-                        <Card
-                          key={index}
-                          className="transition-all hover:shadow-md"
-                        >
-                          <CardHeader>
-                            <div className="flex items-center justify-between gap-4">
-                              <CardTitle className="text-lg">
-                                {accessory}
-                              </CardTitle>
-                              <Button
-                                asChild
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0"
-                              >
-                                <a
-                                  href={amazonSearchUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  Find on Amazon
-                                </a>
-                              </Button>
+            {/* Results */}
+            {analysisState === "idle" && (
+              <div className="grid grid-cols-1 gap-12">
+                {/* Fitment Results */}
+                {results && (
+                  <div className="flex flex-col text-left">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Primary Vehicle Identification</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Grid for primary details */}
+                        <div className="grid grid-cols-3 gap-x-4 gap-y-6 text-sm">
+                          <div>
+                            <div className="text-muted-foreground">Make</div>
+                            <div className="font-medium">
+                              {results.primary.make}
                             </div>
-                          </CardHeader>
-                        </Card>
-                      )
-                    })}
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Model</div>
+                            <div className="font-medium">
+                              {results.primary.model}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Year</div>
+                            <div className="font-medium">
+                              {results.primary.year}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Trim</div>
+                            <div className="font-medium">
+                              {results.primary.trim}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">
+                              Cab Style
+                            </div>
+                            <div className="font-medium">
+                              {results.primary.cabStyle || "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">
+                              Bed Length
+                            </div>
+                            <div className="font-medium">
+                              {results.primary.bedLength || "N/A"}
+                            </div>
+                          </div>
+                          <div className="col-span-3">
+                            <div className="text-muted-foreground">
+                              Confidence
+                            </div>
+                            <div className="font-medium">
+                              {results.primary.confidence}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Engine Details */}
+                        <h3 className="font-semibold mt-8 mb-3">
+                          Engine Details
+                        </h3>
+                        <p className="text-sm">
+                          {results.engineDetails || "No details available."}
+                        </p>
+
+                        {/* Other Possibilities */}
+                        <h3 className="font-semibold mt-8 mb-3">
+                          Other Possibilities
+                        </h3>
+                        <div className="overflow-x-auto rounded-lg border">
+                          <table className="w-full text-sm text-left">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="px-4 py-3 font-medium">
+                                  Vehicle
+                                </th>
+                                <th className="px-4 py-3 font-medium">
+                                  Year Range
+                                </th>
+                                <th className="px-4 py-3 font-medium">Trim</th>
+                                <th className="px-4 py-3 font-medium text-right">
+                                  Confidence
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {results.otherPossibilities.map((item, index) => (
+                                <tr key={index} className="border-t">
+                                  <td className="px-4 py-3 font-medium">
+                                    {item.vehicle}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    {item.yearRange}
+                                  </td>
+                                  <td className="px-4 py-3">{item.trim}</td>
+                                  <td className="px-4 py-3 text-right">
+                                    {item.confidence}%
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Conditional "Detect Products" Button */}
+                    {!detectedProducts && !productError && (
+                      <div className="mt-8">
+                        <Button
+                          onClick={handleDetectProducts}
+                          disabled={analysisState !== "idle"}
+                          className="w-full"
+                          size="lg"
+                        >
+                          Detect Products on Vehicle
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
+
+                {/* Conditional "Analyze Fitment" Button */}
+                {detectedProducts && !results && !error && (
+                  <div className="flex flex-col text-left">
+                    <Button
+                      onClick={handleAnalyzeFitment}
+                      disabled={analysisState !== "idle"}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Analyze Vehicle Fitment
+                    </Button>
+                  </div>
+                )}
+
+                {/* Product Results */}
+                {detectedProducts && (
+                  <div className="flex flex-col text-left">
+                    <h2 className="font-heading text-2xl font-bold mb-4">
+                      Detected Products
+                    </h2>
+                    <div className="overflow-x-auto rounded-lg border">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="px-4 py-3 font-medium">Product</th>
+                            <th className="px-4 py-3 font-medium">
+                              Brand / Model
+                            </th>
+                            <th className="px-4 py-3 font-medium">Link</th>
+                            <th className="px-4 py-3 font-medium text-right">
+                              Confidence
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detectedProducts.map((item, index) => (
+                            <tr key={index} className="border-t">
+                              <td className="px-4 py-3 font-medium">
+                                {item.productType}
+                              </td>
+                              <td className="px-4 py-3">
+                                {item.brandModel}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1.5"
+                                >
+                                  <a
+                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(
+                                      results
+                                        ? `${results.primary.make} ${results.primary.model}`
+                                        : ""
+                                    )} ${encodeURIComponent(item.brandModel)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Search
+                                  </a>
+                                </Button>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {item.confidence}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended Accessories */}
+                {results && (
+                  <div className="flex flex-col text-left">
+                    <h2 className="font-heading text-2xl font-bold">
+                      Recommended Accessories
+                    </h2>
+                    <div className="mt-4 space-y-4">
+                      {results.recommendedAccessories.map(
+                        (accessory, index) => {
+                          const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
+                          const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
+                            vehicleDetails
+                          )}+${encodeURIComponent(accessory)}`
+
+                          return (
+                            <Card
+                              key={index}
+                              className="transition-all hover:shadow-md"
+                            >
+                              <CardHeader>
+                                <div className="flex items-center justify-between gap-4">
+                                  <CardTitle className="text-lg">
+                                    {accessory}
+                                  </CardTitle>
+                                  <Button
+                                    asChild
+                                    variant="outline"
+                                    size="sm"
+                                    className="shrink-0"
+                                  >
+                                    <a
+                                      href={amazonSearchUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Find on Amazon
+                                    </a>
+                                  </Button>
+                                </div>
+                              </CardHeader>
+                            </Card>
+                          )
+                        }
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </section>
       )}
 
-      {/* How It Works & Use Cases Sections (No changes) */}
+      {/* --- Other Sections (No Changes) --- */}
       <section id="how-it-works" className="w-full bg-muted/50 py-24">
         <div className="container max-w-6xl">
           <div className="mb-12 text-center">

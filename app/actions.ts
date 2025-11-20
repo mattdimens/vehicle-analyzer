@@ -91,9 +91,9 @@ export interface DetectedProduct {
 // Function 2: Analyze Image (Updated)
 export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   | {
-      success: true
-      data: VehicleAnalysis // Use the new interface
-    }
+    success: true
+    data: VehicleAnalysis // Use the new interface
+  }
   | { success: false; error: string }
 > {
   try {
@@ -174,96 +174,81 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   }
 }
 
-// Function 3: Analyze Products on Vehicle (2-Stage)
-export async function analyzeProductsOnVehicle(
+// Function 3: Detect Visible Products (Stage 1)
+export async function detectVisibleProducts(
   publicImageUrl: string,
-  vehicleDetails: string | null // <-- This is now optional
+  vehicleDetails: string | null
 ): Promise<
-  | { success: true; data: DetectedProduct[] }
+  | { success: true; data: string[] }
   | { success: false; error: string }
 > {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
 
-    // --- STAGE 1: Detect all visible products ---
-    // Conditionally add vehicle details to the prompt
     const vehicleContext = vehicleDetails
       ? `Given that this is a ${vehicleDetails}`
       : ''
 
-    const stage1Prompt =
+    const prompt =
       `You are a vehicle product specialist. ${vehicleContext}, scan the image and detect all visible aftermarket or OEM products (like Tonneau Cover, Wheels, Tires, Hitch, Roof Rack, Bumper, Side Steps, etc.). ` +
       'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
       'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
-    const stage1Result = await model.generateContent([stage1Prompt, imagePart])
-    const productTypes = JSON.parse(
-      stage1Result.response
-        .text()
-        .replace('```json', '')
-        .replace('```', '')
-        .trim()
-    ) as string[]
+    const result = await model.generateContent([prompt, imagePart])
+    const text = result.response.text()
+    const cleanedText = text.replace('```json', '').replace('```', '').trim()
 
-    if (!Array.isArray(productTypes) || productTypes.length === 0) {
-      return { success: true, data: [] } // No products found
+    const productTypes = JSON.parse(cleanedText) as string[]
+
+    if (!Array.isArray(productTypes)) {
+      return { success: true, data: [] }
     }
 
-    // --- STAGE 2: Refine each product in parallel ---
-    const refinementPromises = productTypes.map(async (productType) => {
-      // Conditionally add vehicle details to the second prompt
-      const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ''
-
-      const stage2Prompt =
-        `I have detected a "${productType}" ${stage2Context}. Look very closely at just this product in the image. ` +
-        'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
-        'Also provide a confidence score (0-100) for your brand/model identification. ' +
-        'Respond ONLY with a valid, minified JSON object: {"productType": string, "brandModel": string, "confidence": number}. ' +
-        'If you can identify the type but not brand/model, return {"productType": "' +
-        productType +
-        '", "brandModel": "Unknown", "confidence": 50}.'
-
-      try {
-        const result = await model.generateContent([stage2Prompt, imagePart])
-        const text = result.response
-          .text()
-          .replace('```json', '')
-          .replace('```', '')
-          .trim()
-        return JSON.parse(text) as DetectedProduct
-      } catch (err) {
-        console.error(`Error refining ${productType}:`, err)
-        // Return a default object on error
-        return {
-          productType: productType,
-          brandModel: 'Error during analysis',
-          confidence: 0,
-        }
-      }
-    })
-
-    const refinedProducts = await Promise.all(refinementPromises)
-
-    // Save to Supabase (optional, but good practice)
-    const { error: dbError } = await supabase
-      .from('product_analysis_results') // You might need to create this table in Supabase
-      .insert({
-        analysis_data: refinedProducts,
-        image_url: publicImageUrl,
-        vehicle_details: vehicleDetails,
-      })
-
-    if (dbError) {
-      console.warn('Supabase DB error (products):', dbError.message)
-      // Don't block the user, just log the error
-    }
-
-    return { success: true, data: refinedProducts }
+    return { success: true, data: productTypes }
   } catch (err) {
     return {
       success: false,
       error: err instanceof Error ? err.message : String(err),
+    }
+  }
+}
+
+// Function 4: Refine Product Details (Stage 2)
+export async function refineProductDetails(
+  publicImageUrl: string,
+  productType: string,
+  vehicleDetails: string | null
+): Promise<DetectedProduct> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
+
+    const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ''
+
+    const prompt =
+      `I have detected a "${productType}" ${stage2Context}. Look very closely at just this product in the image. ` +
+      'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
+      'Also provide a confidence score (0-100) for your brand/model identification. ' +
+      'Respond ONLY with a valid, minified JSON object: {"productType": string, "brandModel": string, "confidence": number}. ' +
+      'If you can identify the type but not brand/model, return {"productType": "' +
+      productType +
+      '", "brandModel": "Unknown", "confidence": 50}.'
+
+    const result = await model.generateContent([prompt, imagePart])
+    const text = result.response
+      .text()
+      .replace('```json', '')
+      .replace('```', '')
+      .trim()
+
+    return JSON.parse(text) as DetectedProduct
+  } catch (err) {
+    console.error(`Error refining ${productType}:`, err)
+    return {
+      productType: productType,
+      brandModel: 'Error during analysis',
+      confidence: 0,
     }
   }
 }

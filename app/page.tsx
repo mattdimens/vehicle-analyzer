@@ -4,7 +4,8 @@ import { useState, useCallback } from "react"
 import {
   createSignedUploadUrl,
   analyzeVehicleImage,
-  analyzeProductsOnVehicle,
+  detectVisibleProducts,
+  refineProductDetails,
 } from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 import { HeroSection } from "@/components/home/hero-section"
@@ -69,6 +70,7 @@ export default function VehicleAccessoryFinder() {
   const [publicImageUrl, setPublicImageUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [productError, setProductError] = useState<string | null>(null)
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
 
   const clearAll = () => {
     setUploadedFile(null)
@@ -77,7 +79,9 @@ export default function VehicleAccessoryFinder() {
     setError(null)
     setPublicImageUrl(null)
     setDetectedProducts(null)
+    setDetectedProducts(null)
     setProductError(null)
+    setLoadingMessage(null)
     setAnalysisState("idle")
     setSelectedAnalysis("default")
   }
@@ -165,22 +169,54 @@ export default function VehicleAccessoryFinder() {
     setAnalysisState("products")
     setError(null)
     setProductError(null)
+    setLoadingMessage("Scanning image for products...")
+
     try {
       const url = await getOrUploadImage()
       const vehicleDetails = results
         ? `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
         : null
-      const response = await analyzeProductsOnVehicle(url, vehicleDetails)
-      if (!response.success) {
-        throw new Error(response.error || "Failed to detect products")
+
+      // Stage 1: Detect Types
+      const detectResponse = await detectVisibleProducts(url, vehicleDetails)
+      if (!detectResponse.success) {
+        throw new Error(detectResponse.error || "Failed to detect products")
       }
-      setDetectedProducts(response.data)
+
+      const productTypes = detectResponse.data
+      if (productTypes.length === 0) {
+        setDetectedProducts([])
+        setLoadingMessage(null)
+        setAnalysisState("idle")
+        return
+      }
+
+      setLoadingMessage(`Found: ${productTypes.join(", ")}. Analyzing details...`)
+
+      // Stage 2: Refine Details
+      // Initialize with placeholders to show immediate progress if we wanted to render them,
+      // but for now we just update the loading message as they complete.
+
+      const refinedProducts: DetectedProduct[] = []
+
+      // Process in parallel but update state? 
+      // For simplicity, let's do parallel and wait, but we could update a progress counter.
+
+      const promises = productTypes.map(async (type) => {
+        const refined = await refineProductDetails(url, type, vehicleDetails)
+        return refined
+      })
+
+      const finalProducts = await Promise.all(promises)
+      setDetectedProducts(finalProducts)
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
       console.error("[v4] Product error:", msg)
       setProductError(msg)
     } finally {
       setAnalysisState("idle")
+      setLoadingMessage(null)
     }
   }
 
@@ -188,25 +224,50 @@ export default function VehicleAccessoryFinder() {
     setAnalysisState("all")
     setError(null)
     setProductError(null)
+    setLoadingMessage("Analyzing vehicle fitment...")
+
     try {
       const url = await getOrUploadImage()
+
+      // 1. Fitment
       const fitmentResponse = await analyzeVehicleImage(url)
       if (!fitmentResponse.success) {
         throw new Error(fitmentResponse.error || "Failed to analyze vehicle")
       }
       setResults(fitmentResponse.data)
+
+      // 2. Products
+      setLoadingMessage("Scanning image for products...")
       const vehicleDetails = `${fitmentResponse.data.primary.year} ${fitmentResponse.data.primary.make} ${fitmentResponse.data.primary.model} ${fitmentResponse.data.primary.trim}`
-      const productResponse = await analyzeProductsOnVehicle(url, vehicleDetails)
-      if (!productResponse.success) {
-        throw new Error(productResponse.error || "Failed to detect products")
+
+      const detectResponse = await detectVisibleProducts(url, vehicleDetails)
+      if (!detectResponse.success) {
+        throw new Error(detectResponse.error || "Failed to detect products")
       }
-      setDetectedProducts(productResponse.data)
+
+      const productTypes = detectResponse.data
+      if (productTypes.length === 0) {
+        setDetectedProducts([])
+        return
+      }
+
+      setLoadingMessage(`Found: ${productTypes.join(", ")}. Analyzing details...`)
+
+      const promises = productTypes.map(async (type) => {
+        const refined = await refineProductDetails(url, type, vehicleDetails)
+        return refined
+      })
+
+      const finalProducts = await Promise.all(promises)
+      setDetectedProducts(finalProducts)
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
       console.error("[v4] 'All' error:", msg)
       setError(msg)
     } finally {
       setAnalysisState("idle")
+      setLoadingMessage(null)
     }
   }
 
@@ -248,6 +309,7 @@ export default function VehicleAccessoryFinder() {
         detectedProducts={detectedProducts}
         error={error}
         productError={productError}
+        loadingMessage={loadingMessage}
         onAnalyzeFitment={handleAnalyzeFitment}
         onDetectProducts={handleDetectProducts}
       />

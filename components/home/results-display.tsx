@@ -50,6 +50,7 @@ interface ResultsDisplayProps {
     detectedProducts: DetectedProduct[] | null
     error: string | null
     productError: string | null
+    loadingMessage?: string | null
     onAnalyzeFitment: () => void
     onDetectProducts: () => void
 }
@@ -60,6 +61,7 @@ export function ResultsDisplay({
     detectedProducts,
     error,
     productError,
+    loadingMessage,
     onAnalyzeFitment,
     onDetectProducts,
 }: ResultsDisplayProps) {
@@ -81,9 +83,13 @@ export function ResultsDisplay({
                     <div className="flex flex-col items-center">
                         <Loader className="h-12 w-12 animate-spin text-primary" />
                         <p className="mt-4 text-lg text-muted-foreground">
-                            {analysisState === "fitment" && "Analyzing vehicle fitment..."}
-                            {analysisState === "products" && "Detecting visible products..."}
-                            {analysisState === "all" && "Running Fitment & Products..."}
+                            {loadingMessage || (
+                                <>
+                                    {analysisState === "fitment" && "Analyzing vehicle fitment..."}
+                                    {analysisState === "products" && "Detecting visible products..."}
+                                    {analysisState === "all" && "Running Fitment & Products..."}
+                                </>
+                            )}
                         </p>
                     </div>
                 )}

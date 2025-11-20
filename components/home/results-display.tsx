@@ -5,6 +5,7 @@ import {
     CardTitle,
     CardContent,
 } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink } from "lucide-react"
 
 // Define interfaces locally or import them.
@@ -51,6 +52,7 @@ interface ResultsDisplayProps {
     error: string | null
     productError: string | null
     loadingMessage?: string | null
+    progress: number
     onAnalyzeFitment: () => void
     onDetectProducts: () => void
 }
@@ -62,6 +64,7 @@ export function ResultsDisplay({
     error,
     productError,
     loadingMessage,
+    progress,
     onAnalyzeFitment,
     onDetectProducts,
 }: ResultsDisplayProps) {
@@ -80,9 +83,14 @@ export function ResultsDisplay({
             <div className="container max-w-4xl">
                 {/* Master Loading State */}
                 {analysisState !== "idle" && (
-                    <div className="flex flex-col items-center">
-                        <Loader className="h-12 w-12 animate-spin text-primary" />
-                        <p className="mt-4 text-lg text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                        <div className="w-full max-w-md space-y-2">
+                            <Progress value={progress} className="w-full h-2" />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{progress}%</span>
+                            </div>
+                        </div>
+                        <p className="text-lg text-muted-foreground font-medium animate-pulse">
                             {loadingMessage || (
                                 <>
                                     {analysisState === "fitment" && "Analyzing vehicle fitment..."}

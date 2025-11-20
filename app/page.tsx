@@ -74,6 +74,7 @@ export default function VehicleAccessoryFinder() {
   const [error, setError] = useState<string | null>(null)
   const [productError, setProductError] = useState<string | null>(null)
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
   const [qualityResult, setQualityResult] = useState<ImageQualityResult | null>(null)
   const [showQualityWarning, setShowQualityWarning] = useState(false)
 
@@ -87,6 +88,7 @@ export default function VehicleAccessoryFinder() {
     setDetectedProducts(null)
     setProductError(null)
     setLoadingMessage(null)
+    setProgress(0)
     setQualityResult(null)
     setShowQualityWarning(false)
     setAnalysisState("idle")
@@ -156,12 +158,17 @@ export default function VehicleAccessoryFinder() {
     setAnalysisState("fitment")
     setError(null)
     setProductError(null)
+    setLoadingMessage("Analyzing vehicle fitment...")
+    setProgress(10)
+
     try {
       const url = await getOrUploadImage()
+      setProgress(30)
       const response = await analyzeVehicleImage(url)
       if (!response.success) {
         throw new Error(response.error || "Failed to analyze vehicle")
       }
+      setProgress(100)
       setResults(response.data)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
@@ -169,6 +176,8 @@ export default function VehicleAccessoryFinder() {
       setError(msg)
     } finally {
       setAnalysisState("idle")
+      setLoadingMessage(null)
+      // Don't reset progress immediately so user sees 100%
     }
   }
 
@@ -177,9 +186,12 @@ export default function VehicleAccessoryFinder() {
     setError(null)
     setProductError(null)
     setLoadingMessage("Scanning image for products...")
+    setProgress(10)
 
     try {
       const url = await getOrUploadImage()
+      setProgress(30)
+
       const vehicleDetails = results
         ? `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
         : null
@@ -189,12 +201,14 @@ export default function VehicleAccessoryFinder() {
       if (!detectResponse.success) {
         throw new Error(detectResponse.error || "Failed to detect products")
       }
+      setProgress(50)
 
       const productTypes = detectResponse.data
       if (productTypes.length === 0) {
         setDetectedProducts([])
         setLoadingMessage(null)
         setAnalysisState("idle")
+        setProgress(100)
         return
       }
 
@@ -205,17 +219,22 @@ export default function VehicleAccessoryFinder() {
       // but for now we just update the loading message as they complete.
 
       const refinedProducts: DetectedProduct[] = []
+      let completed = 0
 
       // Process in parallel but update state? 
       // For simplicity, let's do parallel and wait, but we could update a progress counter.
 
       const promises = productTypes.map(async (type) => {
         const refined = await refineProductDetails(url, type, vehicleDetails)
+        completed++
+        const newProgress = 50 + Math.floor((completed / productTypes.length) * 50)
+        setProgress(newProgress)
         return refined
       })
 
       const finalProducts = await Promise.all(promises)
       setDetectedProducts(finalProducts)
+      setProgress(100)
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
@@ -232,9 +251,11 @@ export default function VehicleAccessoryFinder() {
     setError(null)
     setProductError(null)
     setLoadingMessage("Analyzing vehicle fitment...")
+    setProgress(5)
 
     try {
       const url = await getOrUploadImage()
+      setProgress(20)
 
       // 1. Fitment
       const fitmentResponse = await analyzeVehicleImage(url)
@@ -242,6 +263,7 @@ export default function VehicleAccessoryFinder() {
         throw new Error(fitmentResponse.error || "Failed to analyze vehicle")
       }
       setResults(fitmentResponse.data)
+      setProgress(50)
 
       // 2. Products
       setLoadingMessage("Scanning image for products...")
@@ -251,22 +273,29 @@ export default function VehicleAccessoryFinder() {
       if (!detectResponse.success) {
         throw new Error(detectResponse.error || "Failed to detect products")
       }
+      setProgress(60)
 
       const productTypes = detectResponse.data
       if (productTypes.length === 0) {
         setDetectedProducts([])
+        setProgress(100)
         return
       }
 
       setLoadingMessage(`Found: ${productTypes.join(", ")}. Analyzing details...`)
 
+      let completed = 0
       const promises = productTypes.map(async (type) => {
         const refined = await refineProductDetails(url, type, vehicleDetails)
+        completed++
+        const newProgress = 60 + Math.floor((completed / productTypes.length) * 40)
+        setProgress(newProgress)
         return refined
       })
 
       const finalProducts = await Promise.all(promises)
       setDetectedProducts(finalProducts)
+      setProgress(100)
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred"
@@ -352,6 +381,7 @@ export default function VehicleAccessoryFinder() {
         error={error}
         productError={productError}
         loadingMessage={loadingMessage}
+        progress={progress}
         onAnalyzeFitment={handleAnalyzeFitment}
         onDetectProducts={handleDetectProducts}
       />

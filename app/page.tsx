@@ -108,11 +108,17 @@ export default function Home() {
     try {
       setLoadingMessage("Uploading image...")
       setProgress(10)
+
+      console.log("[Upload] Starting upload for:", file.name, file.type)
       const response = await createSignedUploadUrl(file.name, file.type)
+      console.log("[Upload] Signed URL response:", response)
+
       if (!response.success) {
+        console.error("[Upload] Failed to get signed URL:", response.error)
         throw new Error(response.error || "Failed to get upload URL")
       }
       const { signedUrl, path } = response.data
+      console.log("[Upload] Got signed URL, path:", path)
 
       const uploadResponse = await fetch(signedUrl, {
         method: "PUT",
@@ -121,23 +127,31 @@ export default function Home() {
           "Content-Type": file.type,
         },
       })
+      console.log("[Upload] Upload response status:", uploadResponse.status)
 
       if (!uploadResponse.ok) {
-        throw new Error("Failed to upload image to storage")
+        const errorText = await uploadResponse.text()
+        console.error("[Upload] Upload failed:", uploadResponse.status, errorText)
+        throw new Error(`Failed to upload image to storage: ${uploadResponse.status}`)
       }
 
-      const publicUrlResponse = await fetch(
-        `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
-      )
+      const publicUrl = `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
+      console.log("[Upload] Checking public URL:", publicUrl)
+
+      const publicUrlResponse = await fetch(publicUrl)
+      console.log("[Upload] Public URL check status:", publicUrlResponse.status)
 
       if (publicUrlResponse.status === 200) {
+        console.log("[Upload] Success! Returning URL:", publicUrlResponse.url)
         return publicUrlResponse.url
       }
 
-      return `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
+      console.log("[Upload] Public URL check failed, returning constructed URL")
+      return publicUrl
     } catch (err) {
-      console.error("Upload error:", err)
-      setError("Failed to upload image. Please try again.")
+      console.error("[Upload] Error occurred:", err)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      setError(`Failed to upload image: ${errorMessage}`)
       setAnalysisState("idle")
       return null
     }

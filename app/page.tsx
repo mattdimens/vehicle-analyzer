@@ -18,270 +18,243 @@ import { HowItWorks } from "@/components/home/how-it-works"
 import { UseCases } from "@/components/home/use-cases"
 import { QualityWarningDialog } from "@/components/home/quality-warning-dialog"
 import { ImageCropperDialog } from "@/components/home/image-cropper-dialog"
+import { BatchResults } from "@/components/home/batch-results"
+import type { BatchItem } from "@/lib/types"
 
 
-
-type AnalysisState = "idle" | "fitment" | "products" | "all"
+type AnalysisState = "idle" | "processing" | "complete"
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
 
 export default function Home() {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([])
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>("default")
-  const [results, setResults] = useState<AnalysisResults | null>(null)
-  const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[]>([])
-  const [publicImageUrl, setPublicImageUrl] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [productError, setProductError] = useState<string | null>(null)
-  const [loadingMessage, setLoadingMessage] = useState<string | null>("")
-  const [progress, setProgress] = useState<number>(0)
-
-  // Quality Check State
-  const [qualityResult, setQualityResult] = useState<ImageQualityResult | null>(null)
-  const [showQualityWarning, setShowQualityWarning] = useState(false)
 
   // Cropping State
   const [showCropper, setShowCropper] = useState(false)
+  const [croppingItemId, setCroppingItemId] = useState<string | null>(null)
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null)
 
-  // Cleanup preview URL on unmount or change
+  // Quality Check State (Global for the dialog)
+  const [currentQualityItem, setCurrentQualityItem] = useState<{ id: string, issues: string[] } | null>(null)
+
+  // Cleanup preview URLs
   useEffect(() => {
     return () => {
-      if (preview) URL.revokeObjectURL(preview)
-      if (originalImageSrc && originalImageSrc !== preview) URL.revokeObjectURL(originalImageSrc)
+      batchItems.forEach(item => URL.revokeObjectURL(item.preview))
+      if (originalImageSrc) URL.revokeObjectURL(originalImageSrc)
     }
-  }, [preview, originalImageSrc])
+  }, []) // Run once on unmount, though technically we should cleanup when items are removed too
 
-  const handleFileSelect = (file: File) => {
-    setUploadedFile(file)
-    const objectUrl = URL.createObjectURL(file)
-    setPreview(objectUrl)
-    setOriginalImageSrc(objectUrl) // Keep track of the original for cropping
+  const handleFilesSelect = (files: File[]) => {
+    const newItems: BatchItem[] = files.map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      preview: URL.createObjectURL(file),
+      status: "pending",
+      progress: 0,
+      result: null,
+      detectedProducts: [],
+      error: null,
+      publicUrl: null,
+      qualityIssues: [],
+      loadingMessage: null
+    }))
+    setBatchItems(prev => [...prev, ...newItems])
+    setAnalysisState("idle")
+  }
 
-    // Reset states
-    setResults(null)
-    setDetectedProducts([])
-    setPublicImageUrl(null)
-    setError(null)
-    setProductError(null)
+  const handleRemoveItem = (id: string) => {
+    setBatchItems(prev => {
+      const item = prev.find(i => i.id === id)
+      if (item) URL.revokeObjectURL(item.preview)
+      return prev.filter(i => i.id !== id)
+    })
+  }
+
+  const handleClearAll = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    batchItems.forEach(item => URL.revokeObjectURL(item.preview))
+    setBatchItems([])
     setAnalysisState("idle")
     setSelectedAnalysis("default")
-    setLoadingMessage("")
-    setProgress(0)
-    setQualityResult(null)
-    setShowQualityWarning(false)
+  }
+
+  const handleCropClick = (id: string) => {
+    const item = batchItems.find(i => i.id === id)
+    if (item) {
+      setCroppingItemId(id)
+      setOriginalImageSrc(item.preview) // Using preview as source for now
+      setShowCropper(true)
+    }
   }
 
   const handleCropComplete = (croppedFile: File) => {
-    // Replace the uploaded file with the cropped version
-    setUploadedFile(croppedFile)
+    if (!croppingItemId) return
 
-    // Update preview
-    if (preview) URL.revokeObjectURL(preview)
-    const objectUrl = URL.createObjectURL(croppedFile)
-    setPreview(objectUrl)
-
-    // We don't reset originalImageSrc so the user can re-crop from the original if needed
-  }
-
-  const clearAll = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    setUploadedFile(null)
-    if (preview) URL.revokeObjectURL(preview)
-    setPreview(null)
-    setOriginalImageSrc(null)
-    setResults(null)
-    setDetectedProducts([])
-    setPublicImageUrl(null)
-    setError(null)
-    setProductError(null)
-    setAnalysisState("idle")
-    setSelectedAnalysis("default")
-    setLoadingMessage("")
-    setProgress(0)
-    setQualityResult(null)
-    setShowQualityWarning(false)
-  }
-
-  async function uploadImageToSupabase(file: File): Promise<string | null> {
-    try {
-      setLoadingMessage("Uploading image...")
-      setProgress(10)
-
-      console.log("[Upload] Starting upload for:", file.name, file.type)
-      const response = await createSignedUploadUrl(file.name, file.type)
-      console.log("[Upload] Signed URL response:", response)
-
-      if (!response.success) {
-        console.error("[Upload] Failed to get signed URL:", response.error)
-        throw new Error(response.error || "Failed to get upload URL")
+    setBatchItems(prev => prev.map(item => {
+      if (item.id === croppingItemId) {
+        URL.revokeObjectURL(item.preview)
+        return {
+          ...item,
+          file: croppedFile,
+          preview: URL.createObjectURL(croppedFile),
+          status: "pending", // Reset status if re-cropped
+          result: null,
+          error: null
+        }
       }
+      return item
+    }))
+
+    // Don't close cropper here, let the dialog handle it or user close it
+    // But usually we want to close it after crop
+    setShowCropper(false)
+    setCroppingItemId(null)
+  }
+
+  // --- Analysis Logic ---
+
+  async function uploadImageToSupabase(file: File): Promise<{ url: string | null, error: string | null }> {
+    try {
+      const response = await createSignedUploadUrl(file.name, file.type)
+      if (!response.success) throw new Error(response.error || "Failed to get upload URL")
+
       const { signedUrl, path } = response.data
-      console.log("[Upload] Got signed URL, path:", path)
 
       const uploadResponse = await fetch(signedUrl, {
         method: "PUT",
         body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
+        headers: { "Content-Type": file.type },
       })
-      console.log("[Upload] Upload response status:", uploadResponse.status)
 
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text()
-        console.error("[Upload] Upload failed:", uploadResponse.status, errorText)
-        throw new Error(`Failed to upload image to storage: ${uploadResponse.status}`)
-      }
+      if (!uploadResponse.ok) throw new Error(`Upload failed: ${uploadResponse.status}`)
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      if (!supabaseUrl) {
-        throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable")
-      }
+      if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL")
 
       const publicUrl = `${supabaseUrl}/storage/v1/object/public/vehicle_images/${path}`
-      console.log("[Upload] Checking public URL:", publicUrl)
 
-      const publicUrlResponse = await fetch(publicUrl)
-      console.log("[Upload] Public URL check status:", publicUrlResponse.status)
-
-      if (publicUrlResponse.status === 200) {
-        console.log("[Upload] Success! Returning URL:", publicUrlResponse.url)
-        return publicUrlResponse.url
-      }
-
-      console.log("[Upload] Public URL check failed, returning constructed URL")
-      return publicUrl
+      // Verify URL
+      const check = await fetch(publicUrl)
+      if (check.status === 200) return { url: check.url, error: null }
+      return { url: publicUrl, error: null } // Return constructed URL anyway
     } catch (err) {
-      console.error("[Upload] Error occurred:", err)
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      setError(`Failed to upload image: ${errorMessage}`)
-      setAnalysisState("idle")
-      return null
+      return { url: null, error: err instanceof Error ? err.message : String(err) }
     }
   }
 
-  async function handleAnalyzeFitment(imageUrl: string) {
-    setLoadingMessage("Analyzing vehicle fitment...")
-    setProgress(30)
-    const result = await analyzeVehicleImage(imageUrl)
-    if (result.success) {
-      setResults(result.data)
-      setProgress(100)
-    } else {
-      setError(result.error)
-    }
-  }
-
-  async function handleDetectProducts(imageUrl: string, vehicleDetails: string | null) {
-    setLoadingMessage("Scanning for products...")
-    setProgress(40)
-
-    // Step 1: Detect visible products
-    const detectionResult = await detectVisibleProducts(imageUrl, vehicleDetails)
-
-    if (!detectionResult.success) {
-      setProductError(detectionResult.error)
-      return
-    }
-
-    const productTypes = detectionResult.data
-    if (productTypes.length === 0) {
-      setLoadingMessage("No products found.")
-      setProgress(100)
-      return
-    }
-
-    // Step 2: Refine details for each product
-    const totalProducts = productTypes.length
-    const refinedProducts: DetectedProduct[] = []
-
-    for (let i = 0; i < totalProducts; i++) {
-      const type = productTypes[i]
-      setLoadingMessage(`Analyzing ${type} details (${i + 1}/${totalProducts})...`)
-      // Calculate progress based on how many products we've processed
-      // Map the remaining 60% (40 -> 100) to the product refinement steps
-      const stepProgress = 40 + Math.floor(((i + 1) / totalProducts) * 60)
-      setProgress(stepProgress)
-
-      const productDetails = await refineProductDetails(imageUrl, type, vehicleDetails)
-      refinedProducts.push(productDetails)
-      // Update state incrementally so user sees results appearing
-      setDetectedProducts(prev => [...prev, productDetails])
-    }
-
-    setProgress(100)
-  }
-
-  async function handleAnalyzeAll(imageUrl: string) {
-    // 1. Fitment
-    setLoadingMessage("Analyzing vehicle fitment...")
-    setProgress(20)
-    const fitmentResult = await analyzeVehicleImage(imageUrl)
-
-    let vehicleDetailsString: string | null = null
-
-    if (fitmentResult.success) {
-      setResults(fitmentResult.data)
-      const v = fitmentResult.data.primary
-      vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
-    } else {
-      setError(fitmentResult.error)
-    }
-
-    // 2. Products
-    await handleDetectProducts(imageUrl, vehicleDetailsString)
-  }
-
-  async function proceedWithAnalysis(imageUrl: string) {
-    setShowQualityWarning(false)
-
-    if (selectedAnalysis === "fitment") {
-      setAnalysisState("fitment")
-      await handleAnalyzeFitment(imageUrl)
-    } else if (selectedAnalysis === "products") {
-      setAnalysisState("products")
-      await handleDetectProducts(imageUrl, null)
-    } else {
-      setAnalysisState("all")
-      await handleAnalyzeAll(imageUrl)
-    }
-
-    setAnalysisState("idle")
-    setLoadingMessage(null)
-  }
-
-  const handleSend = async () => {
-    if (!uploadedFile) return
-
-    setAnalysisState(selectedAnalysis === "all" ? "all" : selectedAnalysis === "fitment" ? "fitment" : "products")
-    setError(null)
-    setProductError(null)
-    setResults(null)
-    setDetectedProducts([])
-
+  async function processItem(item: BatchItem, analysisType: AnalysisSelection): Promise<BatchItem> {
     // 1. Upload
-    const imageUrl = await uploadImageToSupabase(uploadedFile)
-    if (!imageUrl) return
-    setPublicImageUrl(imageUrl)
+    let currentItem: BatchItem = { ...item, status: "uploading", progress: 10, loadingMessage: "Uploading..." }
+    // We need to update state to reflect this change? 
+    // Actually, we'll just return the updated item and let the caller update state.
+    // But for long running processes, we might want intermediate updates.
+    // For now, let's just do the logic and return the final state of the item.
+
+    // NOTE: In a real app, we'd want to update the UI state *during* this function.
+    // I'll use a helper to update the specific item in the batchItems state.
+    const updateItem = (updates: Partial<BatchItem>) => {
+      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, ...updates } : i))
+      currentItem = { ...currentItem, ...updates }
+    }
+
+    updateItem({ status: "uploading", progress: 10, loadingMessage: "Uploading..." })
+
+    const { url, error: uploadError } = await uploadImageToSupabase(item.file)
+    if (uploadError || !url) {
+      updateItem({ status: "error", error: uploadError || "Upload failed", progress: 0, loadingMessage: null })
+      return currentItem
+    }
+
+    updateItem({ publicUrl: url, status: "quality_check", progress: 30, loadingMessage: "Checking quality..." })
 
     // 2. Quality Check
-    setLoadingMessage("Checking image quality...")
-    // Check Quality
-    const qualityResponse = await checkImageQuality(imageUrl)
+    const qualityResponse = await checkImageQuality(url)
     if (qualityResponse.success) {
       const { isHighQuality, issues } = qualityResponse.data
       if (!isHighQuality) {
-        setQualityResult(qualityResponse.data)
-        setShowQualityWarning(true)
-        setLoadingMessage(null) // Stop loading to show dialog
-        return // Stop here, wait for user input
+        // For batch, maybe we just mark it with issues but proceed? 
+        // Or pause? Let's just record issues and proceed for now to avoid blocking the whole batch.
+        updateItem({ qualityIssues: issues })
       }
     }
 
-    // 3. Proceed if quality is good
-    await proceedWithAnalysis(imageUrl)
+    updateItem({ status: "analyzing", progress: 50, loadingMessage: "Analyzing..." })
+
+    // 3. Analysis
+    try {
+      let result: AnalysisResults | null = null
+      let detectedProducts: DetectedProduct[] = []
+      let vehicleDetailsString: string | null = null
+
+      // Fitment
+      if (analysisType === "fitment" || analysisType === "all") {
+        updateItem({ loadingMessage: "Analyzing fitment..." })
+        const fitmentRes = await analyzeVehicleImage(url)
+        if (fitmentRes.success) {
+          result = fitmentRes.data
+          const v = fitmentRes.data.primary
+          vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
+        } else {
+          throw new Error(fitmentRes.error)
+        }
+      }
+
+      updateItem({ progress: 70 })
+
+      // Products
+      if (analysisType === "products" || analysisType === "all") {
+        updateItem({ loadingMessage: "Detecting products..." })
+        const detectRes = await detectVisibleProducts(url, vehicleDetailsString)
+        if (detectRes.success) {
+          const types = detectRes.data
+          for (let i = 0; i < types.length; i++) {
+            updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 70 + Math.floor((i / types.length) * 25) })
+            const details = await refineProductDetails(url, types[i], vehicleDetailsString)
+            detectedProducts.push(details)
+            // Update intermediate products
+            updateItem({ detectedProducts: [...detectedProducts] })
+          }
+        } else {
+          // If product detection fails, do we fail the whole thing? Maybe just log error.
+          updateItem({ error: detectRes.error }) // This might overwrite fitment success?
+        }
+      }
+
+      updateItem({
+        status: "complete",
+        progress: 100,
+        result,
+        detectedProducts,
+        loadingMessage: null
+      })
+
+    } catch (err) {
+      updateItem({
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+        progress: 0,
+        loadingMessage: null
+      })
+    }
+
+    return currentItem
+  }
+
+  const handleStartBatch = async () => {
+    setAnalysisState("processing")
+
+    // Process sequentially to avoid rate limits? Or parallel?
+    // Let's do sequential for now to be safe with API limits.
+
+    const pendingItems = batchItems.filter(i => i.status === "pending" || i.status === "error")
+
+    for (const item of pendingItems) {
+      await processItem(item, selectedAnalysis)
+    }
+
+    setAnalysisState("complete")
   }
 
   return (
@@ -290,40 +263,35 @@ export default function Home() {
         <HeroSection />
 
         <UploadZone
-          onFileSelect={handleFileSelect}
-          preview={preview}
-          onClear={clearAll}
+          onFilesSelect={handleFilesSelect}
+          batchItems={batchItems}
+          onRemove={handleRemoveItem}
+          onCrop={handleCropClick}
+          onClearAll={handleClearAll}
           analysisState={analysisState}
           selectedAnalysis={selectedAnalysis}
           onAnalysisChange={setSelectedAnalysis}
-          onStart={handleSend}
-          uploadedFile={uploadedFile}
-          onCrop={() => setShowCropper(true)}
+          onStart={handleStartBatch}
         />
 
-        <ResultsDisplay
-          results={results}
-          detectedProducts={detectedProducts}
-          error={error}
-          productError={productError}
-          loadingMessage={loadingMessage}
-          progress={progress}
-        />
+        {/* Batch Results Display */}
+        {batchItems.length > 0 && (
+          <div className="container mx-auto px-4 py-8">
+            <BatchResults items={batchItems} />
+          </div>
+        )}
 
         <HowItWorks />
         <UseCases />
       </main>
 
       <QualityWarningDialog
-        isOpen={showQualityWarning}
-        issues={qualityResult?.issues || []}
-        onCancel={() => {
-          setShowQualityWarning(false)
-          setAnalysisState("idle")
-          setLoadingMessage(null)
-        }}
+        isOpen={!!currentQualityItem}
+        issues={currentQualityItem?.issues || []}
+        onCancel={() => setCurrentQualityItem(null)}
         onProceed={() => {
-          if (publicImageUrl) proceedWithAnalysis(publicImageUrl)
+          // Logic to resume item? For now we just auto-proceed in batch mode
+          setCurrentQualityItem(null)
         }}
       />
 

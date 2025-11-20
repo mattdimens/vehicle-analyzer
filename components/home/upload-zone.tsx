@@ -103,13 +103,13 @@ export function UploadZone({
                 </div>
 
                 {/* Control Bar */}
-                <div className="flex items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
                     <select
                         value={selectedAnalysis}
                         onChange={(e) =>
                             onAnalysisChange(e.target.value as AnalysisSelection)
                         }
-                        className="h-9 px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                         disabled={analysisState !== "idle"}
                     >
                         <option value="default" disabled>
@@ -120,7 +120,7 @@ export function UploadZone({
                         <option value="all">Fitment & Products</option>
                     </select>
 
-                    <div className="flex-1"></div>
+                    <div className="hidden sm:block flex-1"></div>
 
                     <Button
                         onClick={onStart}
@@ -130,6 +130,7 @@ export function UploadZone({
                             selectedAnalysis === "default"
                         }
                         size="default"
+                        className="w-full sm:w-auto"
                     >
                         {analysisState === "idle" ? (
                             <>

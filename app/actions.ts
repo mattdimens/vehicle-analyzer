@@ -37,7 +37,7 @@ export async function createSignedUploadUrl(
   | { success: false; error: string }
 > {
   const { data, error } = await supabase.storage
-    .from('vehicle-images')
+    .from('vehicle_images')
     .createSignedUploadUrl(fileName, {
       upsert: true,
     })

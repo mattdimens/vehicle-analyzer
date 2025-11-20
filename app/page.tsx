@@ -135,7 +135,7 @@ export default function Home() {
         throw new Error(`Failed to upload image to storage: ${uploadResponse.status}`)
       }
 
-      const publicUrl = `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
+      const publicUrl = `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle_images/${path}`
       console.log("[Upload] Checking public URL:", publicUrl)
 
       const publicUrlResponse = await fetch(publicUrl)

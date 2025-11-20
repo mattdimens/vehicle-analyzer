@@ -180,6 +180,27 @@ export function ResultsDisplay({
                                                 const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
                                                 const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
 
+                                                // Build Amazon search query
+                                                let searchQuery = ""
+                                                if (results) {
+                                                    const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model}`
+
+                                                    if (isUnknownBrand || isUnknownModel) {
+                                                        // For unknown brand/model, only search vehicle + product type
+                                                        searchQuery = `${vehicleDetails} ${item.type}`
+                                                    } else {
+                                                        // For known brand/model, include everything
+                                                        searchQuery = `${vehicleDetails} ${item.brand} ${item.model}`
+                                                    }
+                                                } else {
+                                                    // Fallback if no vehicle results
+                                                    if (!isUnknownBrand && !isUnknownModel) {
+                                                        searchQuery = `${item.brand} ${item.model}`
+                                                    } else {
+                                                        searchQuery = item.type
+                                                    }
+                                                }
+
                                                 return (
                                                     <tr key={index} className="border-t">
                                                         <td className="px-4 py-3 font-medium">
@@ -199,11 +220,7 @@ export function ResultsDisplay({
                                                                 className="gap-1.5"
                                                             >
                                                                 <a
-                                                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(
-                                                                        results
-                                                                            ? `${results.primary.make} ${results.primary.model}`
-                                                                            : ""
-                                                                    )} ${encodeURIComponent(`${item.brand} ${item.model}`)}`}
+                                                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                 >

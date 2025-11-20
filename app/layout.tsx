@@ -34,14 +34,14 @@ export default function RootLayout({
         {/* --- 2. ADD YOUR GA4 TAGS HERE --- */}
         <Script
           async
-          src={`https://www.googletagmanager.com/gtag/js?id=G-3B8VWT1E8G`}
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
         />
         <Script id="google-analytics">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-3B8VWT1E8G');
+            gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
           `}
         </Script>
         {/* --- END OF GA4 TAGS --- */}
@@ -54,13 +54,13 @@ export default function RootLayout({
         )}
       >
         {/* This adds your new header */}
-        <SiteHeader /> 
+        <SiteHeader />
 
         {/* We add 'pt-14' to the main content to offset for the fixed header */}
         <main className="flex-1 pt-14">{children}</main>
 
         {/* This adds your new footer */}
-        <SiteFooter /> 
+        <SiteFooter />
       </body>
     </html>
   )

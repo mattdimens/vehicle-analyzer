@@ -252,3 +252,46 @@ export async function refineProductDetails(
     }
   }
 }
+
+export interface ImageQualityResult {
+  isHighQuality: boolean
+  score: number
+  issues: string[]
+}
+
+// Function 5: Check Image Quality
+export async function checkImageQuality(
+  publicImageUrl: string
+): Promise<
+  | { success: true; data: ImageQualityResult }
+  | { success: false; error: string }
+> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const imagePart = await urlToGenerativePart(publicImageUrl, 'image/jpeg')
+
+    const prompt =
+      'Analyze this vehicle image for quality issues that might affect AI identification. Check for: ' +
+      '1. Blurriness or low resolution. ' +
+      '2. Bad lighting (too dark, too bright, or strong glare). ' +
+      '3. Bad angle (too close, extreme angle, or only a small part of the vehicle is visible). ' +
+      '4. Obstructions or cropping (is the main body of the vehicle fully visible?). ' +
+      'Respond ONLY with a valid, minified JSON object: ' +
+      '{ "isHighQuality": boolean, "score": number (0-100), "issues": string[] (list of specific problems found, or empty if good) }. ' +
+      'Set isHighQuality to false if the score is below 70.'
+
+    const result = await model.generateContent([prompt, imagePart])
+    const text = result.response
+      .text()
+      .replace('```json', '')
+      .replace('```', '')
+      .trim()
+
+    return { success: true, data: JSON.parse(text) as ImageQualityResult }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
+  }
+}

@@ -6,6 +6,8 @@ import {
   analyzeVehicleImage,
   detectVisibleProducts,
   refineProductDetails,
+  checkImageQuality,
+  type ImageQualityResult,
 } from "@/app/actions"
 import { getBrowserClient } from "@/lib/supabase"
 import { HeroSection } from "@/components/home/hero-section"
@@ -13,6 +15,7 @@ import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { UseCases } from "@/components/home/use-cases"
+import { QualityWarningDialog } from "@/components/home/quality-warning-dialog"
 
 // --- Interfaces ---
 interface PrimaryVehicle {
@@ -71,6 +74,8 @@ export default function VehicleAccessoryFinder() {
   const [error, setError] = useState<string | null>(null)
   const [productError, setProductError] = useState<string | null>(null)
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
+  const [qualityResult, setQualityResult] = useState<ImageQualityResult | null>(null)
+  const [showQualityWarning, setShowQualityWarning] = useState(false)
 
   const clearAll = () => {
     setUploadedFile(null)
@@ -82,6 +87,8 @@ export default function VehicleAccessoryFinder() {
     setDetectedProducts(null)
     setProductError(null)
     setLoadingMessage(null)
+    setQualityResult(null)
+    setShowQualityWarning(false)
     setAnalysisState("idle")
     setSelectedAnalysis("default")
   }
@@ -272,19 +279,54 @@ export default function VehicleAccessoryFinder() {
   }
 
   // --- "Start" Button Handler ---
-  const handleSend = () => {
-    if (analysisState !== "idle" || !uploadedFile || selectedAnalysis === "default") return
+  const handleSend = async () => {
+    if (!uploadedFile && !publicImageUrl) return
 
-    switch (selectedAnalysis) {
-      case "fitment":
-        handleAnalyzeFitment()
-        break
-      case "products":
-        handleDetectProducts()
-        break
-      case "all":
-        handleAnalyzeAll()
-        break
+    // If we already have a public URL (re-running analysis), just proceed
+    if (publicImageUrl && !uploadedFile) {
+      proceedWithAnalysis()
+      return
+    }
+
+    // If we have a new file, upload it first, then check quality
+    setAnalysisState(selectedAnalysis === "products" ? "products" : selectedAnalysis === "all" ? "all" : "fitment")
+    setLoadingMessage("Checking image quality...")
+
+    try {
+      const url = await getOrUploadImage()
+
+      // Check Quality
+      const qualityResponse = await checkImageQuality(url)
+      if (qualityResponse.success) {
+        const { isHighQuality, issues } = qualityResponse.data
+        if (!isHighQuality) {
+          setQualityResult(qualityResponse.data)
+          setShowQualityWarning(true)
+          setLoadingMessage(null) // Stop loading to show dialog
+          return // Stop here, wait for user input
+        }
+      }
+
+      // If quality is good, proceed
+      proceedWithAnalysis()
+
+    } catch (err) {
+      console.error("Error during setup:", err)
+      setError("Failed to prepare image for analysis")
+      setAnalysisState("idle")
+      setLoadingMessage(null)
+    }
+  }
+
+  const proceedWithAnalysis = () => {
+    setShowQualityWarning(false)
+    // Reset loading message based on analysis type
+    if (selectedAnalysis === "fitment") {
+      handleAnalyzeFitment()
+    } else if (selectedAnalysis === "products") {
+      handleDetectProducts()
+    } else if (selectedAnalysis === "all") {
+      handleAnalyzeAll()
     }
   }
 
@@ -314,6 +356,16 @@ export default function VehicleAccessoryFinder() {
         onDetectProducts={handleDetectProducts}
       />
 
+      <QualityWarningDialog
+        isOpen={showQualityWarning}
+        issues={qualityResult?.issues || []}
+        onCancel={() => {
+          setShowQualityWarning(false)
+          setAnalysisState("idle")
+          setLoadingMessage(null)
+        }}
+        onProceed={proceedWithAnalysis}
+      />
       <HowItWorks />
 
       <UseCases />

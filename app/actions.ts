@@ -97,7 +97,7 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' })
 
     // --- v2: This is the new, more detailed prompt ---
     const prompt =

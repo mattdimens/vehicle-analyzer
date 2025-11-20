@@ -193,13 +193,13 @@ export function UploadZone({
                     >
                         {analysisState === "idle" ? (
                             <>
-                                Start Batch Analysis
+                                {batchItems.length >= 2 ? "Start Batch Analysis" : "Start Analysis"}
                                 <Send className="w-4 h-4 ml-2" />
                             </>
                         ) : (
                             <div className="flex items-center gap-2">
                                 <Loader className="w-4 h-4 animate-spin" />
-                                Processing Batch...
+                                {batchItems.length >= 2 ? "Processing Batch..." : "Processing..."}
                             </div>
                         )}
                     </Button>

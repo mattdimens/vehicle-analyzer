@@ -176,39 +176,48 @@ export function ResultsDisplay({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {detectedProducts.map((item, index) => (
-                                                <tr key={index} className="border-t">
-                                                    <td className="px-4 py-3 font-medium">
-                                                        {item.type}
-                                                    </td>
-                                                    <td className="px-4 py-3">{item.brand}</td>
-                                                    <td className="px-4 py-3">{item.model}</td>
-                                                    <td className="px-4 py-3">
-                                                        <Button
-                                                            asChild
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="gap-1.5"
-                                                        >
-                                                            <a
-                                                                href={`https://www.amazon.com/s?k=${encodeURIComponent(
-                                                                    results
-                                                                        ? `${results.primary.make} ${results.primary.model}`
-                                                                        : ""
-                                                                )} ${encodeURIComponent(`${item.brand} ${item.model}`)}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
+                                            {detectedProducts.map((item, index) => {
+                                                const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
+                                                const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
+
+                                                return (
+                                                    <tr key={index} className="border-t">
+                                                        <td className="px-4 py-3 font-medium">
+                                                            {item.type}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {!isUnknownBrand && item.brand}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {!isUnknownModel && item.model}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <Button
+                                                                asChild
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="gap-1.5"
                                                             >
-                                                                <ExternalLink className="w-3 h-3" />
-                                                                Search
-                                                            </a>
-                                                        </Button>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        {item.confidence}%
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                                <a
+                                                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(
+                                                                        results
+                                                                            ? `${results.primary.make} ${results.primary.model}`
+                                                                            : ""
+                                                                    )} ${encodeURIComponent(`${item.brand} ${item.model}`)}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    <ExternalLink className="w-3 h-3" />
+                                                                    Search
+                                                                </a>
+                                                            </Button>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {item.confidence}%
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

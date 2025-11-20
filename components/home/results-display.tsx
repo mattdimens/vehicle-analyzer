@@ -7,71 +7,31 @@ import {
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink } from "lucide-react"
-
-// Define interfaces locally or import them.
-// For now, I'll define them here to match page.tsx
-interface PrimaryVehicle {
-    make: string
-    model: string
-    year: string
-    trim: string
-    cabStyle: string | null
-    bedLength: string | null
-    vehicleType: string
-    color: string
-    condition: string
-    confidence: number
-}
-
-interface OtherPossibility {
-    vehicle: string
-    yearRange: string
-    trim: string
-    confidence: number
-}
-
-interface AnalysisResults {
-    primary: PrimaryVehicle
-    engineDetails: string | null
-    otherPossibilities: OtherPossibility[]
-    recommendedAccessories: string[]
-}
-
-interface DetectedProduct {
-    productType: string
-    brandModel: string
-    confidence: number
-}
-
-type AnalysisState = "idle" | "fitment" | "products" | "all"
+import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 
 interface ResultsDisplayProps {
-    analysisState: AnalysisState
     results: AnalysisResults | null
-    detectedProducts: DetectedProduct[] | null
+    detectedProducts: DetectedProduct[]
     error: string | null
     productError: string | null
     loadingMessage?: string | null
     progress: number
-    onAnalyzeFitment: () => void
-    onDetectProducts: () => void
 }
 
 export function ResultsDisplay({
-    analysisState,
     results,
     detectedProducts,
     error,
     productError,
     loadingMessage,
     progress,
-    onAnalyzeFitment,
-    onDetectProducts,
 }: ResultsDisplayProps) {
+    const isLoading = loadingMessage !== null && loadingMessage !== ""
+
     if (
-        analysisState === "idle" &&
+        !isLoading &&
         !results &&
-        !detectedProducts &&
+        !detectedProducts.length &&
         !error &&
         !productError
     ) {
@@ -82,7 +42,7 @@ export function ResultsDisplay({
         <section id="results" className="w-full bg-card py-24">
             <div className="container max-w-4xl">
                 {/* Master Loading State */}
-                {analysisState !== "idle" && (
+                {isLoading && (
                     <div className="flex flex-col items-center justify-center py-12 space-y-6">
                         <div className="w-full max-w-md space-y-2">
                             <Progress value={progress} className="w-full h-2" />
@@ -91,13 +51,7 @@ export function ResultsDisplay({
                             </div>
                         </div>
                         <p className="text-lg text-muted-foreground font-medium animate-pulse">
-                            {loadingMessage || (
-                                <>
-                                    {analysisState === "fitment" && "Analyzing vehicle fitment..."}
-                                    {analysisState === "products" && "Detecting visible products..."}
-                                    {analysisState === "all" && "Running Fitment & Products..."}
-                                </>
-                            )}
+                            {loadingMessage}
                         </p>
                     </div>
                 )}
@@ -115,7 +69,7 @@ export function ResultsDisplay({
                 )}
 
                 {/* Results */}
-                {analysisState === "idle" && (
+                {!isLoading && (
                     <div className="grid grid-cols-1 gap-12">
                         {/* Fitment Results */}
                         {results && (
@@ -178,8 +132,6 @@ export function ResultsDisplay({
                                                 <thead className="bg-muted/50">
                                                     <tr>
                                                         <th className="px-4 py-3 font-medium">Vehicle</th>
-                                                        <th className="px-4 py-3 font-medium">Year Range</th>
-                                                        <th className="px-4 py-3 font-medium">Trim</th>
                                                         <th className="px-4 py-3 font-medium text-right">
                                                             Confidence
                                                         </th>
@@ -189,10 +141,8 @@ export function ResultsDisplay({
                                                     {results.otherPossibilities.map((item, index) => (
                                                         <tr key={index} className="border-t">
                                                             <td className="px-4 py-3 font-medium">
-                                                                {item.vehicle}
+                                                                {item.name}
                                                             </td>
-                                                            <td className="px-4 py-3">{item.yearRange}</td>
-                                                            <td className="px-4 py-3">{item.trim}</td>
                                                             <td className="px-4 py-3 text-right">
                                                                 {item.confidence}%
                                                             </td>
@@ -203,34 +153,6 @@ export function ResultsDisplay({
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                                {/* Conditional "Detect Products" Button */}
-                                {!detectedProducts && !productError && (
-                                    <div className="mt-8">
-                                        <Button
-                                            onClick={onDetectProducts}
-                                            disabled={analysisState !== "idle"}
-                                            className="w-full"
-                                            size="lg"
-                                        >
-                                            Detect Products on Vehicle
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Conditional "Analyze Fitment" Button */}
-                        {detectedProducts && !results && !error && (
-                            <div className="flex flex-col text-left">
-                                <Button
-                                    onClick={onAnalyzeFitment}
-                                    disabled={analysisState !== "idle"}
-                                    className="w-full"
-                                    size="lg"
-                                >
-                                    Analyze Vehicle Fitment
-                                </Button>
                             </div>
                         )}
 
@@ -245,7 +167,8 @@ export function ResultsDisplay({
                                         <thead className="bg-muted/50">
                                             <tr>
                                                 <th className="px-4 py-3 font-medium">Product</th>
-                                                <th className="px-4 py-3 font-medium">Brand / Model</th>
+                                                <th className="px-4 py-3 font-medium">Brand</th>
+                                                <th className="px-4 py-3 font-medium">Model</th>
                                                 <th className="px-4 py-3 font-medium">Link</th>
                                                 <th className="px-4 py-3 font-medium text-right">
                                                     Confidence
@@ -256,9 +179,10 @@ export function ResultsDisplay({
                                             {detectedProducts.map((item, index) => (
                                                 <tr key={index} className="border-t">
                                                     <td className="px-4 py-3 font-medium">
-                                                        {item.productType}
+                                                        {item.type}
                                                     </td>
-                                                    <td className="px-4 py-3">{item.brandModel}</td>
+                                                    <td className="px-4 py-3">{item.brand}</td>
+                                                    <td className="px-4 py-3">{item.model}</td>
                                                     <td className="px-4 py-3">
                                                         <Button
                                                             asChild
@@ -271,7 +195,7 @@ export function ResultsDisplay({
                                                                     results
                                                                         ? `${results.primary.make} ${results.primary.model}`
                                                                         : ""
-                                                                )} ${encodeURIComponent(item.brandModel)}`}
+                                                                )} ${encodeURIComponent(`${item.brand} ${item.model}`)}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                             >

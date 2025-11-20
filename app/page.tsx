@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useEffect } from "react"
 import {
   createSignedUploadUrl,
   analyzeVehicleImage,
@@ -8,383 +8,292 @@ import {
   refineProductDetails,
   checkImageQuality,
   type ImageQualityResult,
-} from "@/app/actions"
-import { getBrowserClient } from "@/lib/supabase"
+  type AnalysisResults,
+  type DetectedProduct
+} from "./actions"
 import { HeroSection } from "@/components/home/hero-section"
 import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { UseCases } from "@/components/home/use-cases"
 import { QualityWarningDialog } from "@/components/home/quality-warning-dialog"
+import { ImageCropperDialog } from "@/components/home/image-cropper-dialog"
 
-// --- Interfaces ---
-interface PrimaryVehicle {
-  make: string
-  model: string
-  year: string
-  trim: string
-  cabStyle: string | null
-  bedLength: string | null
-  vehicleType: string
-  color: string
-  condition: string
-  confidence: number
-}
 
-interface OtherPossibility {
-  vehicle: string
-  yearRange: string
-  trim: string
-  confidence: number
-}
 
-interface AnalysisResults {
-  primary: PrimaryVehicle
-  engineDetails: string | null
-  otherPossibilities: OtherPossibility[]
-  recommendedAccessories: string[]
-}
-
-interface DetectedProduct {
-  productType: string
-  brandModel: string
-  confidence: number
-}
-
-// --- State Types ---
 type AnalysisState = "idle" | "fitment" | "products" | "all"
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
 
-export default function VehicleAccessoryFinder() {
+export default function Home() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-
-  // --- State Management ---
-  const [analysisState, setAnalysisState] =
-    useState<AnalysisState>("idle")
-  const [
-    selectedAnalysis,
-    setSelectedAnalysis,
-  ] = useState<AnalysisSelection>("default")
+  const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
+  const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>("default")
   const [results, setResults] = useState<AnalysisResults | null>(null)
-  const [detectedProducts, setDetectedProducts] = useState<
-    DetectedProduct[] | null
-  >(null)
+  const [detectedProducts, setDetectedProducts] = useState<DetectedProduct[]>([])
   const [publicImageUrl, setPublicImageUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [productError, setProductError] = useState<string | null>(null)
-  const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
-  const [progress, setProgress] = useState(0)
+  const [loadingMessage, setLoadingMessage] = useState<string | null>("")
+  const [progress, setProgress] = useState<number>(0)
+
+  // Quality Check State
   const [qualityResult, setQualityResult] = useState<ImageQualityResult | null>(null)
   const [showQualityWarning, setShowQualityWarning] = useState(false)
 
-  const clearAll = () => {
-    setUploadedFile(null)
-    setPreview(null)
+  // Cropping State
+  const [showCropper, setShowCropper] = useState(false)
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null)
+
+  // Cleanup preview URL on unmount or change
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+      if (originalImageSrc && originalImageSrc !== preview) URL.revokeObjectURL(originalImageSrc)
+    }
+  }, [preview, originalImageSrc])
+
+  const handleFileSelect = (file: File) => {
+    setUploadedFile(file)
+    const objectUrl = URL.createObjectURL(file)
+    setPreview(objectUrl)
+    setOriginalImageSrc(objectUrl) // Keep track of the original for cropping
+
+    // Reset states
     setResults(null)
-    setError(null)
+    setDetectedProducts([])
     setPublicImageUrl(null)
-    setDetectedProducts(null)
-    setDetectedProducts(null)
+    setError(null)
     setProductError(null)
-    setLoadingMessage(null)
+    setAnalysisState("idle")
+    setSelectedAnalysis("default")
+    setLoadingMessage("")
     setProgress(0)
     setQualityResult(null)
     setShowQualityWarning(false)
+  }
+
+  const handleCropComplete = (croppedFile: File) => {
+    // Replace the uploaded file with the cropped version
+    setUploadedFile(croppedFile)
+
+    // Update preview
+    if (preview) URL.revokeObjectURL(preview)
+    const objectUrl = URL.createObjectURL(croppedFile)
+    setPreview(objectUrl)
+
+    // We don't reset originalImageSrc so the user can re-crop from the original if needed
+  }
+
+  const clearAll = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setUploadedFile(null)
+    if (preview) URL.revokeObjectURL(preview)
+    setPreview(null)
+    setOriginalImageSrc(null)
+    setResults(null)
+    setDetectedProducts([])
+    setPublicImageUrl(null)
+    setError(null)
+    setProductError(null)
     setAnalysisState("idle")
     setSelectedAnalysis("default")
+    setLoadingMessage("")
+    setProgress(0)
+    setQualityResult(null)
+    setShowQualityWarning(false)
   }
 
-  const handleFileSelect = (file: File) => {
-    clearAll() // Clear everything on new upload
-    setUploadedFile(file)
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const clearPreview = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    clearAll()
-  }
-
-  // --- Utility Function to Upload Image ---
-  const getOrUploadImage = async (): Promise<string> => {
-    if (publicImageUrl) {
-      console.log("[v4] Using cached image URL")
-      return publicImageUrl
-    }
-    if (!uploadedFile) {
-      throw new Error("No file uploaded.")
-    }
-
-    console.log("[v4] Uploading file to get URL...")
-    const signedUrlResponse = await createSignedUploadUrl(
-      uploadedFile.name,
-      uploadedFile.type
-    )
-    if (!signedUrlResponse.success) {
-      throw new Error(
-        signedUrlResponse.error || "Failed to get signed upload URL"
-      )
-    }
-    const { signedUrl, path } = signedUrlResponse.data
-
-    const uploadResponse = await fetch(signedUrl, {
-      method: "PUT",
-      headers: { "Content-Type": uploadedFile.type },
-      body: uploadedFile,
-    })
-    if (!uploadResponse.ok) {
-      throw new Error("Failed to upload file to storage")
-    }
-
-    const supabase = getBrowserClient()
-    const { data: publicUrlData } = supabase.storage.getPublicUrl
-      ? supabase.storage.getPublicUrl("vehicle_images", path)
-      : supabase.storage.from("vehicle_images").getPublicUrl(path)
-
-    const newPublicUrl = publicUrlData.publicUrl
-    console.log("[v4] Public URL obtained:", newPublicUrl)
-    setPublicImageUrl(newPublicUrl) // Cache it
-    return newPublicUrl
-  }
-
-  // --- Individual Handlers ---
-  const handleAnalyzeFitment = async () => {
-    setAnalysisState("fitment")
-    setError(null)
-    setProductError(null)
-    setLoadingMessage("Analyzing vehicle fitment...")
-    setProgress(10)
-
+  async function uploadImageToSupabase(file: File): Promise<string | null> {
     try {
-      const url = await getOrUploadImage()
-      setProgress(30)
-      const response = await analyzeVehicleImage(url)
+      setLoadingMessage("Uploading image...")
+      setProgress(10)
+      const response = await createSignedUploadUrl(file.name, file.type)
       if (!response.success) {
-        throw new Error(response.error || "Failed to analyze vehicle")
+        throw new Error(response.error || "Failed to get upload URL")
       }
-      setProgress(100)
-      setResults(response.data)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v4] Fitment error:", msg)
-      setError(msg)
-    } finally {
-      setAnalysisState("idle")
-      setLoadingMessage(null)
-      // Don't reset progress immediately so user sees 100%
-    }
-  }
+      const { signedUrl, path } = response.data
 
-  const handleDetectProducts = async () => {
-    setAnalysisState("products")
-    setError(null)
-    setProductError(null)
-    setLoadingMessage("Scanning image for products...")
-    setProgress(10)
-
-    try {
-      const url = await getOrUploadImage()
-      setProgress(30)
-
-      const vehicleDetails = results
-        ? `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-        : null
-
-      // Stage 1: Detect Types
-      const detectResponse = await detectVisibleProducts(url, vehicleDetails)
-      if (!detectResponse.success) {
-        throw new Error(detectResponse.error || "Failed to detect products")
-      }
-      setProgress(50)
-
-      const productTypes = detectResponse.data
-      if (productTypes.length === 0) {
-        setDetectedProducts([])
-        setLoadingMessage(null)
-        setAnalysisState("idle")
-        setProgress(100)
-        return
-      }
-
-      setLoadingMessage(`Found: ${productTypes.join(", ")}. Analyzing details...`)
-
-      // Stage 2: Refine Details
-      // Initialize with placeholders to show immediate progress if we wanted to render them,
-      // but for now we just update the loading message as they complete.
-
-      const refinedProducts: DetectedProduct[] = []
-      let completed = 0
-
-      // Process in parallel but update state? 
-      // For simplicity, let's do parallel and wait, but we could update a progress counter.
-
-      const promises = productTypes.map(async (type) => {
-        const refined = await refineProductDetails(url, type, vehicleDetails)
-        completed++
-        const newProgress = 50 + Math.floor((completed / productTypes.length) * 50)
-        setProgress(newProgress)
-        return refined
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
       })
 
-      const finalProducts = await Promise.all(promises)
-      setDetectedProducts(finalProducts)
-      setProgress(100)
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image to storage")
+      }
 
+      const publicUrlResponse = await fetch(
+        `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
+      )
+
+      if (publicUrlResponse.status === 200) {
+        return publicUrlResponse.url
+      }
+
+      return `https://vjscvjukmkoqhwwjndhi.supabase.co/storage/v1/object/public/vehicle-images/${path}`
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v4] Product error:", msg)
-      setProductError(msg)
-    } finally {
+      console.error("Upload error:", err)
+      setError("Failed to upload image. Please try again.")
       setAnalysisState("idle")
-      setLoadingMessage(null)
+      return null
     }
   }
 
-  const handleAnalyzeAll = async () => {
-    setAnalysisState("all")
-    setError(null)
-    setProductError(null)
+  async function handleAnalyzeFitment(imageUrl: string) {
     setLoadingMessage("Analyzing vehicle fitment...")
-    setProgress(5)
-
-    try {
-      const url = await getOrUploadImage()
-      setProgress(20)
-
-      // 1. Fitment
-      const fitmentResponse = await analyzeVehicleImage(url)
-      if (!fitmentResponse.success) {
-        throw new Error(fitmentResponse.error || "Failed to analyze vehicle")
-      }
-      setResults(fitmentResponse.data)
-      setProgress(50)
-
-      // 2. Products
-      setLoadingMessage("Scanning image for products...")
-      const vehicleDetails = `${fitmentResponse.data.primary.year} ${fitmentResponse.data.primary.make} ${fitmentResponse.data.primary.model} ${fitmentResponse.data.primary.trim}`
-
-      const detectResponse = await detectVisibleProducts(url, vehicleDetails)
-      if (!detectResponse.success) {
-        throw new Error(detectResponse.error || "Failed to detect products")
-      }
-      setProgress(60)
-
-      const productTypes = detectResponse.data
-      if (productTypes.length === 0) {
-        setDetectedProducts([])
-        setProgress(100)
-        return
-      }
-
-      setLoadingMessage(`Found: ${productTypes.join(", ")}. Analyzing details...`)
-
-      let completed = 0
-      const promises = productTypes.map(async (type) => {
-        const refined = await refineProductDetails(url, type, vehicleDetails)
-        completed++
-        const newProgress = 60 + Math.floor((completed / productTypes.length) * 40)
-        setProgress(newProgress)
-        return refined
-      })
-
-      const finalProducts = await Promise.all(promises)
-      setDetectedProducts(finalProducts)
+    setProgress(30)
+    const result = await analyzeVehicleImage(imageUrl)
+    if (result.success) {
+      setResults(result.data)
       setProgress(100)
-
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "An error occurred"
-      console.error("[v4] 'All' error:", msg)
-      setError(msg)
-    } finally {
-      setAnalysisState("idle")
-      setLoadingMessage(null)
+    } else {
+      setError(result.error)
     }
   }
 
-  // --- "Start" Button Handler ---
-  const handleSend = async () => {
-    if (!uploadedFile && !publicImageUrl) return
+  async function handleDetectProducts(imageUrl: string, vehicleDetails: string | null) {
+    setLoadingMessage("Scanning for products...")
+    setProgress(40)
 
-    // If we already have a public URL (re-running analysis), just proceed
-    if (publicImageUrl && !uploadedFile) {
-      proceedWithAnalysis()
+    // Step 1: Detect visible products
+    const detectionResult = await detectVisibleProducts(imageUrl, vehicleDetails)
+
+    if (!detectionResult.success) {
+      setProductError(detectionResult.error)
       return
     }
 
-    // If we have a new file, upload it first, then check quality
-    setAnalysisState(selectedAnalysis === "products" ? "products" : selectedAnalysis === "all" ? "all" : "fitment")
-    setLoadingMessage("Checking image quality...")
-
-    try {
-      const url = await getOrUploadImage()
-
-      // Check Quality
-      const qualityResponse = await checkImageQuality(url)
-      if (qualityResponse.success) {
-        const { isHighQuality, issues } = qualityResponse.data
-        if (!isHighQuality) {
-          setQualityResult(qualityResponse.data)
-          setShowQualityWarning(true)
-          setLoadingMessage(null) // Stop loading to show dialog
-          return // Stop here, wait for user input
-        }
-      }
-
-      // If quality is good, proceed
-      proceedWithAnalysis()
-
-    } catch (err) {
-      console.error("Error during setup:", err)
-      setError("Failed to prepare image for analysis")
-      setAnalysisState("idle")
-      setLoadingMessage(null)
+    const productTypes = detectionResult.data
+    if (productTypes.length === 0) {
+      setLoadingMessage("No products found.")
+      setProgress(100)
+      return
     }
+
+    // Step 2: Refine details for each product
+    const totalProducts = productTypes.length
+    const refinedProducts: DetectedProduct[] = []
+
+    for (let i = 0; i < totalProducts; i++) {
+      const type = productTypes[i]
+      setLoadingMessage(`Analyzing ${type} details (${i + 1}/${totalProducts})...`)
+      // Calculate progress based on how many products we've processed
+      // Map the remaining 60% (40 -> 100) to the product refinement steps
+      const stepProgress = 40 + Math.floor(((i + 1) / totalProducts) * 60)
+      setProgress(stepProgress)
+
+      const productDetails = await refineProductDetails(imageUrl, type, vehicleDetails)
+      refinedProducts.push(productDetails)
+      // Update state incrementally so user sees results appearing
+      setDetectedProducts(prev => [...prev, productDetails])
+    }
+
+    setProgress(100)
   }
 
-  const proceedWithAnalysis = () => {
-    setShowQualityWarning(false)
-    // Reset loading message based on analysis type
-    if (selectedAnalysis === "fitment") {
-      handleAnalyzeFitment()
-    } else if (selectedAnalysis === "products") {
-      handleDetectProducts()
-    } else if (selectedAnalysis === "all") {
-      handleAnalyzeAll()
+  async function handleAnalyzeAll(imageUrl: string) {
+    // 1. Fitment
+    setLoadingMessage("Analyzing vehicle fitment...")
+    setProgress(20)
+    const fitmentResult = await analyzeVehicleImage(imageUrl)
+
+    let vehicleDetailsString: string | null = null
+
+    if (fitmentResult.success) {
+      setResults(fitmentResult.data)
+      const v = fitmentResult.data.primary
+      vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
+    } else {
+      setError(fitmentResult.error)
     }
+
+    // 2. Products
+    await handleDetectProducts(imageUrl, vehicleDetailsString)
+  }
+
+  async function proceedWithAnalysis(imageUrl: string) {
+    setShowQualityWarning(false)
+
+    if (selectedAnalysis === "fitment") {
+      setAnalysisState("fitment")
+      await handleAnalyzeFitment(imageUrl)
+    } else if (selectedAnalysis === "products") {
+      setAnalysisState("products")
+      await handleDetectProducts(imageUrl, null)
+    } else {
+      setAnalysisState("all")
+      await handleAnalyzeAll(imageUrl)
+    }
+
+    setAnalysisState("idle")
+    setLoadingMessage(null)
+  }
+
+  const handleSend = async () => {
+    if (!uploadedFile) return
+
+    setAnalysisState(selectedAnalysis === "all" ? "all" : selectedAnalysis === "fitment" ? "fitment" : "products")
+    setError(null)
+    setProductError(null)
+    setResults(null)
+    setDetectedProducts([])
+
+    // 1. Upload
+    const imageUrl = await uploadImageToSupabase(uploadedFile)
+    if (!imageUrl) return
+    setPublicImageUrl(imageUrl)
+
+    // 2. Quality Check
+    setLoadingMessage("Checking image quality...")
+    // Check Quality
+    const qualityResponse = await checkImageQuality(imageUrl)
+    if (qualityResponse.success) {
+      const { isHighQuality, issues } = qualityResponse.data
+      if (!isHighQuality) {
+        setQualityResult(qualityResponse.data)
+        setShowQualityWarning(true)
+        setLoadingMessage(null) // Stop loading to show dialog
+        return // Stop here, wait for user input
+      }
+    }
+
+    // 3. Proceed if quality is good
+    await proceedWithAnalysis(imageUrl)
   }
 
   return (
-    <div className="flex flex-col">
-      <HeroSection />
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1">
+        <HeroSection />
 
-      <UploadZone
-        onFileSelect={handleFileSelect}
-        preview={preview}
-        onClear={clearPreview}
-        analysisState={analysisState}
-        selectedAnalysis={selectedAnalysis}
-        onAnalysisChange={setSelectedAnalysis}
-        onStart={handleSend}
-        uploadedFile={uploadedFile}
-      />
+        <UploadZone
+          onFileSelect={handleFileSelect}
+          preview={preview}
+          onClear={clearAll}
+          analysisState={analysisState}
+          selectedAnalysis={selectedAnalysis}
+          onAnalysisChange={setSelectedAnalysis}
+          onStart={handleSend}
+          uploadedFile={uploadedFile}
+          onCrop={() => setShowCropper(true)}
+        />
 
-      <ResultsDisplay
-        analysisState={analysisState}
-        results={results}
-        detectedProducts={detectedProducts}
-        error={error}
-        productError={productError}
-        loadingMessage={loadingMessage}
-        progress={progress}
-        onAnalyzeFitment={handleAnalyzeFitment}
-        onDetectProducts={handleDetectProducts}
-      />
+        <ResultsDisplay
+          results={results}
+          detectedProducts={detectedProducts}
+          error={error}
+          productError={productError}
+          loadingMessage={loadingMessage}
+          progress={progress}
+        />
+
+        <HowItWorks />
+        <UseCases />
+      </main>
 
       <QualityWarningDialog
         isOpen={showQualityWarning}
@@ -394,11 +303,17 @@ export default function VehicleAccessoryFinder() {
           setAnalysisState("idle")
           setLoadingMessage(null)
         }}
-        onProceed={proceedWithAnalysis}
+        onProceed={() => {
+          if (publicImageUrl) proceedWithAnalysis(publicImageUrl)
+        }}
       />
-      <HowItWorks />
 
-      <UseCases />
+      <ImageCropperDialog
+        isOpen={showCropper}
+        onClose={() => setShowCropper(false)}
+        imageSrc={originalImageSrc}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   )
 }

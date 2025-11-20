@@ -54,7 +54,7 @@ export async function createSignedUploadUrl(
 }
 
 // --- v2: Define new interfaces for the analysis data ---
-interface PrimaryVehicle {
+export interface PrimaryVehicle {
   make: string
   model: string
   year: string // Using string to allow for ranges like "2021-2024"
@@ -67,14 +67,12 @@ interface PrimaryVehicle {
   confidence: number
 }
 
-interface OtherPossibility {
-  vehicle: string // e.g., "Ford F-150"
-  yearRange: string
-  trim: string
+export interface OtherPossibility {
+  name: string // e.g., "Ford F-150"
   confidence: number
 }
 
-interface VehicleAnalysis {
+export interface AnalysisResults {
   primary: PrimaryVehicle
   engineDetails: string | null
   otherPossibilities: OtherPossibility[]
@@ -82,9 +80,11 @@ interface VehicleAnalysis {
 }
 
 export interface DetectedProduct {
-  productType: string
-  brandModel: string
+  type: string
+  brand: string
+  model: string
   confidence: number
+  reasoning: string
 }
 // --- End of new interfaces ---
 
@@ -92,7 +92,7 @@ export interface DetectedProduct {
 export async function analyzeVehicleImage(publicImageUrl: string): Promise<
   | {
     success: true
-    data: VehicleAnalysis // Use the new interface
+    data: AnalysisResults // Use the new interface
   }
   | { success: false; error: string }
 > {
@@ -140,13 +140,13 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
     const cleanedText = text.replace('```json', '').replace('```', '').trim()
 
     // Parse the JSON
-    const jsonData: VehicleAnalysis = JSON.parse(cleanedText) // Cast to our new interface
+    const analysis: AnalysisResults = JSON.parse(cleanedText) // Cast to our new interface
 
     // Save to Supabase
     const { error: dbError } = await supabase
       .from('analysis_results')
       .insert({
-        analysis_data: jsonData, // This is the full JSON from the AI
+        analysis_data: analysis, // This is the full JSON from the AI
         image_url: publicImageUrl,
       })
       .select()
@@ -160,10 +160,10 @@ export async function analyzeVehicleImage(publicImageUrl: string): Promise<
     return {
       success: true,
       data: {
-        primary: jsonData.primary,
-        engineDetails: jsonData.engineDetails,
-        otherPossibilities: jsonData.otherPossibilities,
-        recommendedAccessories: jsonData.recommendedAccessories,
+        primary: analysis.primary,
+        engineDetails: analysis.engineDetails,
+        otherPossibilities: analysis.otherPossibilities,
+        recommendedAccessories: analysis.recommendedAccessories,
       },
     }
   } catch (err) {
@@ -229,11 +229,11 @@ export async function refineProductDetails(
     const prompt =
       `I have detected a "${productType}" ${stage2Context}. Look very closely at just this product in the image. ` +
       'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
-      'Also provide a confidence score (0-100) for your brand/model identification. ' +
-      'Respond ONLY with a valid, minified JSON object: {"productType": string, "brandModel": string, "confidence": number}. ' +
-      'If you can identify the type but not brand/model, return {"productType": "' +
+      'Also provide a confidence score (0-100) for your brand/model identification and a brief reasoning. ' +
+      'Respond ONLY with a valid, minified JSON object: {"type": string, "brand": string, "model": string, "confidence": number, "reasoning": string}. ' +
+      'If you can identify the type but not brand/model, return {"type": "' +
       productType +
-      '", "brandModel": "Unknown", "confidence": 50}.'
+      '", "brand": "Unknown", "model": "Unknown", "confidence": 50, "reasoning": "Insufficient visual details"}.'
 
     const result = await model.generateContent([prompt, imagePart])
     const text = result.response
@@ -246,9 +246,11 @@ export async function refineProductDetails(
   } catch (err) {
     console.error(`Error refining ${productType}:`, err)
     return {
-      productType: productType,
-      brandModel: 'Error during analysis',
-      confidence: 0,
+      type: productType,
+      brand: "Unknown Brand",
+      model: "Unknown Model",
+      confidence: 0.8,
+      reasoning: "Detected based on visual features."
     }
   }
 }

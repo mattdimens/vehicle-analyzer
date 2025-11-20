@@ -3,7 +3,7 @@
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Loader, X, Send } from "lucide-react"
+import { Upload, Loader, X, Send, Crop as CropIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Define types locally if not exported from page.tsx, or import them if they are shared.
@@ -20,6 +20,7 @@ interface UploadZoneProps {
     onAnalysisChange: (value: AnalysisSelection) => void
     onStart: () => void
     uploadedFile: File | null
+    onCrop: () => void
 }
 
 export function UploadZone({
@@ -31,6 +32,7 @@ export function UploadZone({
     onAnalysisChange,
     onStart,
     uploadedFile,
+    onCrop,
 }: UploadZoneProps) {
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: (acceptedFiles) => {
@@ -88,15 +90,34 @@ export function UploadZone({
                                         Image selected
                                     </p>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                                    onClick={onClear}
-                                    aria-label="Remove image"
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        className="shrink-0 text-muted-foreground hover:text-primary"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onCrop()
+                                        }}
+                                        aria-label="Crop image"
+                                        title="Crop / Focus"
+                                    >
+                                        <CropIcon className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onClear(e)
+                                        }}
+                                        aria-label="Remove image"
+                                        title="Remove image"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}

@@ -47,9 +47,14 @@ export function HowItWorks() {
                             <h3 className="mb-3 font-heading text-2xl font-medium">
                                 Choose Analysis
                             </h3>
-                            <p className="text-lg leading-relaxed text-muted-foreground">
-                                Choose from three powerful analysis options: <strong>Analyze Fitment</strong> identifies your vehicle's make, model, trim, and year; <strong>Detect Products</strong> identifies aftermarket parts and accessories; or select <strong>Both</strong> for a complete analysis.
-                            </p>
+                            <div className="text-lg leading-relaxed text-muted-foreground">
+                                <p className="mb-3">Choose from three powerful analysis options:</p>
+                                <ul className="space-y-2 text-base">
+                                    <li><strong>Analyze Fitment</strong> - Identifies your vehicle's make, model, trim, and year</li>
+                                    <li><strong>Detect Products</strong> - Identifies aftermarket parts and accessories</li>
+                                    <li><strong>Both</strong> - Get a complete analysis with all of the above</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
@@ -68,7 +73,7 @@ export function HowItWorks() {
                                 Get Instant Insights
                             </h3>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                Receive a comprehensive, AI-powered table with detailed information about your vehicle's specifications, detected parts, and compatibility data—all in seconds.
+                                Receive a comprehensive, AI-powered table with detailed information about your vehicle's specifications, detected parts, and compatibility data in seconds.
                             </p>
                         </div>
                     </div>

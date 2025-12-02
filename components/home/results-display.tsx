@@ -8,6 +8,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink } from "lucide-react"
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
+import { addAmazonAffiliateTag } from "@/lib/amazon"
 
 interface ResultsDisplayProps {
     results: AnalysisResults | null
@@ -220,7 +221,7 @@ export function ResultsDisplay({
                                                                 className="gap-1.5"
                                                             >
                                                                 <a
-                                                                    href={`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`}
+                                                                    href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                 >
@@ -266,7 +267,7 @@ export function ResultsDisplay({
                                                             className="shrink-0"
                                                         >
                                                             <a
-                                                                href={amazonSearchUrl}
+                                                                href={addAmazonAffiliateTag(amazonSearchUrl)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                             >

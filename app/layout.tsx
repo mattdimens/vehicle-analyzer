@@ -5,6 +5,7 @@ import './globals.css'
 import { cn } from '../lib/utils'
 import { SiteHeader } from '../components/ui/site-header'
 import { SiteFooter } from '../components/ui/site-footer'
+import { AffiliateDisclosure } from '../components/ui/affiliate-disclosure'
 
 // Setup your new fonts
 const fontSans = Inter({
@@ -58,6 +59,9 @@ export default function RootLayout({
 
         {/* We add 'pt-14' to the main content to offset for the fixed header */}
         <main className="flex-1 pt-14">{children}</main>
+
+        {/* Affiliate Disclosure Banner */}
+        <AffiliateDisclosure />
 
         {/* This adds your new footer */}
         <SiteFooter />

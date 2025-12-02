@@ -81,7 +81,7 @@ export function ResultsDisplay({
                                     </CardHeader>
                                     <CardContent>
                                         {/* Grid for primary details */}
-                                        <div className="grid grid-cols-3 gap-x-4 gap-y-6 text-sm">
+                                        <div className="grid grid-cols-1 gap-x-4 gap-y-6 text-sm sm:grid-cols-2 md:grid-cols-3">
                                             <div>
                                                 <div className="text-muted-foreground">Make</div>
                                                 <div className="font-medium">{results.primary.make}</div>

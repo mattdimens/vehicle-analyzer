@@ -245,6 +245,12 @@ export default function Home() {
   const handleStartBatch = async () => {
     setAnalysisState("processing")
 
+    // Scroll to results
+    const resultsElement = document.getElementById("results")
+    if (resultsElement) {
+      resultsElement.scrollIntoView({ behavior: "smooth" })
+    }
+
     // Process sequentially to avoid rate limits? Or parallel?
     // Let's do sequential for now to be safe with API limits.
 

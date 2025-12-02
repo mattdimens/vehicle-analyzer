@@ -1,4 +1,4 @@
-import { Upload, Zap, FileText } from "lucide-react"
+import { Upload, Zap, Table } from "lucide-react"
 
 export function HowItWorks() {
     return (
@@ -48,7 +48,7 @@ export function HowItWorks() {
                                 Choose Analysis
                             </h3>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                Select what you want to find: "Analyze Fitment", "Detect Products", or both.
+                                Choose from three powerful analysis options: <strong>Analyze Fitment</strong> identifies your vehicle's make, model, trim, and year; <strong>Detect Products</strong> identifies aftermarket parts and accessories; or select <strong>Both</strong> for a complete analysis.
                             </p>
                         </div>
                     </div>
@@ -60,7 +60,7 @@ export function HowItWorks() {
                             <div className="absolute left-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-black md:block" />
 
                             <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full border-2 border-black bg-white">
-                                <FileText className="h-8 w-8" />
+                                <Table className="h-8 w-8" />
                             </div>
                         </div>
                         <div className="border-t border-black pt-6">
@@ -68,7 +68,7 @@ export function HowItWorks() {
                                 Get Instant Insights
                             </h3>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                Every response is backed by AI analysis, giving you a detailed breakdown of parts and fitment.
+                                Receive a comprehensive, AI-powered table with detailed information about your vehicle's specifications, detected parts, and compatibility data—all in seconds.
                             </p>
                         </div>
                     </div>

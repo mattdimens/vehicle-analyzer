@@ -1,7 +1,7 @@
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle } from "lucide-react"
+import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle, Search, Tag, Zap, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BatchItem } from "@/lib/types"
 
@@ -207,10 +207,24 @@ export function UploadZone({
             </div>
 
             {/* Pills */}
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-                <Badge variant="secondary">Batch Processing</Badge>
-                <Badge variant="secondary">Instant Identification</Badge>
-                <Badge variant="secondary">Accessory Matching</Badge>
+            {/* Pills */}
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
+                    <Search className="h-4 w-4" />
+                    Fitment Identification
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
+                    <Tag className="h-4 w-4" />
+                    Product Detection
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
+                    <Zap className="h-4 w-4" />
+                    Instant Results
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
+                    <Layers className="h-4 w-4" />
+                    Multi-Image Processing
+                </div>
             </div>
         </div>
     )

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Menu } from 'lucide-react'
+import { Menu, ArrowRight } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -25,7 +25,7 @@ export function SiteHeader() {
             width={32}
             height={32}
           />
-          <span className="text-lg font-bold font-heading text-primary">
+          <span className="text-lg font-bold font-heading text-foreground">
             Visual Fitment
           </span>
         </Link>
@@ -49,7 +49,9 @@ export function SiteHeader() {
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center justify-end flex-1">
           <Button asChild>
-            <Link href="#upload-zone">Try it now</Link>
+            <Link href="#upload-zone">
+              Try it now <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
         </div>
 

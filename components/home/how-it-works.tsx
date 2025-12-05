@@ -2,7 +2,7 @@ import { Upload, Zap, Table } from "lucide-react"
 
 export function HowItWorks() {
     return (
-        <section id="how-it-works" className="w-full bg-[#FDFBF7] py-24">
+        <section id="how-it-works" className="w-full bg-[#E4EEF0] py-24">
             <div className="container max-w-6xl">
                 <div className="mb-20 text-center">
                     <h2 className="font-heading text-5xl font-bold text-black">
@@ -70,10 +70,10 @@ export function HowItWorks() {
                         </div>
                         <div className="border-t border-black pt-6">
                             <h3 className="mb-3 font-heading text-2xl font-medium">
-                                Get Instant Insights
+                                Get Instant Results
                             </h3>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                Receive a comprehensive, AI-powered table with detailed information about your vehicle's specifications, detected parts, and compatibility data in seconds.
+                                Receive a comprehensive table with detailed information about your vehicle's specifications, detected parts, and compatibility data in seconds.
                             </p>
                         </div>
                     </div>

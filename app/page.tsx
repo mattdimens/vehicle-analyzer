@@ -266,20 +266,22 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
-        <HeroSection />
+        <div className="bg-[#075056]">
+          <HeroSection />
 
-        <div id="upload-zone" className="scroll-mt-20">
-          <UploadZone
-            onFilesSelect={handleFilesSelect}
-            batchItems={batchItems}
-            onRemove={handleRemoveItem}
-            onCrop={handleCropClick}
-            onClearAll={handleClearAll}
-            analysisState={analysisState}
-            selectedAnalysis={selectedAnalysis}
-            onAnalysisChange={setSelectedAnalysis}
-            onStart={handleStartBatch}
-          />
+          <div id="upload-zone" className="scroll-mt-20">
+            <UploadZone
+              onFilesSelect={handleFilesSelect}
+              batchItems={batchItems}
+              onRemove={handleRemoveItem}
+              onCrop={handleCropClick}
+              onClearAll={handleClearAll}
+              analysisState={analysisState}
+              selectedAnalysis={selectedAnalysis}
+              onAnalysisChange={setSelectedAnalysis}
+              onStart={handleStartBatch}
+            />
+          </div>
         </div>
 
         {/* Batch Results Display */}

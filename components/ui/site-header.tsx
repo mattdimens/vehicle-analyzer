@@ -15,7 +15,7 @@ export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
+    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-white backdrop-blur-sm">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 mr-6">

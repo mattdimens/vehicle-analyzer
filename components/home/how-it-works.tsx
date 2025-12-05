@@ -6,7 +6,7 @@ export function HowItWorks() {
             <div className="container max-w-6xl">
                 <div className="mb-20 text-center">
                     <h2 className="font-heading text-5xl font-bold text-black">
-                        How Visual Fitment Works
+                        How <span className="italic text-primary">Visual Fitment</span> Works
                     </h2>
                 </div>
 
@@ -48,11 +48,11 @@ export function HowItWorks() {
                                 Choose Analysis
                             </h3>
                             <div className="text-lg leading-relaxed text-muted-foreground">
-                                <p className="mb-3">Choose from three powerful analysis options:</p>
+                                <p className="mb-3">Choose from three separate analyses:</p>
                                 <ul className="space-y-2 text-base">
-                                    <li><strong>Analyze Fitment</strong> - Identifies your vehicle's make, model, trim, and year</li>
+                                    <li><strong>Analyze Fitment</strong> - Identifies your vehicle's make, model, trim, year, etc.</li>
                                     <li><strong>Detect Products</strong> - Identifies aftermarket parts and accessories</li>
-                                    <li><strong>Both</strong> - Get a complete analysis with all of the above</li>
+                                    <li><strong>Fitment & Products</strong> - Get a complete analysis with all of the above</li>
                                 </ul>
                             </div>
                         </div>
@@ -73,7 +73,7 @@ export function HowItWorks() {
                                 Get Instant Results
                             </h3>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                Receive a comprehensive table with detailed information about your vehicle's specifications, detected parts, and compatibility data in seconds.
+                                Analysis results are organized into a comprehensive table detailing your vehicle's fitment specifications, detected parts, and compatibility data in seconds.
                             </p>
                         </div>
                     </div>

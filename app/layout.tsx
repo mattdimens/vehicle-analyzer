@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Manrope } from 'next/font/google'
+import { Domine } from 'next/font/google'
 import Script from 'next/script' // <-- 1. IMPORT SCRIPT
 import './globals.css'
 import { cn } from '../lib/utils'
@@ -8,15 +8,15 @@ import { SiteFooter } from '../components/ui/site-footer'
 import { AffiliateDisclosure } from '../components/ui/affiliate-disclosure'
 
 // Setup your new fonts
-const fontSans = Inter({
+const fontSans = Domine({
   subsets: ['latin'],
   variable: '--font-sans',
 })
 
-const fontHeading = Manrope({
+const fontHeading = Domine({
   subsets: ['latin'],
   variable: '--font-heading',
-  weight: ['700', '800'],
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {

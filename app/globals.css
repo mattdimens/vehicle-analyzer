@@ -8,8 +8,8 @@
   /* --- NEW PALETTE --- */
   --color-background: oklch(0.935 0.019 217.41); /* Wild Sand */
   --color-foreground: oklch(0.205 0.024 246.3); /* Mirage */
-  --font-sans: "Inter", sans-serif;
-  --font-heading: "Manrope", sans-serif;
+  --font-sans: "Domine", serif;
+  --font-heading: "Domine", serif;
   --color-ring: oklch(0.655 0.222 36.6); /* Blaze Orange */
   --color-input: oklch(0.88 0.019 217.41); /* Darker Wild Sand */
   --color-border: oklch(0.88 0.019 217.41); /* Darker Wild Sand */

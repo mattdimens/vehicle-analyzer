@@ -49,7 +49,7 @@ export function SiteHeader() {
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center justify-end flex-1">
           <Button asChild>
-            <Link href="#hero">Try Now</Link>
+            <Link href="#upload-zone">Try it now</Link>
           </Button>
         </div>
 
@@ -78,8 +78,8 @@ export function SiteHeader() {
               </Link>
               <div className="pt-4">
                 <Button asChild className="w-full">
-                  <Link href="#hero" onClick={() => setIsOpen(false)}>
-                    Try Now
+                  <Link href="#upload-zone" onClick={() => setIsOpen(false)}>
+                    Try it now
                   </Link>
                 </Button>
               </div>

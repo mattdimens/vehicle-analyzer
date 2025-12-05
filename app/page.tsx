@@ -268,17 +268,19 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
 
-        <UploadZone
-          onFilesSelect={handleFilesSelect}
-          batchItems={batchItems}
-          onRemove={handleRemoveItem}
-          onCrop={handleCropClick}
-          onClearAll={handleClearAll}
-          analysisState={analysisState}
-          selectedAnalysis={selectedAnalysis}
-          onAnalysisChange={setSelectedAnalysis}
-          onStart={handleStartBatch}
-        />
+        <div id="upload-zone" className="scroll-mt-20">
+          <UploadZone
+            onFilesSelect={handleFilesSelect}
+            batchItems={batchItems}
+            onRemove={handleRemoveItem}
+            onCrop={handleCropClick}
+            onClearAll={handleClearAll}
+            analysisState={analysisState}
+            selectedAnalysis={selectedAnalysis}
+            onAnalysisChange={setSelectedAnalysis}
+            onStart={handleStartBatch}
+          />
+        </div>
 
         {/* Batch Results Display */}
         {batchItems.length > 0 && (

@@ -25,7 +25,7 @@ export function SiteHeader() {
             width={32}
             height={32}
           />
-          <span className="text-lg font-bold text-primary">
+          <span className="text-lg font-bold font-heading text-primary">
             Visual Fitment
           </span>
         </Link>

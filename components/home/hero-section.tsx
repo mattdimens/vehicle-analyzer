@@ -8,11 +8,10 @@ export function HeroSection() {
         >
             <div className="max-w-4xl w-full">
                 <h1 className="font-heading text-5xl font-bold md:text-7xl">
-                    See the Parts. Find the Products.
+                    Find vehicle fitment & accessories from an image
                 </h1>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-                    Upload an image of any vehicle and our AI will instantly identify
-                    fitment and compatible accessories.
+                    Upload an image of any vehicle and we will instantly identify vehicle fitment and compatible accessories to inspire your next purchase.
                 </p>
             </div>
         </section>

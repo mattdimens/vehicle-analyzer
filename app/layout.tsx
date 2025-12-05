@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Domine } from 'next/font/google'
+import { Domine, Inter } from 'next/font/google'
 import Script from 'next/script' // <-- 1. IMPORT SCRIPT
 import './globals.css'
 import { cn } from '../lib/utils'
@@ -8,7 +8,7 @@ import { SiteFooter } from '../components/ui/site-footer'
 import { AffiliateDisclosure } from '../components/ui/affiliate-disclosure'
 
 // Setup your new fonts
-const fontSans = Domine({
+const fontSans = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
 })

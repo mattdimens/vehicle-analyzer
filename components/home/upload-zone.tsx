@@ -1,3 +1,6 @@
+"use client"
+
+import { useCallback, useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +15,11 @@ interface UploadZoneProps {
     onFilesSelect: (files: File[]) => void
     batchItems: BatchItem[]
     onRemove: (id: string) => void
+    onRemoveImage: (itemId: string, imageId: string) => void
     onCrop: (itemId: string, imageId: string) => void
+    onAddImages: (itemId: string, files: File[]) => void
+    onSplit: (itemId: string) => void
+    onMerge: (sourceId: string, targetId: string) => void
     onClearAll: (e: React.MouseEvent) => void
     analysisState: AnalysisState
     selectedAnalysis: AnalysisSelection
@@ -24,13 +31,46 @@ export function UploadZone({
     onFilesSelect,
     batchItems,
     onRemove,
+    onRemoveImage,
     onCrop,
+    onAddImages,
+    onSplit,
+    onMerge,
     onClearAll,
     analysisState,
     selectedAnalysis,
     onAnalysisChange,
     onStart,
 }: UploadZoneProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [dragOverId, setDragOverId] = useState<string | null>(null)
+
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+        e.dataTransfer.setData("application/vehicle-item-id", id)
+        e.dataTransfer.effectAllowed = "move"
+    }
+
+    const handleDragOver = (e: React.DragEvent, id: string) => {
+        e.preventDefault()
+        if (e.dataTransfer.types.includes("application/vehicle-item-id")) {
+            setDragOverId(id)
+            e.dataTransfer.dropEffect = "move"
+        }
+    }
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        setDragOverId(null)
+    }
+
+    const handleDrop = (e: React.DragEvent, targetId: string) => {
+        e.preventDefault()
+        setDragOverId(null)
+        const sourceId = e.dataTransfer.getData("application/vehicle-item-id")
+        if (sourceId && sourceId !== targetId) {
+            onMerge(sourceId, targetId)
+        }
+    }
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: (acceptedFiles) => {
             if (acceptedFiles.length > 0) {
@@ -100,22 +140,43 @@ export function UploadZone({
                                 {batchItems.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="relative p-3 rounded-xl border bg-background shadow-sm hover:shadow-md transition-shadow"
+                                        draggable={item.status === 'pending'} // Only pending items can be moved
+                                        onDragStart={(e) => handleDragStart(e, item.id)}
+                                        onDragOver={(e) => item.status === 'pending' && handleDragOver(e, item.id)}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={(e) => item.status === 'pending' && handleDrop(e, item.id)}
+                                        className={cn(
+                                            "relative p-3 rounded-xl border bg-background shadow-sm hover:shadow-md transition-shadow",
+                                            dragOverId === item.id ? "border-primary ring-2 ring-primary/20 bg-primary/5" : ""
+                                        )}
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-medium text-muted-foreground">Vehicle {item.id}</span>
-                                            {item.status === "pending" && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                                    onClick={() => onRemove(item.id)}
-                                                    title="Remove Vehicle"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </Button>
-                                            )}
+                                            <div className="flex items-center gap-1">
+                                                {item.images.length > 1 && item.status === "pending" && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground"
+                                                        onClick={() => onSplit(item.id)}
+                                                        title="Split into individual vehicles"
+                                                    >
+                                                        Split
+                                                    </Button>
+                                                )}
+                                                {item.status === "pending" && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => onRemove(item.id)}
+                                                        title="Remove Vehicle"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Horizontal Image Scroll */}
@@ -136,13 +197,49 @@ export function UploadZone({
                                                                 size="icon"
                                                                 className="h-6 w-6 text-white hover:text-white hover:bg-white/20"
                                                                 onClick={() => onCrop(item.id, img.id)}
+                                                                title="Crop"
                                                             >
                                                                 <CropIcon className="w-3 h-3" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 text-white hover:text-white hover:bg-white/20"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    onRemoveImage(item.id, img.id)
+                                                                }}
+                                                                title="Delete Image"
+                                                            >
+                                                                <X className="w-3 h-3" />
                                                             </Button>
                                                         </div>
                                                     )}
                                                 </div>
                                             ))}
+
+                                            {/* Add Image Button (Mini) */}
+                                            {item.status === "pending" && (
+                                                <label className="shrink-0 w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/50 hover:bg-muted/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files.length > 0) {
+                                                                onAddImages(item.id, Array.from(e.target.files))
+                                                                // Reset value to allow re-upload of same file if needed
+                                                                e.target.value = ''
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center mb-1">
+                                                        <span className="text-lg leading-none pb-0.5 text-muted-foreground">+</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-muted-foreground">Add</span>
+                                                </label>
+                                            )}
                                         </div>
 
                                         {/* Status Footer */}

@@ -71,6 +71,100 @@ export default function Home() {
     setAnalysisState("idle")
   }
 
+  const handleAddImageToItem = (itemId: string, files: File[]) => {
+    setBatchItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const newImages = files.map(file => ({
+          id: Math.random().toString(36).substring(7),
+          file,
+          preview: URL.createObjectURL(file),
+          publicUrl: null
+        }))
+        return {
+          ...item,
+          images: [...item.images, ...newImages],
+          status: "pending" // Reset status to allow re-analysis
+        }
+      }
+      return item
+    }))
+  }
+
+  const handleSplitItem = (itemId: string) => {
+    setBatchItems(prev => {
+      const itemToSplit = prev.find(i => i.id === itemId)
+      if (!itemToSplit) return prev
+
+      // Remove the original item
+      const others = prev.filter(i => i.id !== itemId)
+
+      // Create new items for each image in the split item
+      const splitItems: BatchItem[] = itemToSplit.images.map(img => ({
+        id: Math.random().toString(36).substring(7),
+        images: [img], // Keep the image object as is (with preview)
+        status: "pending",
+        progress: 0,
+        result: null,
+        detectedProducts: [],
+        error: null,
+        qualityIssues: [],
+        loadingMessage: null
+      }))
+
+      return [...others, ...splitItems]
+    })
+  }
+
+  const handleRemoveImageFromItem = (itemId: string, imageId: string) => {
+    setBatchItems(prev => {
+      return prev.map(item => {
+        if (item.id !== itemId) return item
+
+        // Filter out the image
+        const targetImage = item.images.find(img => img.id === imageId)
+        if (targetImage) {
+          URL.revokeObjectURL(targetImage.preview)
+        }
+        const newImages = item.images.filter(img => img.id !== imageId)
+
+        // If no images left, we filter out the item entirely later
+        if (newImages.length === 0) return null
+
+        return {
+          ...item,
+          images: newImages,
+          status: "pending" // Reset status
+        }
+      }).filter(Boolean) as BatchItem[]
+    })
+  }
+
+  const handleMergeItems = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return
+
+    setBatchItems(prev => {
+      const sourceItem = prev.find(i => i.id === sourceId)
+      const targetItem = prev.find(i => i.id === targetId)
+
+      if (!sourceItem || !targetItem) return prev
+
+      // Merge images from source to target
+      const mergedImages = [...targetItem.images, ...sourceItem.images]
+
+      // Return new list: target updated, source removed
+      return prev.map(item => {
+        if (item.id === targetId) {
+          return {
+            ...item,
+            images: mergedImages,
+            status: "pending" as const // Reset status for re-analysis
+          }
+        }
+        return item
+      }).filter(item => item.id !== sourceId)
+    })
+  }
+
   const handleRemoveItem = (id: string) => {
     setBatchItems(prev => {
       const item = prev.find(i => i.id === id)
@@ -326,7 +420,11 @@ export default function Home() {
               onFilesSelect={handleFilesSelect}
               batchItems={batchItems}
               onRemove={handleRemoveItem}
+              onRemoveImage={handleRemoveImageFromItem}
               onCrop={handleCropClick}
+              onAddImages={handleAddImageToItem}
+              onSplit={handleSplitItem}
+              onMerge={handleMergeItems}
               onClearAll={handleClearAll}
               analysisState={analysisState}
               selectedAnalysis={selectedAnalysis}

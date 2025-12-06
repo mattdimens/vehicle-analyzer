@@ -49,6 +49,9 @@ export function BatchResults({ items }: BatchResultsProps) {
                     const isComplete = item.status === "complete"
                     const isError = item.status === "error"
                     const isProcessing = ["uploading", "quality_check", "analyzing"].includes(item.status)
+                    const primaryImage = item.images[0]
+                    const title = primaryImage ? primaryImage.file.name : "Unknown Vehicle"
+                    const otherCount = Math.max(0, item.images.length - 1)
 
                     return (
                         <div
@@ -65,17 +68,26 @@ export function BatchResults({ items }: BatchResultsProps) {
                             >
                                 {/* Thumbnail */}
                                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
-                                    <img
-                                        src={item.preview}
-                                        alt={item.file.name}
-                                        className="h-full w-full object-cover"
-                                    />
+                                    {primaryImage && (
+                                        <img
+                                            src={primaryImage.preview}
+                                            alt={title}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    )}
+                                    {otherCount > 0 && (
+                                        <div className="absolute  bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl-md">
+                                            +{otherCount}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-semibold truncate">{item.file.name}</h3>
+                                        <h3 className="font-semibold truncate">
+                                            {title} {otherCount > 0 && <span className="text-muted-foreground font-normal text-sm">(+{otherCount} views)</span>}
+                                        </h3>
                                         {isComplete && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                                         {isError && <AlertCircle className="h-4 w-4 text-destructive" />}
                                     </div>
@@ -109,6 +121,22 @@ export function BatchResults({ items }: BatchResultsProps) {
                             {/* Expanded Content */}
                             {isExpanded && (
                                 <div className="border-t p-4 bg-muted/10">
+                                    {/* Source Images Grid */}
+                                    <div className="mb-6">
+                                        <h4 className="text-sm font-medium mb-3 text-muted-foreground">Source Images</h4>
+                                        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
+                                            {item.images.map((img, idx) => (
+                                                <div key={img.id} className="relative h-32 w-32 shrink-0 rounded-lg overflow-hidden border shadow-sm">
+                                                    <img
+                                                        src={img.preview}
+                                                        alt={`View ${idx + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                     {isComplete ? (
                                         <ResultsDisplay
                                             results={item.result}

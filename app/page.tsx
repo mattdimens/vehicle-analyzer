@@ -41,50 +41,68 @@ export default function Home() {
   // Cleanup preview URLs
   useEffect(() => {
     return () => {
-      batchItems.forEach(item => URL.revokeObjectURL(item.preview))
+      batchItems.forEach(item => {
+        item.images.forEach(img => URL.revokeObjectURL(img.preview))
+      })
       if (originalImageSrc) URL.revokeObjectURL(originalImageSrc)
     }
-  }, []) // Run once on unmount, though technically we should cleanup when items are removed too
+  }, []) // Run once on unmount
 
   const handleFilesSelect = (files: File[]) => {
-    const newItems: BatchItem[] = files.map(file => ({
+    // Create ONE item for all the dropped files (User intention: 1 Drop = 1 Vehicle)
+    const newItem: BatchItem = {
       id: Math.random().toString(36).substring(7),
-      file,
-      preview: URL.createObjectURL(file),
+      images: files.map(file => ({
+        id: Math.random().toString(36).substring(7),
+        file,
+        preview: URL.createObjectURL(file), // Create preview for each file
+        publicUrl: null
+      })),
       status: "pending",
       progress: 0,
       result: null,
       detectedProducts: [],
       error: null,
-      publicUrl: null,
       qualityIssues: [],
       loadingMessage: null
-    }))
-    setBatchItems(prev => [...prev, ...newItems])
+    }
+
+    setBatchItems(prev => [...prev, newItem])
     setAnalysisState("idle")
   }
 
   const handleRemoveItem = (id: string) => {
     setBatchItems(prev => {
       const item = prev.find(i => i.id === id)
-      if (item) URL.revokeObjectURL(item.preview)
+      if (item) {
+        item.images.forEach(img => URL.revokeObjectURL(img.preview))
+      }
       return prev.filter(i => i.id !== id)
     })
   }
 
   const handleClearAll = (e?: React.MouseEvent) => {
     e?.stopPropagation()
-    batchItems.forEach(item => URL.revokeObjectURL(item.preview))
+    batchItems.forEach(item => {
+      item.images.forEach(img => URL.revokeObjectURL(img.preview))
+    })
     setBatchItems([])
     setAnalysisState("idle")
     setSelectedAnalysis("default")
   }
 
-  const handleCropClick = (id: string) => {
-    const item = batchItems.find(i => i.id === id)
-    if (item) {
-      setCroppingItemId(id)
-      setOriginalImageSrc(item.preview) // Using preview as source for now
+  // For cropping, we need to know WHICH image in WHICH item is being cropped.
+  // Ideally, we'd pass both IDs. For now, let's assume `croppingItemId` is the ITEM id, 
+  // but we also need the IMAGE id.
+  // Updated strategy: `croppingItemId` will store `${itemId}|${imageId}`
+
+  const handleCropClick = (itemId: string, imageId: string) => {
+    const item = batchItems.find(i => i.id === itemId)
+    const image = item?.images.find(img => img.id === imageId)
+
+    if (item && image) {
+      setCroppingItemId(`${itemId}|${imageId}`)
+      setOriginalImageSrc(image.preview)
       setShowCropper(true)
     }
   }
@@ -92,14 +110,30 @@ export default function Home() {
   const handleCropComplete = (croppedFile: File) => {
     if (!croppingItemId) return
 
+    const [itemId, imageId] = croppingItemId.split('|')
+
     setBatchItems(prev => prev.map(item => {
-      if (item.id === croppingItemId) {
-        URL.revokeObjectURL(item.preview)
+      if (item.id === itemId) {
+        // Update specific image in the item
+        const updatedImages = item.images.map(img => {
+          if (img.id === imageId) {
+            URL.revokeObjectURL(img.preview)
+            return {
+              ...img,
+              file: croppedFile,
+              preview: URL.createObjectURL(croppedFile),
+              // If we re-crop, we might need to reset publicUrl if it was already uploaded?
+              // Yes, strictly speaking. But typically we only crop before processing.
+              publicUrl: null
+            }
+          }
+          return img
+        })
+
         return {
           ...item,
-          file: croppedFile,
-          preview: URL.createObjectURL(croppedFile),
-          status: "pending", // Reset status if re-cropped
+          images: updatedImages,
+          status: "pending", // Reset item status if user edits an image
           result: null,
           error: null
         }
@@ -107,8 +141,6 @@ export default function Home() {
       return item
     }))
 
-    // Don't close cropper here, let the dialog handle it or user close it
-    // But usually we want to close it after crop
     setShowCropper(false)
     setCroppingItemId(null)
   }
@@ -145,42 +177,63 @@ export default function Home() {
   }
 
   async function processItem(item: BatchItem, analysisType: AnalysisSelection): Promise<BatchItem> {
-    // 1. Upload
-    let currentItem: BatchItem = { ...item, status: "uploading", progress: 10, loadingMessage: "Uploading..." }
-    // We need to update state to reflect this change? 
-    // Actually, we'll just return the updated item and let the caller update state.
-    // But for long running processes, we might want intermediate updates.
-    // For now, let's just do the logic and return the final state of the item.
+    // 1. Upload Loop
+    let currentItem: BatchItem = { ...item, status: "uploading", progress: 0, loadingMessage: "Uploading images..." }
 
-    // NOTE: In a real app, we'd want to update the UI state *during* this function.
-    // I'll use a helper to update the specific item in the batchItems state.
     const updateItem = (updates: Partial<BatchItem>) => {
       setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, ...updates } : i))
       currentItem = { ...currentItem, ...updates }
     }
 
-    updateItem({ status: "uploading", progress: 10, loadingMessage: "Uploading..." })
+    updateItem({ status: "uploading", progress: 5 })
 
-    const { url, error: uploadError } = await uploadImageToSupabase(item.file)
-    if (uploadError || !url) {
-      updateItem({ status: "error", error: uploadError || "Upload failed", progress: 0, loadingMessage: null })
+    const uploadedImages: { id: string, file: File, preview: string, publicUrl: string | null }[] = []
+
+    // Upload each image
+    let uploadedCount = 0
+    for (const img of item.images) {
+      // Skip if already uploaded? For now, re-upload to be safe or if retry logic needs it.
+      // Actually, if publicUrl exists, we could skip.
+      if (img.publicUrl) {
+        uploadedImages.push(img)
+        uploadedCount++
+        continue
+      }
+
+      const { url, error: uploadError } = await uploadImageToSupabase(img.file)
+      if (uploadError || !url) {
+        updateItem({ status: "error", error: `Failed to upload image ${img.file.name}`, progress: 0, loadingMessage: null })
+        return currentItem
+      }
+
+      uploadedImages.push({ ...img, publicUrl: url })
+      uploadedCount++
+      updateItem({ progress: 5 + Math.floor((uploadedCount / item.images.length) * 20) }) // Upload is 5-25%
+    }
+
+    // Update item with uploaded URLs
+    // We update the state to preserve the publicUrls
+    updateItem({ images: uploadedImages })
+
+    const publicUrls = uploadedImages.map(img => img.publicUrl!).filter(Boolean)
+
+    if (publicUrls.length === 0) {
+      updateItem({ status: "error", error: "No images uploaded successfully", progress: 0 })
       return currentItem
     }
 
-    updateItem({ publicUrl: url, status: "quality_check", progress: 30, loadingMessage: "Checking quality..." })
+    updateItem({ status: "quality_check", progress: 30, loadingMessage: "Checking image quality..." })
 
-    // 2. Quality Check
-    const qualityResponse = await checkImageQuality(url)
+    // 2. Quality Check (Batched)
+    const qualityResponse = await checkImageQuality(publicUrls)
     if (qualityResponse.success) {
       const { isHighQuality, issues } = qualityResponse.data
       if (!isHighQuality) {
-        // For batch, maybe we just mark it with issues but proceed? 
-        // Or pause? Let's just record issues and proceed for now to avoid blocking the whole batch.
         updateItem({ qualityIssues: issues })
       }
     }
 
-    updateItem({ status: "analyzing", progress: 50, loadingMessage: "Analyzing..." })
+    updateItem({ status: "analyzing", progress: 40, loadingMessage: "Analyzing vehicle..." })
 
     // 3. Analysis
     try {
@@ -190,8 +243,8 @@ export default function Home() {
 
       // Fitment
       if (analysisType === "fitment" || analysisType === "all") {
-        updateItem({ loadingMessage: "Analyzing fitment..." })
-        const fitmentRes = await analyzeVehicleImage(url)
+        updateItem({ loadingMessage: "Analyzing vehicle details..." })
+        const fitmentRes = await analyzeVehicleImage(publicUrls)
         if (fitmentRes.success) {
           result = fitmentRes.data
           const v = fitmentRes.data.primary
@@ -201,24 +254,23 @@ export default function Home() {
         }
       }
 
-      updateItem({ progress: 70 })
+      updateItem({ progress: 60 })
 
       // Products
       if (analysisType === "products" || analysisType === "all") {
         updateItem({ loadingMessage: "Detecting products..." })
-        const detectRes = await detectVisibleProducts(url, vehicleDetailsString)
+        const detectRes = await detectVisibleProducts(publicUrls, vehicleDetailsString)
         if (detectRes.success) {
           const types = detectRes.data
           for (let i = 0; i < types.length; i++) {
-            updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 70 + Math.floor((i / types.length) * 25) })
-            const details = await refineProductDetails(url, types[i], vehicleDetailsString)
+            updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 60 + Math.floor((i / types.length) * 35) })
+            const details = await refineProductDetails(publicUrls, types[i], vehicleDetailsString)
             detectedProducts.push(details)
             // Update intermediate products
             updateItem({ detectedProducts: [...detectedProducts] })
           }
         } else {
-          // If product detection fails, do we fail the whole thing? Maybe just log error.
-          updateItem({ error: detectRes.error }) // This might overwrite fitment success?
+          updateItem({ error: detectRes.error })
         }
       }
 

@@ -12,7 +12,7 @@ interface UploadZoneProps {
     onFilesSelect: (files: File[]) => void
     batchItems: BatchItem[]
     onRemove: (id: string) => void
-    onCrop: (id: string) => void
+    onCrop: (itemId: string, imageId: string) => void
     onClearAll: (e: React.MouseEvent) => void
     analysisState: AnalysisState
     selectedAnalysis: AnalysisSelection
@@ -81,7 +81,7 @@ export function UploadZone({
                         <div className="w-full">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-sm font-medium text-muted-foreground">
-                                    {batchItems.length} image{batchItems.length !== 1 ? "s" : ""} selected
+                                    {batchItems.length} vehicle{batchItems.length !== 1 ? "s" : ""} selected
                                 </h3>
                                 <Button
                                     variant="ghost"
@@ -96,65 +96,91 @@ export function UploadZone({
                                 </Button>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                 {batchItems.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="relative group aspect-square rounded-lg overflow-hidden border bg-background shadow-sm"
+                                        className="relative p-3 rounded-xl border bg-background shadow-sm hover:shadow-md transition-shadow"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <img
-                                            src={item.preview}
-                                            alt={item.file.name}
-                                            className="w-full h-full object-cover"
-                                        />
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs font-medium text-muted-foreground">Vehicle {item.id}</span>
+                                            {item.status === "pending" && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => onRemove(item.id)}
+                                                    title="Remove Vehicle"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </Button>
+                                            )}
+                                        </div>
 
-                                        {/* Status Overlay */}
-                                        {item.status !== "pending" && (
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                {item.status === "uploading" && <Loader className="w-6 h-6 text-white animate-spin" />}
-                                                {item.status === "analyzing" && <Loader className="w-6 h-6 text-white animate-spin" />}
-                                                {item.status === "complete" && <div className="bg-green-500/80 text-white text-xs px-2 py-1 rounded-full">Done</div>}
-                                                {item.status === "error" && <div className="bg-destructive/80 text-white text-xs px-2 py-1 rounded-full">Error</div>}
+                                        {/* Horizontal Image Scroll */}
+                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                                            {item.images.map((img) => (
+                                                <div key={img.id} className="relative group shrink-0 w-24 h-24 rounded-lg overflow-hidden border">
+                                                    <img
+                                                        src={img.preview}
+                                                        alt={img.file.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+
+                                                    {/* Image Actions */}
+                                                    {item.status === "pending" && (
+                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 text-white hover:text-white hover:bg-white/20"
+                                                                onClick={() => onCrop(item.id, img.id)}
+                                                            >
+                                                                <CropIcon className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Status Footer */}
+                                        <div className="mt-3 flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2">
+                                                {item.status === "uploading" && (
+                                                    <span className="text-blue-500 flex items-center gap-1">
+                                                        <Loader className="w-3 h-3 animate-spin" /> Uploading...
+                                                    </span>
+                                                )}
+                                                {item.status === "analyzing" && (
+                                                    <span className="text-purple-500 flex items-center gap-1">
+                                                        <Loader className="w-3 h-3 animate-spin" /> Analyzing...
+                                                    </span>
+                                                )}
+                                                {item.status === "complete" && (
+                                                    <span className="text-green-600 font-medium">Complete</span>
+                                                )}
+                                                {item.status === "error" && (
+                                                    <span className="text-destructive font-medium">Error</span>
+                                                )}
+                                                {item.status === "pending" && (
+                                                    <span className="text-muted-foreground">{item.images.length} images</span>
+                                                )}
                                             </div>
-                                        )}
-
-                                        {/* Actions Overlay (Hover) */}
-                                        <div className={cn(
-                                            "absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2",
-                                            item.status !== "pending" && "hidden" // Hide actions if processing
-                                        )}>
-                                            <Button
-                                                variant="secondary"
-                                                size="icon"
-                                                className="h-8 w-8 rounded-full"
-                                                onClick={() => onCrop(item.id)}
-                                                title="Crop / Focus"
-                                            >
-                                                <CropIcon className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                className="h-8 w-8 rounded-full"
-                                                onClick={() => onRemove(item.id)}
-                                                title="Remove"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
                                         </div>
                                     </div>
                                 ))}
 
                                 {/* Add more button */}
                                 <div
-                                    className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+                                    className="min-h-[160px] rounded-xl border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
                                     onClick={(e) => {
                                         // This click propagates to the dropzone root
                                     }}
                                 >
                                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                                    <span className="text-xs text-muted-foreground">Add more</span>
+                                    <span className="text-xs text-muted-foreground">Add another vehicle</span>
                                 </div>
                             </div>
                         </div>

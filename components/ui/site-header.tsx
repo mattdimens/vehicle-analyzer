@@ -9,6 +9,14 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronDown } from "lucide-react"
+
 import { useState } from 'react'
 
 export function SiteHeader() {
@@ -44,6 +52,22 @@ export function SiteHeader() {
           >
             Use Cases
           </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
+              By Product Category <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/wheels-rims">Wheels & Rims</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/truck-bed-covers">Truck Bed Covers</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/nerf-bars-running-boards">Running Boards</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Desktop CTA */}

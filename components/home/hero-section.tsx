@@ -3,7 +3,15 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
-export function HeroSection() {
+interface HeroSectionProps {
+    title?: string
+    description?: string
+}
+
+export function HeroSection({
+    title = "Find vehicle fitment, parts, & accessories from an image",
+    description = "Upload one or more images of a vehicle to instantly identify vehicle fitment and find compatible accessories. Support for multi-angle analysis and batch processing."
+}: HeroSectionProps) {
     return (
         <section
             id="hero"
@@ -11,10 +19,10 @@ export function HeroSection() {
         >
             <div className="max-w-4xl w-full flex flex-col items-center">
                 <h1 className="font-heading text-3xl md:text-5xl font-bold text-white">
-                    Find vehicle fitment, parts, & accessories from an image
+                    {title}
                 </h1>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-white/80">
-                    Upload one or more images of a vehicle to instantly identify vehicle fitment and find compatible accessories. Support for multi-angle analysis and batch processing.
+                    {description}
                 </p>
 
                 <div className="mt-8">

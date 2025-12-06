@@ -89,7 +89,10 @@ export interface DetectedProduct {
 // --- End of new interfaces ---
 
 // Function 2: Analyze Image (Updated)
-export async function analyzeVehicleImage(publicImageUrls: string[]): Promise<
+export async function analyzeVehicleImage(
+  publicImageUrls: string[],
+  promptContext?: string
+): Promise<
   | {
     success: true
     data: AnalysisResults // Use the new interface
@@ -99,9 +102,14 @@ export async function analyzeVehicleImage(publicImageUrls: string[]): Promise<
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
+    const contextInstruction = promptContext
+      ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.`
+      : ''
+
     // --- v2: This is the new, more detailed prompt ---
     const prompt =
       'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle shown in these images (they are different views of the same vehicle). ' +
+      contextInstruction +
       'Identify the following for the **primary, most likely vehicle**: ' +
       '1. `make` (string) ' +
       '2. `model` (string) ' +
@@ -179,7 +187,8 @@ export async function analyzeVehicleImage(publicImageUrls: string[]): Promise<
 // Function 3: Detect Visible Products (Stage 1)
 export async function detectVisibleProducts(
   publicImageUrls: string[],
-  vehicleDetails: string | null
+  vehicleDetails: string | null,
+  promptContext?: string
 ): Promise<
   | { success: true; data: string[] }
   | { success: false; error: string }
@@ -194,8 +203,14 @@ export async function detectVisibleProducts(
       ? `Given that this is a ${vehicleDetails}`
       : ''
 
+    const contextInstruction = promptContext
+      ? `Focus specifically on detecting products related to: ${promptContext}. `
+      : ''
+
     const prompt =
       `You are a vehicle product specialist. ${vehicleContext}, scan these images and detect all visible aftermarket or OEM products (like Tonneau Cover, Wheels, Tires, Hitch, Roof Rack, Bumper, Side Steps, etc.). ` +
+      contextInstruction +
+      'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
       'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
       'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
@@ -222,7 +237,8 @@ export async function detectVisibleProducts(
 export async function refineProductDetails(
   publicImageUrls: string[],
   productType: string,
-  vehicleDetails: string | null
+  vehicleDetails: string | null,
+  promptContext?: string
 ): Promise<DetectedProduct> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
@@ -232,8 +248,14 @@ export async function refineProductDetails(
 
     const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ''
 
+    const contextInstruction = promptContext
+      ? ` Consider that the user is specifically interested in ${promptContext}. Focus heavily on details relevant to this category.`
+      : ''
+
     const prompt =
       `I have detected a "${productType}" ${stage2Context}. Look very closely at this product in the provided images. ` +
+      contextInstruction +
+      'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
       'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
       'Also provide a confidence score (0-100) for your brand/model identification and a brief reasoning. ' +
       'Respond ONLY with a valid, minified JSON object: {"type": string, "brand": string, "model": string, "confidence": number, "reasoning": string}. ' +

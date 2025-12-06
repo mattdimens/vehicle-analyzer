@@ -14,7 +14,7 @@ export function HeroSection() {
                     Find vehicle fitment, parts, & accessories from an image
                 </h1>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-white/80">
-                    Upload an image of any vehicle to instantly identify vehicle fitment and find compatible accessories to inspire your next purchase.
+                    Upload one or more images of a vehicle to instantly identify vehicle fitment and find compatible accessories. Support for multi-angle analysis and batch processing.
                 </p>
 
                 <div className="mt-8">

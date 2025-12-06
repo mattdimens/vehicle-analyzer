@@ -112,7 +112,7 @@ export function UploadZone({
                                     : "Drag 'n' drop images, or click to select"}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                Upload multiple vehicle images for batch analysis
+                                Upload multiple images per vehicle for better accuracy. Drag and drop multiple files to create groups.
                             </p>
                         </div>
                     )}

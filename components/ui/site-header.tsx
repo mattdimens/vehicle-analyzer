@@ -102,6 +102,33 @@ export function SiteHeader() {
               >
                 Use Cases
               </Link>
+
+              <div className="py-2">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Categories</p>
+                <div className="flex flex-col gap-3 pl-4 border-l">
+                  <Link
+                    href="/wheels-rims"
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Wheels & Rims
+                  </Link>
+                  <Link
+                    href="/truck-bed-covers"
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Truck Bed Covers
+                  </Link>
+                  <Link
+                    href="/nerf-bars-running-boards"
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Running Boards
+                  </Link>
+                </div>
+              </div>
               <div className="pt-4">
                 <Button asChild className="w-full">
                   <Link href="#upload-zone" onClick={() => setIsOpen(false)}>

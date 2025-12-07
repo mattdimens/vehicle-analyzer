@@ -114,27 +114,33 @@ export async function analyzeVehicleImage(
     if (promptContext && (promptContext.toLowerCase().includes('truck bed cover') || promptContext.toLowerCase().includes('tonneau'))) {
       specificLogicInstruction = `
         For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Essential Bed Protection & Organization Add-ons" (Protection from below & Organization): Bed Mats/Rugs, Swing-out cases, BedSlides, Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
-        2. "Compatible Hauling Hardware & Rack Systems" (Compatibility Check): Bed Racks (Tonneau Compatible/T-Slot), Toolboxes (Under-the-rail/Low Profile).
-        3. "Alternative Truck Bed Enclosure Solutions" (Alternatives): Camper Shells, Soft Toppers, Canvas Tarps.
+        1. "Essential Bed Protection & Organization Add-ons": Bed Mats/Rugs (e.g. BedRug, Dee Zee), Swing-out cases (e.g. UnderCover SwingCase), BedSlides (e.g. BEDSLIDE S), Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
+        2. "Compatible Hauling Hardware & Rack Systems": Bed Racks (e.g. Yakima OverHaul, Thule), Toolboxes (e.g. UWS Low Profile).
+        3. "Alternative Truck Bed Enclosure Solutions": Camper Shells (e.g. LEER, ARE), Soft Toppers (e.g. Softopper), Canvas Tarps.
+
+        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;
     } else if (promptContext && (promptContext.toLowerCase().includes('wheels') || promptContext.toLowerCase().includes('rims') || promptContext.toLowerCase().includes('tires'))) {
       specificLogicInstruction = `
         For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Essential Tire Integration & Installation Hardware": Identify wheel specs (Diameter, Width, Bolt Pattern) and query these required install parts: Tires (match diameter), TPMS Sensors (315MHz vs 433MHz), Hub Centric Rings, Aftermarket Lug Nuts (Cone seat vs. Ball seat).
-        2. "Stance Modification & Clearance Components": If the identified wheel is "Off-Road" or has aggressive offset, suggest: Suspension (Leveling Kits, Lift Kits), Body (Fender Flares for poke), Spacing (Wheel Spacers).
-        3. "Cosmetic Overlay & Restoration Alternatives": If the current wheels imply budget/steelies, suggest: Wheel Skins, Hubcaps, Caliper Covers.
+        1. "Essential Tire Integration & Installation Hardware": Tires (e.g. Nitto Ridge Grappler, Falken Wildpeak), TPMS Sensors (e.g. Autel MX-Sensor), Hub Centric Rings (e.g. Gorilla), Aftermarket Lug Nuts (e.g. McGard, Gorilla).
+        2. "Stance Modification & Clearance Components": Suspension (e.g. Bilstein 5100, Rough Country Lift), Fender Flares (e.g. Bushwacker Pocket Style), Wheel Spacers (e.g. Bora, Spidertrax).
+        3. "Cosmetic Overlay & Restoration Alternatives": Wheel Skins (e.g. Coast to Coast), Hubcaps, Caliper Covers (e.g. MGP).
+
+        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;
     } else if (promptContext && (promptContext.toLowerCase().includes('nerf bars') || promptContext.toLowerCase().includes('running boards') || promptContext.toLowerCase().includes('side steps'))) {
       specificLogicInstruction = `
         For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Supplemental Access Points & Paint Protection" (Difficuty reaching high points): Rear Access (Retractable Bed Steps, Hitch Steps), Exterior Protection (No-Drill Mud Flaps, Door Sill Guards).
-        2. "Heavy-Duty Frame Protection & Lighting Integration" (Off-Road cues): Armor (Rock Sliders - Frame-Mounted, Steel), Tech (Universal LED Running Board Light Strips, Puddle Lights), Fitment (Body Lift Gap Guards if lifted).
-        3. "Automated & Compact Step Alternatives" (Style/Luxury vs Sport): High-End (Power Retractable Steps e.g. AMP Research), Minimalist (Cast Aluminum Hoop Steps, Individual Drop Steps).
+        1. "Supplemental Access Points & Paint Protection": Rear Access (e.g. AMP Research BedStep), Hitch Steps (e.g. WeatherTech BumpStep), Mud Flaps (e.g. WeatherTech No-Drill), Door Sill Guards (e.g. AVS).
+        2. "Heavy-Duty Frame Protection & Lighting Integration": Rock Sliders (e.g. N-Fab RKR, Tyger Auto), LED Light Strips (e.g. OPT7), Gap Guards (e.g. Performance Accessories).
+        3. "Automated & Compact Step Alternatives": Power Steps (e.g. AMP Research PowerStep), Hoop Steps (e.g. Bully, N-Fab), Drop Steps (e.g. Westin HDX).
+
+        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;
@@ -158,7 +164,7 @@ export async function analyzeVehicleImage(
       'Also identify: ' +
       '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
       '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
-      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. IF tiered recommendations are requested, keep this as a fallback summary list). ' +
+      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. ALWAYS format each string as "Product Name (e.g. Example 1, Example 2)". IF tiered recommendations are requested, keep this as a fallback summary list). ' +
       specificLogicInstruction +
       'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
       '{' +

@@ -252,36 +252,77 @@ export function ResultsDisplay({
                                 <h2 className="font-heading text-2xl font-bold mb-6">
                                     Popular & Recommended Products for Your {results.primary.year} {results.primary.make} {results.primary.model}
                                 </h2>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    {results.recommendedAccessories.map((accessory, index) => {
-                                        const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-                                        const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
-                                            vehicleDetails
-                                        )}+${encodeURIComponent(accessory)}`
 
-                                        return (
-                                            <Card key={index} className="transition-all hover:shadow-md">
-                                                <CardHeader>
-                                                    <CardTitle className="text-base mb-3">{accessory}</CardTitle>
-                                                    <Button
-                                                        asChild
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="w-full"
-                                                    >
-                                                        <a
-                                                            href={addAmazonAffiliateTag(amazonSearchUrl)}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                {results.tieredRecommendations && results.tieredRecommendations.length > 0 ? (
+                                    <div className="space-y-8">
+                                        {results.tieredRecommendations.map((tier, tIdx) => (
+                                            <div key={tIdx}>
+                                                <h3 className="text-lg font-semibold mb-4 text-primary border-b pb-2">{tier.title}</h3>
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                                    {tier.items.map((accessory, index) => {
+                                                        const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
+                                                        const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
+                                                            vehicleDetails
+                                                        )}+${encodeURIComponent(accessory)}`
+
+                                                        return (
+                                                            <Card key={index} className="transition-all hover:shadow-md">
+                                                                <CardHeader>
+                                                                    <CardTitle className="text-base mb-3">{accessory}</CardTitle>
+                                                                    <Button
+                                                                        asChild
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="w-full"
+                                                                    >
+                                                                        <a
+                                                                            href={addAmazonAffiliateTag(amazonSearchUrl)}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                        >
+                                                                            Search on Amazon
+                                                                        </a>
+                                                                    </Button>
+                                                                </CardHeader>
+                                                            </Card>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {results.recommendedAccessories.map((accessory, index) => {
+                                            const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
+                                            const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
+                                                vehicleDetails
+                                            )}+${encodeURIComponent(accessory)}`
+
+                                            return (
+                                                <Card key={index} className="transition-all hover:shadow-md">
+                                                    <CardHeader>
+                                                        <CardTitle className="text-base mb-3">{accessory}</CardTitle>
+                                                        <Button
+                                                            asChild
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="w-full"
                                                         >
-                                                            Search on Amazon
-                                                        </a>
-                                                    </Button>
-                                                </CardHeader>
-                                            </Card>
-                                        )
-                                    })}
-                                </div>
+                                                            <a
+                                                                href={addAmazonAffiliateTag(amazonSearchUrl)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                Search on Amazon
+                                                            </a>
+                                                        </Button>
+                                                    </CardHeader>
+                                                </Card>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

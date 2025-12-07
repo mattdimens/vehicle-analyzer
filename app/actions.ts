@@ -77,6 +77,10 @@ export interface AnalysisResults {
   engineDetails: string | null
   otherPossibilities: OtherPossibility[]
   recommendedAccessories: string[]
+  tieredRecommendations?: {
+    title: string
+    items: string[]
+  }[]
 }
 
 export interface DetectedProduct {
@@ -106,6 +110,18 @@ export async function analyzeVehicleImage(
       ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.`
       : ''
 
+    let specificLogicInstruction = '';
+    if (promptContext && (promptContext.toLowerCase().includes('truck bed cover') || promptContext.toLowerCase().includes('tonneau'))) {
+      specificLogicInstruction = `
+        For the "recommendedAccessories", follow this STRICT hierarchy:
+        1. "Completer Items" (Protection from below & Organization): Bed Mats/Rugs, Swing-out cases, BedSlides, Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
+        2. "Structural Items" (Compatibility Check): Bed Racks (Tonneau Compatible/T-Slot), Toolboxes (Under-the-rail/Low Profile).
+        3. "Substitute Options" (Alternatives): Camper Shells, Soft Toppers, Canvas Tarps.
+        
+        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
+      `;
+    }
+
     // --- v2: This is the new, more detailed prompt ---
     const prompt =
       'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle shown in these images (they are different views of the same vehicle). ' +
@@ -124,7 +140,8 @@ export async function analyzeVehicleImage(
       'Also identify: ' +
       '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
       '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
-      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings) ' +
+      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. IF tiered recommendations are requested, keep this as a fallback summary list). ' +
+      specificLogicInstruction +
       'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
       '{' +
       '"primary": {' +
@@ -135,7 +152,8 @@ export async function analyzeVehicleImage(
       '"otherPossibilities": [' +
       '{ "vehicle": string, "yearRange": string, "trim": string, "confidence": number }' +
       '], ' +
-      '"recommendedAccessories": [string]' +
+      '"recommendedAccessories": [string], ' +
+      '"tieredRecommendations": [{ "title": string, "items": [string] }] (OPTIONAL, include only if instructed)' +
       '}'
 
     const imageParts = await Promise.all(
@@ -174,6 +192,7 @@ export async function analyzeVehicleImage(
         engineDetails: analysis.engineDetails,
         otherPossibilities: analysis.otherPossibilities,
         recommendedAccessories: analysis.recommendedAccessories,
+        tieredRecommendations: analysis.tieredRecommendations,
       },
     }
   } catch (err) {

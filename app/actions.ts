@@ -120,6 +120,15 @@ export async function analyzeVehicleImage(
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;
+    } else if (promptContext && (promptContext.toLowerCase().includes('wheels') || promptContext.toLowerCase().includes('rims') || promptContext.toLowerCase().includes('tires'))) {
+      specificLogicInstruction = `
+        For the "recommendedAccessories", follow this STRICT hierarchy:
+        1. "Essential Tire Integration & Installation Hardware": Identify wheel specs (Diameter, Width, Bolt Pattern) and query these required install parts: Tires (match diameter), TPMS Sensors (315MHz vs 433MHz), Hub Centric Rings, Aftermarket Lug Nuts (Cone seat vs. Ball seat).
+        2. "Stance Modification & Clearance Components": If the identified wheel is "Off-Road" or has aggressive offset, suggest: Suspension (Leveling Kits, Lift Kits), Body (Fender Flares for poke), Spacing (Wheel Spacers).
+        3. "Cosmetic Overlay & Restoration Alternatives": If the current wheels imply budget/steelies, suggest: Wheel Skins, Hubcaps, Caliper Covers.
+        
+        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
+      `;
     }
 
     // --- v2: This is the new, more detailed prompt ---

@@ -41,6 +41,19 @@ export function ResultsDisplay({
         return null
     }
 
+    // Helper to parse "Product Name (Context Description)"
+    const parseRecommendation = (text: string) => {
+        // Match the last occurrence of content in parentheses
+        const match = text.match(/^(.*?)\s*\(([^)]+)\)$/)
+        if (match) {
+            return {
+                name: match[1].trim(),
+                description: match[2].trim()
+            }
+        }
+        return { name: text, description: null }
+    }
+
     return (
         <section id="results" className="w-full bg-card py-24">
             <div className="container max-w-4xl">
@@ -265,15 +278,23 @@ export function ResultsDisplay({
                                                 <h3 className="text-lg font-semibold mb-4 text-primary border-b pb-2">{tier.title}</h3>
                                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                                     {tier.items.map((accessory, index) => {
+                                                        const { name, description } = parseRecommendation(accessory)
                                                         const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
                                                         const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
                                                             vehicleDetails
-                                                        )}+${encodeURIComponent(accessory)}`
+                                                        )}+${encodeURIComponent(name)}`
 
                                                         return (
-                                                            <Card key={index} className="transition-all hover:shadow-md">
-                                                                <CardHeader>
-                                                                    <CardTitle className="text-base mb-3">{accessory}</CardTitle>
+                                                            <Card key={index} className="transition-all hover:shadow-md flex flex-col h-full">
+                                                                <CardHeader className="flex-1">
+                                                                    <CardTitle className="text-base mb-2">{name}</CardTitle>
+                                                                    {description && (
+                                                                        <p className="text-sm text-muted-foreground mb-4 leading-snug">
+                                                                            {description}
+                                                                        </p>
+                                                                    )}
+                                                                </CardHeader>
+                                                                <CardContent className="pt-0 mt-auto">
                                                                     <Button
                                                                         asChild
                                                                         variant="outline"
@@ -288,7 +309,7 @@ export function ResultsDisplay({
                                                                             Search on Amazon
                                                                         </a>
                                                                     </Button>
-                                                                </CardHeader>
+                                                                </CardContent>
                                                             </Card>
                                                         )
                                                     })}
@@ -299,15 +320,23 @@ export function ResultsDisplay({
                                 ) : (
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                         {results.recommendedAccessories.map((accessory, index) => {
+                                            const { name, description } = parseRecommendation(accessory)
                                             const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
                                             const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
                                                 vehicleDetails
-                                            )}+${encodeURIComponent(accessory)}`
+                                            )}+${encodeURIComponent(name)}`
 
                                             return (
-                                                <Card key={index} className="transition-all hover:shadow-md">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-base mb-3">{accessory}</CardTitle>
+                                                <Card key={index} className="transition-all hover:shadow-md flex flex-col h-full">
+                                                    <CardHeader className="flex-1">
+                                                        <CardTitle className="text-base mb-2">{name}</CardTitle>
+                                                        {description && (
+                                                            <p className="text-sm text-muted-foreground mb-4 leading-snug">
+                                                                {description}
+                                                            </p>
+                                                        )}
+                                                    </CardHeader>
+                                                    <CardContent className="pt-0 mt-auto">
                                                         <Button
                                                             asChild
                                                             variant="outline"
@@ -322,7 +351,7 @@ export function ResultsDisplay({
                                                                 Search on Amazon
                                                             </a>
                                                         </Button>
-                                                    </CardHeader>
+                                                    </CardContent>
                                                 </Card>
                                             )
                                         })}

@@ -114,9 +114,9 @@ export async function analyzeVehicleImage(
     if (promptContext && (promptContext.toLowerCase().includes('truck bed cover') || promptContext.toLowerCase().includes('tonneau'))) {
       specificLogicInstruction = `
         For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Completer Items" (Protection from below & Organization): Bed Mats/Rugs, Swing-out cases, BedSlides, Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
-        2. "Structural Items" (Compatibility Check): Bed Racks (Tonneau Compatible/T-Slot), Toolboxes (Under-the-rail/Low Profile).
-        3. "Substitute Options" (Alternatives): Camper Shells, Soft Toppers, Canvas Tarps.
+        1. "Essential Bed Protection & Organization Add-ons" (Protection from below & Organization): Bed Mats/Rugs, Swing-out cases, BedSlides, Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
+        2. "Compatible Hauling Hardware & Rack Systems" (Compatibility Check): Bed Racks (Tonneau Compatible/T-Slot), Toolboxes (Under-the-rail/Low Profile).
+        3. "Alternative Truck Bed Enclosure Solutions" (Alternatives): Camper Shells, Soft Toppers, Canvas Tarps.
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;

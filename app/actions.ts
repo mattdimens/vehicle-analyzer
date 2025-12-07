@@ -129,6 +129,15 @@ export async function analyzeVehicleImage(
         
         INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
       `;
+    } else if (promptContext && (promptContext.toLowerCase().includes('nerf bars') || promptContext.toLowerCase().includes('running boards') || promptContext.toLowerCase().includes('side steps'))) {
+      specificLogicInstruction = `
+        For the "recommendedAccessories", follow this STRICT hierarchy:
+        1. "Supplemental Access Points & Paint Protection" (Difficuty reaching high points): Rear Access (Retractable Bed Steps, Hitch Steps), Exterior Protection (No-Drill Mud Flaps, Door Sill Guards).
+        2. "Heavy-Duty Frame Protection & Lighting Integration" (Off-Road cues): Armor (Rock Sliders - Frame-Mounted, Steel), Tech (Universal LED Running Board Light Strips, Puddle Lights), Fitment (Body Lift Gap Guards if lifted).
+        3. "Automated & Compact Step Alternatives" (Style/Luxury vs Sport): High-End (Power Retractable Steps e.g. AMP Research), Minimalist (Cast Aluminum Hoop Steps, Individual Drop Steps).
+        
+        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
+      `;
     }
 
     // --- v2: This is the new, more detailed prompt ---

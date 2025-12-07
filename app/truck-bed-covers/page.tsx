@@ -8,6 +8,7 @@ export default function TruckBedCoversPage() {
             title="Truck Bed Cover Analyzer"
             description="Identify your truck's exact bed length and style from a photo. Find the perfect tonneau cover, bed liner, or cap that fits your specific vehicle."
             promptContext="truck bed covers, tonneau covers (hard, soft, roll-up, folding), bed liners, and bed caps"
+            detectedProductsTitle="Detected Tonneau Cover"
         />
     )
 }

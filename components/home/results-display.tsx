@@ -17,6 +17,7 @@ interface ResultsDisplayProps {
     productError: string | null
     loadingMessage?: string | null
     progress: number
+    detectedProductsTitle?: string
 }
 
 export function ResultsDisplay({
@@ -26,6 +27,7 @@ export function ResultsDisplay({
     productError,
     loadingMessage,
     progress,
+    detectedProductsTitle = "Detected Products",
 }: ResultsDisplayProps) {
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
@@ -75,9 +77,12 @@ export function ResultsDisplay({
                         {/* Fitment Results */}
                         {results && (
                             <div className="flex flex-col text-left">
+                                <h2 className="font-heading text-2xl font-bold mb-4">
+                                    Vehicle Fitment Breakdown
+                                </h2>
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Primary Vehicle Identification</CardTitle>
+
                                     </CardHeader>
                                     <CardContent>
                                         {/* Grid for primary details */}
@@ -165,7 +170,7 @@ export function ResultsDisplay({
                         {detectedProducts && (
                             <div className="flex flex-col text-left">
                                 <h2 className="font-heading text-2xl font-bold mb-4">
-                                    Detected Products
+                                    {detectedProductsTitle}
                                 </h2>
                                 <div className="overflow-x-auto rounded-lg border">
                                     <table className="w-full text-sm text-left">

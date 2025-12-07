@@ -30,9 +30,10 @@ interface VehicleAnalyzerProps {
     description?: string
     promptContext?: string
     showCategories?: boolean
+    detectedProductsTitle?: string
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>("default")
@@ -447,7 +448,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {/* Batch Results Display */}
                 {batchItems.length > 0 && (
                     <div className="container mx-auto px-4 py-8">
-                        <BatchResults items={batchItems} />
+                        <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} />
                     </div>
                 )}
 

@@ -10,12 +10,13 @@ import type { BatchItem } from "@/lib/types"
 
 interface BatchResultsProps {
     items: BatchItem[]
+    detectedProductsTitle?: string
 }
 
 /**
  * BatchResults component displays analysis results for multiple uploaded images
  */
-export function BatchResults({ items }: BatchResultsProps) {
+export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps) {
     // Track expanded items by ID
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
@@ -145,6 +146,7 @@ export function BatchResults({ items }: BatchResultsProps) {
                                             productError={null} // Handled in error prop mostly
                                             loadingMessage={null}
                                             progress={100}
+                                            detectedProductsTitle={detectedProductsTitle}
                                         />
                                     ) : isError ? (
                                         <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">

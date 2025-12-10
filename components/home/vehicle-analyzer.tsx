@@ -423,7 +423,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     return (
         <div className="flex min-h-screen flex-col">
             <main className="flex-1">
-                <div className="bg-[#075056]">
+                <div className="bg-[#003223]">
                     <HeroSection title={title} description={description} />
 
                     <div id="upload-zone" className="scroll-mt-20">

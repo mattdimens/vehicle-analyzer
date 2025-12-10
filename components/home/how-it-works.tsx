@@ -2,7 +2,7 @@ import { Upload, Zap, Table } from "lucide-react"
 
 export function HowItWorks() {
     return (
-        <section id="how-it-works" className="w-full bg-[#E4EEF0] py-24">
+        <section id="how-it-works" className="w-full bg-[#F5EBE1] py-24">
             <div className="container max-w-6xl">
                 <div className="mb-20 text-center">
                     <h2 className="font-heading text-5xl font-bold text-black">

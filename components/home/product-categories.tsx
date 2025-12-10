@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 
 export function ProductCategories() {
     return (
-        <section id="product-categories" className="w-full bg-white py-24">
+        <section id="product-categories" className="w-full bg-[#F5EBE1] py-24">
             <div className="container max-w-6xl">
                 <div className="mb-16 text-center">
                     <h2 className="font-heading text-4xl font-bold text-black md:text-5xl">

@@ -172,6 +172,10 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                                 <div className="font-semibold mb-1">Analysis Failed</div>
                                                 {item.error}
                                             </div>
+                                        ) : item.status === "pending" ? (
+                                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/60">
+                                                <p className="text-sm italic">Waiting...</p>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/60">
                                                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/40 mb-3" />

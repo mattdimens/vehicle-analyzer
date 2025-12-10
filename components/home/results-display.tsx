@@ -232,7 +232,7 @@ export function ResultsDisplay({
                                                             asChild
                                                             variant="outline"
                                                             size="sm"
-                                                            className="w-full md:w-auto h-8 px-4 rounded-full hover:bg-muted border-primary/20"
+                                                            className="w-full md:w-auto h-8 px-4 rounded-full hover:bg-zinc-800 hover:text-white border-primary/20"
                                                         >
                                                             <a
                                                                 href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}

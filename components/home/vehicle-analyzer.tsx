@@ -399,6 +399,13 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         return currentItem
     }
 
+    const handleReset = () => {
+        setBatchItems([])
+        setAnalysisState("idle")
+        setSelectedAnalysis("default")
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+
     const handleStartBatch = async () => {
         setAnalysisState("processing")
 
@@ -441,6 +448,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             selectedAnalysis={selectedAnalysis}
                             onAnalysisChange={setSelectedAnalysis}
                             onStart={handleStartBatch}
+                            onReset={handleReset}
                         />
                     </div>
                 </div>

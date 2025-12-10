@@ -25,6 +25,7 @@ interface UploadZoneProps {
     selectedAnalysis: AnalysisSelection
     onAnalysisChange: (value: AnalysisSelection) => void
     onStart: () => void
+    onReset?: () => void
 }
 
 export function UploadZone({
@@ -41,9 +42,23 @@ export function UploadZone({
     selectedAnalysis,
     onAnalysisChange,
     onStart,
+    onReset,
 }: UploadZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
+
+    // ... (rest of the component logic remains unchanged until the button)
+
+    // Helper to keep the replacement concise, we assume the middle part is unchanged.
+    // I will target the end of component to update the button.
+    // WAIT, I need to inject onReset into props destructuring at the top.
+    // This tool call only allows contiguous replacement.
+    // I will do two separate edits or one large edit if I can target correctly.
+    // Let's do a multi_replace if I need to touch top and bottom.
+    // Actually, I can use multi_replace_file_content.
+
+    // Changing strategy to multi_replace.
+
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData("application/vehicle-item-id", id)
@@ -305,11 +320,13 @@ export function UploadZone({
                     <div className="hidden sm:block flex-1"></div>
 
                     <Button
-                        onClick={onStart}
+                        onClick={analysisState === "complete" ? onReset : onStart}
                         disabled={
-                            !hasItems ||
-                            analysisState !== "idle" ||
-                            selectedAnalysis === "default"
+                            analysisState !== "complete" && (
+                                !hasItems ||
+                                analysisState !== "idle" ||
+                                selectedAnalysis === "default"
+                            )
                         }
                         size="default"
                         className="w-full sm:w-auto"
@@ -317,6 +334,11 @@ export function UploadZone({
                         {analysisState === "idle" ? (
                             <>
                                 {batchItems.length >= 2 ? "Start Batch Analysis" : "Start Analysis"}
+                                <Send className="w-4 h-4 ml-2" />
+                            </>
+                        ) : analysisState === "complete" ? (
+                            <>
+                                Start New Analysis
                                 <Send className="w-4 h-4 ml-2" />
                             </>
                         ) : (

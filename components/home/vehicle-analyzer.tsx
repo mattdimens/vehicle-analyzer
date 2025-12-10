@@ -457,7 +457,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 <HowItWorks />
 
                 {/* Visual Separator */}
-                {showCategories && <div className="w-full h-px bg-black" />}
+                {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
 
                 {showCategories && <ProductCategories />}
                 <UseCases />

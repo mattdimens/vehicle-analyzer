@@ -208,15 +208,23 @@ export function ResultsDisplay({
                                                         {item.type}
                                                     </div>
 
-                                                    <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
-                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
-                                                        {!isUnknownBrand ? item.brand : <span className="text-muted-foreground italic">Unknown</span>}
-                                                    </div>
+                                                    {(isUnknownBrand || isUnknownModel) ? (
+                                                        <div className="col-span-1 md:col-span-5 text-sm text-muted-foreground italic">
+                                                            We think there are {item.type} on your vehicle but we couldn’t identify the Brand and/or Model
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
+                                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
+                                                                {item.brand}
+                                                            </div>
 
-                                                    <div className="col-span-1 md:col-span-3 text-sm text-foreground/80">
-                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
-                                                        {!isUnknownModel ? item.model : <span className="text-muted-foreground italic">Unknown</span>}
-                                                    </div>
+                                                            <div className="col-span-1 md:col-span-3 text-sm text-foreground/80">
+                                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
+                                                                {item.model}
+                                                            </div>
+                                                        </>
+                                                    )}
 
                                                     <div className="col-span-1 md:col-span-2 flex items-center gap-2">
                                                         <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>

@@ -232,14 +232,20 @@ export function ResultsDisplay({
                                                             asChild
                                                             variant="outline"
                                                             size="sm"
-                                                            className="w-full md:w-auto gap-1.5 h-8 text-xs font-medium rounded-full hover:bg-primary hover:text-primary-foreground border-primary/20"
+                                                            className="w-full md:w-auto h-8 px-4 rounded-full hover:bg-muted border-primary/20"
                                                         >
                                                             <a
                                                                 href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
+                                                                className="flex items-center justify-center"
                                                             >
-                                                                Search
+                                                                <span className="sr-only">Search on Amazon</span>
+                                                                <img
+                                                                    src="/amazon-logo.png"
+                                                                    alt="Amazon"
+                                                                    className="h-4 w-auto object-contain mt-1"
+                                                                />
                                                             </a>
                                                         </Button>
                                                     </div>
@@ -292,8 +298,14 @@ export function ResultsDisplay({
                                                                             href={addAmazonAffiliateTag(amazonSearchUrl)}
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
+                                                                            className="flex items-center justify-center gap-2"
                                                                         >
-                                                                            Search on Amazon
+                                                                            <span className="text-xs font-medium text-muted-foreground">Buy on</span>
+                                                                            <img
+                                                                                src="/amazon-logo.png"
+                                                                                alt="Amazon"
+                                                                                className="h-5 w-auto object-contain mt-1"
+                                                                            />
                                                                         </a>
                                                                     </Button>
                                                                 </CardContent>
@@ -334,8 +346,14 @@ export function ResultsDisplay({
                                                                 href={addAmazonAffiliateTag(amazonSearchUrl)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
+                                                                className="flex items-center justify-center gap-2"
                                                             >
-                                                                Search on Amazon
+                                                                <span className="text-xs font-medium text-muted-foreground">Buy on</span>
+                                                                <img
+                                                                    src="/amazon-logo.png"
+                                                                    alt="Amazon"
+                                                                    className="h-5 w-auto object-contain mt-1"
+                                                                />
                                                             </a>
                                                         </Button>
                                                     </CardContent>

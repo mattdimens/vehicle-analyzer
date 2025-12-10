@@ -148,8 +148,21 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                     </div>
 
                                     {/* Col 4: Action */}
-                                    <div className="hidden md:flex col-span-1 justify-end">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                                    <div className="col-span-1 md:col-span-1 flex justify-end w-full md:w-auto mt-4 md:mt-0">
+                                        {/* Mobile Button */}
+                                        <Button
+                                            variant="outline"
+                                            className="w-full md:hidden"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                toggleExpand(item.id)
+                                            }}
+                                        >
+                                            {isExpanded ? "Hide Results" : "See Results"}
+                                        </Button>
+
+                                        {/* Desktop Chevron */}
+                                        <Button variant="ghost" size="icon" className="hidden md:flex h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
                                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </Button>
                                     </div>

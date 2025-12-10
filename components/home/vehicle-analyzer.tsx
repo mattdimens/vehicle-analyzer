@@ -447,9 +447,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {/* Batch Results Display */}
                 {batchItems.length > 0 && (
-                    <div className="container mx-auto px-4 py-8">
-                        <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} />
-                    </div>
+                    <section className="bg-[#8CC850] w-full py-12">
+                        <div className="container mx-auto px-4">
+                            <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} />
+                        </div>
+                    </section>
                 )}
 
                 <HowItWorks />

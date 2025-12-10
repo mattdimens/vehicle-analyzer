@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://visualfitment.com/sitemap_index.xml
+Sitemap: https://visualfitment.com/sitemap.xml

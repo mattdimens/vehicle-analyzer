@@ -52,115 +52,144 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                     const isProcessing = ["uploading", "quality_check", "analyzing"].includes(item.status)
                     const primaryImage = item.images[0]
                     const title = primaryImage ? primaryImage.file.name : "Unknown Vehicle"
-                    const otherCount = Math.max(0, item.images.length - 1)
+
+                    // Format file size (rough estimate)
+                    const size = primaryImage ? (primaryImage.file.size / (1024 * 1024)).toFixed(1) + " MB" : ""
 
                     return (
                         <div
                             key={item.id}
                             className={cn(
-                                "rounded-lg border bg-card text-card-foreground shadow-sm transition-all",
-                                isExpanded ? "ring-1 ring-primary/20" : ""
+                                "group rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md",
+                                isExpanded ? "ring-2 ring-primary/10 border-primary/20" : "border-border/50"
                             )}
                         >
-                            {/* Header / Summary Row */}
-                            <div
-                                className="p-4 flex items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg"
-                                onClick={() => toggleExpand(item.id)}
-                            >
+                            {/* Main Card Content */}
+                            <div className="p-5 flex flex-col sm:flex-row gap-5 items-start sm:items-center">
                                 {/* Thumbnail */}
-                                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
-                                    {primaryImage && (
+                                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-muted shadow-sm">
+                                    {primaryImage ? (
                                         <img
                                             src={primaryImage.preview}
                                             alt={title}
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                         />
-                                    )}
-                                    {otherCount > 0 && (
-                                        <div className="absolute  bottom-0 right-0 bg-black/60 text-white text-[10px] px-1 rounded-tl-md">
-                                            +{otherCount}
+                                    ) : (
+                                        <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                            <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-semibold truncate">
-                                            {title} {otherCount > 0 && <span className="text-muted-foreground font-normal text-sm">(+{otherCount} views)</span>}
+                                {/* Content Info */}
+                                <div className="flex-1 w-full min-w-0 grid gap-2">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <h3 className="font-semibold text-base truncate pr-4 text-foreground/90">
+                                            {title}
                                         </h3>
-                                        {isComplete && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                                        {isError && <AlertCircle className="h-4 w-4 text-destructive" />}
+
+                                        {/* Status Badge / Indicator */}
+                                        <div className="shrink-0">
+                                            {isComplete ? (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 text-xs font-medium">
+                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    <span>Completed</span>
+                                                </div>
+                                            ) : isError ? (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 text-xs font-medium">
+                                                    <AlertCircle className="h-3.5 w-3.5" />
+                                                    <span>Failed</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm font-medium text-muted-foreground tabular-nums">
+                                                    {item.progress}%
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Status Text or Progress */}
-                                    {isProcessing ? (
-                                        <div className="space-y-1.5 max-w-xs">
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>{item.loadingMessage || "Processing..."}</span>
-                                                <span>{item.progress}%</span>
+                                    {/* Progress Bar & Subtext */}
+                                    <div className="space-y-1.5">
+                                        {isProcessing ? (
+                                            <>
+                                                <Progress
+                                                    value={item.progress}
+                                                    className="h-2 w-full bg-muted/50"
+                                                // Add custom indicator class via CSS or style if needed, but default is fine usually.
+                                                // For "orange" feel like image, we can override css variables or use inline style 
+                                                // but stick to system design first (usually primary color).
+                                                />
+                                                <div className="flex justify-between items-center text-xs text-muted-foreground/80">
+                                                    <span>{item.loadingMessage || "Processing..."}</span>
+                                                    <span>{size}</span>
+                                                </div>
+                                            </>
+                                        ) : isComplete ? (
+                                            <div className="h-2 w-full rounded-full bg-green-500/20">
+                                                <div className="h-full w-full rounded-full bg-green-500" />
                                             </div>
-                                            <Progress value={item.progress} className="h-1.5" />
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">
-                                            {isComplete
-                                                ? (item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Complete")
-                                                : isError
-                                                    ? item.error
-                                                    : "Ready to start"}
-                                        </p>
-                                    )}
+                                        ) : isError ? (
+                                            <div className="h-2 w-full rounded-full bg-destructive/20">
+                                                <div className="h-full w-full rounded-full bg-destructive" />
+                                            </div>
+                                        ) : (
+                                            <div className="h-2 w-full rounded-full bg-muted" />
+                                        )}
+
+                                        {!isProcessing && (
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground/80">
+                                                <span>
+                                                    {isComplete
+                                                        ? (item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Ready")
+                                                        : isError ? item.error : "Waiting to start..."}
+                                                </span>
+                                                <span>{size}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Expand Button */}
-                                <Button variant="ghost" size="icon" className="shrink-0">
-                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                </Button>
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 sm:ml-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+                                        onClick={() => toggleExpand(item.id)}
+                                    >
+                                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                    {/* Could add a 'Remove' X button here too if requested later */}
+                                </div>
                             </div>
 
-                            {/* Expanded Content */}
+                            {/* Expanded Content (Results Only) */}
                             {isExpanded && (
-                                <div className="border-t p-4 bg-muted/10">
-                                    {/* Source Images Grid */}
-                                    <div className="mb-6">
-                                        <h4 className="text-sm font-medium mb-3 text-muted-foreground">Source Images</h4>
-                                        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
-                                            {item.images.map((img, idx) => (
-                                                <div key={img.id} className="relative h-32 w-32 shrink-0 rounded-lg overflow-hidden border shadow-sm">
-                                                    <img
-                                                        src={img.preview}
-                                                        alt={`View ${idx + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
+                                <div className="border-t border-border/50 bg-muted/5 p-6 animate-in slide-in-from-top-2 duration-200">
                                     {isComplete ? (
                                         <ResultsDisplay
                                             results={item.result}
                                             detectedProducts={item.detectedProducts}
                                             error={item.error}
-                                            productError={null} // Handled in error prop mostly
+                                            productError={null}
                                             loadingMessage={null}
                                             progress={100}
                                             detectedProductsTitle={detectedProductsTitle}
                                         />
                                     ) : isError ? (
-                                        <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
-                                            <strong>Error:</strong> {item.error}
+                                        <div className="p-4 rounded-lg bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-200 border border-red-200 dark:border-red-900/50 text-sm">
+                                            <strong>Analysis Failed:</strong> {item.error}
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/60">
                                             {isProcessing ? (
-                                                <>
-                                                    <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                                                    <p>{item.loadingMessage}</p>
-                                                </>
+                                                <div className="text-center space-y-3">
+                                                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                                                    <p className="text-sm font-medium text-foreground">{item.loadingMessage}</p>
+                                                    <p className="text-xs">Please wait while our AI models analyze your vehicle...</p>
+                                                </div>
                                             ) : (
-                                                <p>Waiting to start analysis...</p>
+                                                <p>Ready to analyze</p>
                                             )}
                                         </div>
                                     )}

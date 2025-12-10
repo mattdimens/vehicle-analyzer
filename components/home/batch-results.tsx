@@ -44,6 +44,14 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                 </div>
             </div>
 
+            {/* AI Disclaimer */}
+            <div className="mx-2 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900 leading-relaxed">
+                    <span className="font-semibold">Disclaimer:</span> AI-generated results may vary in accuracy. We recommend verifying all vehicle details and product compatibility before making a purchase.
+                </p>
+            </div>
+
             <div className="rounded-[2rem] border border-border/40 bg-white shadow-sm overflow-hidden">
                 {/* Table Header */}
                 <div className="hidden md:grid grid-cols-12 gap-6 px-8 py-4 border-b border-border/40 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -150,7 +158,7 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                     {/* Col 4: Action */}
                                     <div className="col-span-1 md:col-span-1 flex justify-end w-full md:w-auto mt-4 md:mt-0">
                                         <Button
-                                            className="w-full md:w-auto bg-[#BC544B] text-white hover:bg-[#BC544B]/90 border-none"
+                                            className="w-full md:w-auto bg-transparent text-[#003223] border border-[#003223] hover:bg-[#003223] hover:text-white"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 toggleExpand(item.id)

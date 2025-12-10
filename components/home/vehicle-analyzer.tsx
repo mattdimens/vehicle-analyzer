@@ -410,10 +410,12 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         setAnalysisState("processing")
 
         // Scroll to results
-        const resultsElement = document.getElementById("results")
-        if (resultsElement) {
-            resultsElement.scrollIntoView({ behavior: "smooth" })
-        }
+        setTimeout(() => {
+            const resultsElement = document.getElementById("analysis-results")
+            if (resultsElement) {
+                resultsElement.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+        }, 100)
 
         // Process sequentially to avoid rate limits? Or parallel?
         // Let's do sequential for now to be safe with API limits.
@@ -455,7 +457,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {/* Batch Results Display */}
                 {batchItems.length > 0 && (
-                    <section className="bg-white w-full py-12">
+                    <section id="analysis-results" className="bg-white w-full py-12">
                         <div className="container mx-auto px-4">
                             <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} />
                         </div>

@@ -2,7 +2,7 @@ import { ShoppingBag, Camera, Wrench, Sparkles } from "lucide-react"
 
 export function UseCases() {
     return (
-        <section id="use-cases" className="w-full py-24 bg-[#F5EBE1]">
+        <section id="use-cases" className="w-full py-24 bg-white">
             <div className="container max-w-6xl">
                 <div className="rounded-[2.5rem] bg-[#16232A] px-6 py-20 text-center text-white md:px-16 md:py-24">
                     <div className="mx-auto max-w-3xl">

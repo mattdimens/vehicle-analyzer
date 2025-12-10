@@ -89,177 +89,164 @@ export function ResultsDisplay({
                     <div className="grid grid-cols-1 gap-12">
                         {/* Fitment Results */}
                         {results && (
-                            <div className="flex flex-col text-left">
-                                <h2 className="font-heading text-2xl font-bold mb-4">
+                            <div className="flex flex-col text-left space-y-4">
+                                <h2 className="font-heading text-2xl font-bold">
                                     Vehicle Fitment Breakdown
                                 </h2>
-                                <Card>
-                                    <CardHeader>
 
-                                    </CardHeader>
-                                    <CardContent>
-                                        {/* Grid for primary details */}
-                                        <div className="grid grid-cols-1 gap-x-4 gap-y-6 text-sm sm:grid-cols-2 md:grid-cols-3">
-                                            <div>
-                                                <div className="text-muted-foreground">Make</div>
-                                                <div className="font-medium">{results.primary.make}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground">Model</div>
-                                                <div className="font-medium">{results.primary.model}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground">Year</div>
-                                                <div className="font-medium">{results.primary.year}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground">Trim</div>
-                                                <div className="font-medium">{results.primary.trim}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground">Cab Style</div>
-                                                <div className="font-medium">
-                                                    {results.primary.cabStyle || "N/A"}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground">Bed Length</div>
-                                                <div className="font-medium">
-                                                    {results.primary.bedLength || "N/A"}
-                                                </div>
-                                            </div>
-                                            <div className="col-span-3">
-                                                <div className="text-muted-foreground">Confidence</div>
-                                                <div className="font-medium">
-                                                    {results.primary.confidence}%
-                                                </div>
-                                            </div>
+                                <div className="rounded-[1.5rem] border border-border/40 bg-white shadow-sm overflow-hidden p-6 md:p-8">
+                                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                                        Primary Identification
+                                        <div className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                            {results.primary.confidence}% Confidence
                                         </div>
+                                    </h3>
 
-                                        {/* Engine Details */}
-                                        <h3 className="font-semibold mt-8 mb-3">Engine Details</h3>
-                                        <p className="text-sm">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.year}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.make}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.model}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.trim}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cab Style</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.cabStyle || "N/A"}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Bed Length</div>
+                                            <div className="text-lg font-semibold text-foreground">{results.primary.bedLength || "N/A"}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Engine Details */}
+                                    <div className="mt-8 pt-6 border-t border-border/40">
+                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Engine Details</div>
+                                        <p className="text-base text-foreground/80 leading-relaxed">
                                             {results.engineDetails || "No details available."}
                                         </p>
+                                    </div>
+                                </div>
 
-                                        {/* Other Possibilities */}
-                                        {results.otherPossibilities.some(item => item.name && item.name.trim() !== "") && (
-                                            <>
-                                                <h3 className="font-semibold mt-8 mb-3">
-                                                    Other Possibilities
-                                                </h3>
-                                                <div className="overflow-x-auto rounded-lg border">
-                                                    <table className="w-full text-sm text-left">
-                                                        <thead className="bg-muted/50">
-                                                            <tr>
-                                                                <th className="px-4 py-3 font-medium">Vehicle</th>
-                                                                <th className="px-4 py-3 font-medium text-right">
-                                                                    Confidence
-                                                                </th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {results.otherPossibilities.map((item, index) => (
-                                                                <tr key={index} className="border-t">
-                                                                    <td className="px-4 py-3 font-medium">
-                                                                        {item.name}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right">
-                                                                        {item.confidence}%
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </>
-                                        )}
-                                    </CardContent>
-                                </Card>
+                                {/* Other Possibilities */}
+                                {results.otherPossibilities.some(item => item.name && item.name.trim() !== "") && (
+                                    <div className="mt-8">
+                                        <h3 className="font-semibold text-lg mb-4">Other Possibilities</h3>
+                                        <div className="rounded-[1.5rem] border border-border/40 bg-white shadow-sm overflow-hidden">
+                                            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted/30 text-xs font-semibold uppercase text-muted-foreground border-b border-border/40">
+                                                <div className="col-span-10">Vehicle Name</div>
+                                                <div className="col-span-2 text-right">Confidence</div>
+                                            </div>
+                                            <div className="divide-y divide-border/40">
+                                                {results.otherPossibilities.map((item, index) => (
+                                                    <div key={index} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-muted/10 transition-colors">
+                                                        <div className="col-span-10 font-medium text-foreground">{item.name}</div>
+                                                        <div className="col-span-2 text-right text-muted-foreground">{item.confidence}%</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* Product Results */}
-                        {detectedProducts && (
-                            <div className="flex flex-col text-left">
-                                <h2 className="font-heading text-2xl font-bold mb-4">
+                        {detectedProducts && detectedProducts.length > 0 && (
+                            <div className="flex flex-col text-left space-y-4">
+                                <h2 className="font-heading text-2xl font-bold">
                                     {detectedProductsTitle}
                                 </h2>
-                                <div className="overflow-x-auto rounded-lg border">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-muted/50">
-                                            <tr>
-                                                <th className="px-4 py-3 font-medium">Product</th>
-                                                <th className="px-4 py-3 font-medium">Brand</th>
-                                                <th className="px-4 py-3 font-medium">Model</th>
-                                                <th className="px-4 py-3 font-medium">Link</th>
-                                                <th className="px-4 py-3 font-medium text-right">
-                                                    Confidence
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {detectedProducts.map((item, index) => {
-                                                const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
-                                                const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
 
-                                                // Build Amazon search query
-                                                let searchQuery = ""
-                                                if (results) {
-                                                    const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model}`
+                                <div className="rounded-[1.5rem] border border-border/40 bg-white shadow-sm overflow-hidden">
+                                    {/* Table Header */}
+                                    <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-muted/30 text-xs font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/40">
+                                        <div className="col-span-3">Product Type</div>
+                                        <div className="col-span-2">Brand</div>
+                                        <div className="col-span-3">Model</div>
+                                        <div className="col-span-2">Confidence</div>
+                                        <div className="col-span-2 text-right">Action</div>
+                                    </div>
 
-                                                    if (isUnknownBrand || isUnknownModel) {
-                                                        // For unknown brand/model, only search vehicle + product type
-                                                        searchQuery = `${vehicleDetails} ${item.type}`
-                                                    } else {
-                                                        // For known brand/model, include everything
-                                                        searchQuery = `${vehicleDetails} ${item.brand} ${item.model}`
-                                                    }
+                                    {/* Table Body */}
+                                    <div className="divide-y divide-border/40">
+                                        {detectedProducts.map((item, index) => {
+                                            const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
+                                            const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
+
+                                            // Build Amazon search query
+                                            let searchQuery = ""
+                                            if (results) {
+                                                const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model}`
+                                                if (isUnknownBrand || isUnknownModel) {
+                                                    searchQuery = `${vehicleDetails} ${item.type}`
                                                 } else {
-                                                    // Fallback if no vehicle results
-                                                    if (!isUnknownBrand && !isUnknownModel) {
-                                                        searchQuery = `${item.brand} ${item.model}`
-                                                    } else {
-                                                        searchQuery = item.type
-                                                    }
+                                                    searchQuery = `${vehicleDetails} ${item.brand} ${item.model}`
                                                 }
+                                            } else {
+                                                if (!isUnknownBrand && !isUnknownModel) {
+                                                    searchQuery = `${item.brand} ${item.model}`
+                                                } else {
+                                                    searchQuery = item.type
+                                                }
+                                            }
 
-                                                return (
-                                                    <tr key={index} className="border-t">
-                                                        <td className="px-4 py-3 font-medium">
-                                                            {item.type}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            {!isUnknownBrand && item.brand}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            {!isUnknownModel && item.model}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <Button
-                                                                asChild
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="gap-1.5"
+                                            return (
+                                                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 md:px-8 py-4 items-center hover:bg-muted/10 transition-colors">
+                                                    {/* Mobile Labels are handled via flex/grid tricks or just hidden labels for simplicity in this replacement -> keeping clean table structure */}
+                                                    <div className="col-span-1 md:col-span-3 font-medium text-foreground">
+                                                        {item.type}
+                                                    </div>
+
+                                                    <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
+                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
+                                                        {!isUnknownBrand ? item.brand : <span className="text-muted-foreground italic">Unknown</span>}
+                                                    </div>
+
+                                                    <div className="col-span-1 md:col-span-3 text-sm text-foreground/80">
+                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
+                                                        {!isUnknownModel ? item.model : <span className="text-muted-foreground italic">Unknown</span>}
+                                                    </div>
+
+                                                    <div className="col-span-1 md:col-span-2 flex items-center gap-2">
+                                                        <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>
+                                                        {/* Simple visual indicator for confidence */}
+                                                        <div className="flex-1 md:flex-none h-1.5 w-16 bg-muted rounded-full overflow-hidden">
+                                                            <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
+                                                        </div>
+                                                        <span className="text-xs font-medium text-muted-foreground">{item.confidence}%</span>
+                                                    </div>
+
+                                                    <div className="col-span-1 md:col-span-2 text-right">
+                                                        <Button
+                                                            asChild
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="w-full md:w-auto gap-1.5 h-8 text-xs font-medium rounded-full hover:bg-primary hover:text-primary-foreground border-primary/20"
+                                                        >
+                                                            <a
+                                                                href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
                                                             >
-                                                                <a
-                                                                    href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    <ExternalLink className="w-3 h-3" />
-                                                                    Search
-                                                                </a>
-                                                            </Button>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right">
-                                                            {item.confidence}%
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                                Search
+                                                            </a>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

@@ -13,6 +13,16 @@ const supabase = createClient(
 // Initialize the Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
+// --- Cascading model constants ---
+const SCOUT_MODEL = 'gemini-3-flash-preview'   // Fast + cheap — always runs first
+const SNIPER_MODEL = 'gemini-3-pro-preview'      // Slower + smarter — fallback
+const CASCADE_CONFIDENCE_THRESHOLD = 85           // Scout confidence ≤ this → escalate to Sniper
+
+// Helper: clean markdown-wrapped JSON from AI responses
+function cleanJsonResponse(text: string): string {
+  return text.replace(/```json\s*/g, '').replace(/```/g, '').trim()
+}
+
 // Helper function to fetch an image from a URL and convert it to base64
 async function urlToGenerativePart(url: string, mimeType: string) {
   const response = await fetch(url)
@@ -157,8 +167,6 @@ export async function analyzeVehicleImage(
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-
     const contextInstruction = promptContext
       ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.`
       : ''
@@ -199,7 +207,6 @@ export async function analyzeVehicleImage(
       `;
     }
 
-    // --- v2: This is the new, more detailed prompt ---
     const prompt =
       'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle shown in these images (they are different views of the same vehicle). ' +
       contextInstruction +
@@ -237,28 +244,42 @@ export async function analyzeVehicleImage(
       publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
     )
 
-    const result = await model.generateContent([prompt, ...imageParts])
-    const response = result.response
-    const text = response.text()
+    // --- Cascading Model: Scout pass (Flash) ---
+    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
+    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
+    const scoutText = cleanJsonResponse(scoutResult.response.text())
 
-    // Clean the AI's response to remove the markdown wrapper
-    const cleanedText = text.replace('```json', '').replace('```', '').trim()
-
-    // Parse and validate the JSON with Zod
-    const rawAnalysis = JSON.parse(cleanedText)
-    const parseResult = AnalysisResultsSchema.safeParse(rawAnalysis)
-    if (!parseResult.success) {
-      console.error('AI response validation failed:', parseResult.error.flatten())
+    const scoutRaw = JSON.parse(scoutText)
+    const scoutParse = AnalysisResultsSchema.safeParse(scoutRaw)
+    if (!scoutParse.success) {
+      console.error('Scout AI response validation failed:', scoutParse.error.flatten())
       throw new Error('The AI returned an unexpected response format. Please try again.')
     }
-    const analysis: AnalysisResults = parseResult.data
+    let analysis: AnalysisResults = scoutParse.data
+
+    // --- Gatekeeper: check Scout confidence ---
+    if (analysis.primary.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
+      console.log(`Scout confidence ${analysis.primary.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`)
+      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
+      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
+      const sniperText = cleanJsonResponse(sniperResult.response.text())
+
+      const sniperRaw = JSON.parse(sniperText)
+      const sniperParse = AnalysisResultsSchema.safeParse(sniperRaw)
+      if (sniperParse.success) {
+        analysis = sniperParse.data // Sniper overrides Scout
+      } else {
+        // Sniper failed validation — keep Scout result rather than crashing
+        console.warn('Sniper response validation failed, keeping Scout result:', sniperParse.error.flatten())
+      }
+    }
 
     // Save to Supabase
     const { error: dbError } = await supabase
       .from('analysis_results')
       .insert({
-        analysis_data: analysis, // This is the full JSON from the AI
-        image_url: publicImageUrls[0], // Log the first image as representative
+        analysis_data: analysis,
+        image_url: publicImageUrls[0],
       })
       .select()
 
@@ -267,7 +288,6 @@ export async function analyzeVehicleImage(
       throw new Error(dbError.message)
     }
 
-    // --- v2: Return the new data structure ---
     return {
       success: true,
       data: {
@@ -296,7 +316,7 @@ export async function detectVisibleProducts(
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: SCOUT_MODEL })
     const imageParts = await Promise.all(
       publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
     )
@@ -317,8 +337,7 @@ export async function detectVisibleProducts(
       'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
     const result = await model.generateContent([prompt, ...imageParts])
-    const text = result.response.text()
-    const cleanedText = text.replace('```json', '').replace('```', '').trim()
+    const cleanedText = cleanJsonResponse(result.response.text())
 
     const rawProductTypes = JSON.parse(cleanedText)
     const productTypesResult = z.array(z.string()).safeParse(rawProductTypes)
@@ -345,7 +364,6 @@ export async function refineProductDetails(
   promptContext?: string
 ): Promise<DetectedProduct> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const imageParts = await Promise.all(
       publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
     )
@@ -367,17 +385,15 @@ export async function refineProductDetails(
       productType +
       '", "brand": "Unknown", "model": "Unknown", "confidence": 50, "reasoning": "Insufficient visual details"}.'
 
-    const result = await model.generateContent([prompt, ...imageParts])
-    const text = result.response
-      .text()
-      .replace('```json', '')
-      .replace('```', '')
-      .trim()
+    // --- Cascading Model: Scout pass (Flash) ---
+    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
+    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
+    const scoutText = cleanJsonResponse(scoutResult.response.text())
 
-    const rawProduct = JSON.parse(text)
-    const productResult = DetectedProductSchema.safeParse(rawProduct)
-    if (!productResult.success) {
-      console.error(`Product validation failed for ${productType}:`, productResult.error.flatten())
+    const scoutRaw = JSON.parse(scoutText)
+    const scoutParse = DetectedProductSchema.safeParse(scoutRaw)
+    if (!scoutParse.success) {
+      console.error(`Scout product validation failed for ${productType}:`, scoutParse.error.flatten())
       return {
         type: productType,
         brand: 'Unknown Brand',
@@ -386,7 +402,25 @@ export async function refineProductDetails(
         reasoning: 'AI response did not match expected format.',
       }
     }
-    return productResult.data
+    let product = scoutParse.data
+
+    // --- Gatekeeper: check Scout confidence ---
+    if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
+      console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType} — escalating to Sniper`)
+      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
+      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
+      const sniperText = cleanJsonResponse(sniperResult.response.text())
+
+      const sniperRaw = JSON.parse(sniperText)
+      const sniperParse = DetectedProductSchema.safeParse(sniperRaw)
+      if (sniperParse.success) {
+        product = sniperParse.data // Sniper overrides Scout
+      } else {
+        console.warn(`Sniper product validation failed for ${productType}, keeping Scout result:`, sniperParse.error.flatten())
+      }
+    }
+
+    return product
   } catch (err) {
     console.error(`Error refining ${productType}:`, err)
     return {
@@ -413,7 +447,7 @@ export async function checkImageQuality(
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: SCOUT_MODEL })
     const imageParts = await Promise.all(
       publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
     )
@@ -429,13 +463,9 @@ export async function checkImageQuality(
       'Set isHighQuality to false if the score is below 70.'
 
     const result = await model.generateContent([prompt, ...imageParts])
-    const text = result.response
-      .text()
-      .replace('```json', '')
-      .replace('```', '')
-      .trim()
+    const cleanedText = cleanJsonResponse(result.response.text())
 
-    return { success: true, data: JSON.parse(text) as ImageQualityResult }
+    return { success: true, data: JSON.parse(cleanedText) as ImageQualityResult }
   } catch (err) {
     return {
       success: false,

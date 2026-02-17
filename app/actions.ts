@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { z } from 'zod'
 
 // Initialize the server-side Supabase client
 const supabase = createClient(
@@ -28,7 +29,11 @@ async function urlToGenerativePart(url: string, mimeType: string) {
   }
 }
 
-// Function 1: Get Signed URL (No changes needed here)
+// --- File upload validation constants ---
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
+
+// Function 1: Get Signed URL (with file validation)
 export async function createSignedUploadUrl(
   fileName: string,
   fileType: string
@@ -36,6 +41,11 @@ export async function createSignedUploadUrl(
   | { success: true; data: { signedUrl: string; path: string } }
   | { success: false; error: string }
 > {
+  // Server-side file type validation
+  if (!ALLOWED_MIME_TYPES.includes(fileType.toLowerCase())) {
+    return { success: false, error: `Invalid file type: ${fileType}. Only JPEG, PNG, GIF, and WebP images are allowed.` }
+  }
+
   const { data, error } = await supabase.storage
     .from('vehicle_images')
     .createSignedUploadUrl(fileName, {
@@ -91,6 +101,49 @@ export interface DetectedProduct {
   reasoning: string
 }
 // --- End of new interfaces ---
+
+// --- Zod schemas for runtime validation of AI responses ---
+const PrimaryVehicleSchema = z.object({
+  make: z.string(),
+  model: z.string(),
+  year: z.string(),
+  trim: z.string(),
+  cabStyle: z.string().nullable(),
+  bedLength: z.string().nullable(),
+  vehicleType: z.string(),
+  color: z.string(),
+  condition: z.string(),
+  confidence: z.number(),
+})
+
+const AnalysisResultsSchema = z.object({
+  primary: PrimaryVehicleSchema,
+  engineDetails: z.string().nullable(),
+  otherPossibilities: z.array(z.object({
+    name: z.string().default(''),
+    vehicle: z.string().optional(),
+    yearRange: z.string().optional(),
+    trim: z.string().optional(),
+    confidence: z.number(),
+  }).transform(item => ({
+    name: item.name || item.vehicle || 'Unknown',
+    confidence: item.confidence,
+  }))),
+  recommendedAccessories: z.array(z.string()),
+  tieredRecommendations: z.array(z.object({
+    title: z.string(),
+    items: z.array(z.string()),
+  })).optional(),
+})
+
+const DetectedProductSchema = z.object({
+  type: z.string(),
+  brand: z.string(),
+  model: z.string(),
+  confidence: z.number(),
+  reasoning: z.string(),
+})
+// --- End of Zod schemas ---
 
 // Function 2: Analyze Image (Updated)
 export async function analyzeVehicleImage(
@@ -191,8 +244,14 @@ export async function analyzeVehicleImage(
     // Clean the AI's response to remove the markdown wrapper
     const cleanedText = text.replace('```json', '').replace('```', '').trim()
 
-    // Parse the JSON
-    const analysis: AnalysisResults = JSON.parse(cleanedText) // Cast to our new interface
+    // Parse and validate the JSON with Zod
+    const rawAnalysis = JSON.parse(cleanedText)
+    const parseResult = AnalysisResultsSchema.safeParse(rawAnalysis)
+    if (!parseResult.success) {
+      console.error('AI response validation failed:', parseResult.error.flatten())
+      throw new Error('The AI returned an unexpected response format. Please try again.')
+    }
+    const analysis: AnalysisResults = parseResult.data
 
     // Save to Supabase
     const { error: dbError } = await supabase
@@ -261,7 +320,9 @@ export async function detectVisibleProducts(
     const text = result.response.text()
     const cleanedText = text.replace('```json', '').replace('```', '').trim()
 
-    const productTypes = JSON.parse(cleanedText) as string[]
+    const rawProductTypes = JSON.parse(cleanedText)
+    const productTypesResult = z.array(z.string()).safeParse(rawProductTypes)
+    const productTypes = productTypesResult.success ? productTypesResult.data : []
 
     if (!Array.isArray(productTypes)) {
       return { success: true, data: [] }
@@ -313,7 +374,19 @@ export async function refineProductDetails(
       .replace('```', '')
       .trim()
 
-    return JSON.parse(text) as DetectedProduct
+    const rawProduct = JSON.parse(text)
+    const productResult = DetectedProductSchema.safeParse(rawProduct)
+    if (!productResult.success) {
+      console.error(`Product validation failed for ${productType}:`, productResult.error.flatten())
+      return {
+        type: productType,
+        brand: 'Unknown Brand',
+        model: 'Unknown Model',
+        confidence: 0,
+        reasoning: 'AI response did not match expected format.',
+      }
+    }
+    return productResult.data
   } catch (err) {
     console.error(`Error refining ${productType}:`, err)
     return {

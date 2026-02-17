@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink } from "lucide-react"
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 import { addAmazonAffiliateTag } from "@/lib/amazon"
+import { trackEvent } from "@/lib/analytics"
+import Image from "next/image"
 
 interface ResultsDisplayProps {
     results: AnalysisResults | null
@@ -220,8 +222,15 @@ export function ResultsDisplay({
 
                                                     <div className="col-span-1 md:col-span-2 flex items-center gap-2">
                                                         <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>
-                                                        {/* Simple visual indicator for confidence */}
-                                                        <div className="flex-1 md:flex-none h-1.5 w-16 bg-muted rounded-full overflow-hidden">
+                                                        {/* Accessible confidence indicator (A-07) */}
+                                                        <div
+                                                            className="flex-1 md:flex-none h-1.5 w-16 bg-muted rounded-full overflow-hidden"
+                                                            role="progressbar"
+                                                            aria-valuenow={item.confidence}
+                                                            aria-valuemin={0}
+                                                            aria-valuemax={100}
+                                                            aria-label={`${item.type} confidence`}
+                                                        >
                                                             <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
                                                         </div>
                                                         <span className="text-xs font-medium text-muted-foreground">{item.confidence}%</span>
@@ -239,11 +248,14 @@ export function ResultsDisplay({
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="flex items-center justify-center"
+                                                                onClick={() => trackEvent('amazon_click', { product: item.type, query: searchQuery })}
                                                             >
                                                                 <span className="sr-only">Search on Amazon</span>
-                                                                <img
+                                                                <Image
                                                                     src="/amazon-logo.png"
                                                                     alt="Amazon"
+                                                                    width={64}
+                                                                    height={20}
                                                                     className="h-4 w-auto object-contain mt-1"
                                                                 />
                                                             </a>
@@ -305,11 +317,14 @@ export function ResultsDisplay({
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
                                                                             className="flex items-center justify-center gap-2"
+                                                                            onClick={() => trackEvent('amazon_click', { product: name })}
                                                                         >
                                                                             <span className="text-xs font-medium text-muted-foreground">Buy on</span>
-                                                                            <img
+                                                                            <Image
                                                                                 src="/amazon-logo.png"
                                                                                 alt="Amazon"
+                                                                                width={80}
+                                                                                height={24}
                                                                                 className="h-5 w-auto object-contain mt-1"
                                                                             />
                                                                         </a>
@@ -353,11 +368,14 @@ export function ResultsDisplay({
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="flex items-center justify-center gap-2"
+                                                                onClick={() => trackEvent('amazon_click', { product: name })}
                                                             >
                                                                 <span className="text-xs font-medium text-muted-foreground">Buy on</span>
-                                                                <img
+                                                                <Image
                                                                     src="/amazon-logo.png"
                                                                     alt="Amazon"
+                                                                    width={80}
+                                                                    height={24}
                                                                     className="h-5 w-auto object-contain mt-1"
                                                                 />
                                                             </a>

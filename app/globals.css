@@ -5,43 +5,61 @@
 
 /* This @theme block is the correct way to define colors for v4 */
 @theme inline {
-  /* --- NEW PALETTE --- */
+  /* --- NEW PALETTE (with hex fallbacks for older browsers) --- */
+  --color-background: #e8eded;
   --color-background: oklch(0.935 0.019 217.41);
   /* Wild Sand */
+  --color-foreground: #1a2332;
   --color-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
   --font-sans: "Inter", sans-serif;
   --font-heading: "Domine", serif;
+  --color-ring: #e05500;
   --color-ring: oklch(0.655 0.222 36.6);
   /* Blaze Orange */
+  --color-input: #d5ddde;
   --color-input: oklch(0.88 0.019 217.41);
   /* Darker Wild Sand */
+  --color-border: #d5ddde;
   --color-border: oklch(0.88 0.019 217.41);
   /* Darker Wild Sand */
+  --color-destructive: #d93025;
   --color-destructive: oklch(0.577 0.245 27.325);
   /* Kept original red */
+  --color-accent-foreground: #fbfbfb;
   --color-accent-foreground: oklch(0.985 0 0);
   /* White-ish */
+  --color-accent: #2d6058;
   --color-accent: oklch(0.395 0.065 204.4);
   /* Deep Sea Green */
+  --color-muted-foreground: #566070;
   --color-muted-foreground: oklch(0.45 0.024 246.3);
   /* Lighter Mirage */
+  --color-muted: #e8eded;
   --color-muted: oklch(0.935 0.019 217.41);
   /* Wild Sand */
+  --color-secondary-foreground: #1a2332;
   --color-secondary-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
+  --color-secondary: #f5f5f5;
   --color-secondary: oklch(0.97 0 0);
   /* Kept original light gray for badges */
+  --color-primary-foreground: #fbfbfb;
   --color-primary-foreground: oklch(0.985 0 0);
   /* White-ish */
+  --color-primary: #e05500;
   --color-primary: oklch(0.655 0.222 36.6);
   /* Blaze Orange */
+  --color-popover-foreground: #1a2332;
   --color-popover-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
+  --color-popover: #ffffff;
   --color-popover: oklch(1 0 0);
   /* Pure White */
+  --color-card-foreground: #1a2332;
   --color-card-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
+  --color-card: #ffffff;
   --color-card: oklch(1 0 0);
   /* Pure White */
   --radius: 0.75rem;

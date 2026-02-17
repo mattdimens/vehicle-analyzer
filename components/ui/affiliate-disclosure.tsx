@@ -16,6 +16,8 @@ export function AffiliateDisclosure() {
                     <div className="flex-1 text-sm">
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
+                            aria-expanded={isExpanded}
+                            aria-controls="affiliate-disclosure-content"
                             className="group inline-flex items-center gap-2 font-medium text-amber-900 hover:text-amber-700 dark:text-amber-100 dark:hover:text-amber-200"
                         >
                             <span>Affiliate Disclosure</span>
@@ -29,7 +31,7 @@ export function AffiliateDisclosure() {
                             </svg>
                         </button>
                         {isExpanded && (
-                            <p className="mt-2 leading-relaxed text-amber-800/90 dark:text-amber-200/80">
+                            <p id="affiliate-disclosure-content" className="mt-2 leading-relaxed text-amber-800/90 dark:text-amber-200/80">
                                 Some links to Amazon on this site are affiliate links, meaning Visual Fitment may earn a small commission if you make a purchase through these links, at no additional cost to you. This helps support the development and maintenance of this free tool. Thank you for your support!
                             </p>
                         )}

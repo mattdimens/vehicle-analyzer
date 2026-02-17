@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import dynamic from "next/dynamic"
 import {
     createSignedUploadUrl,
     analyzeVehicleImage,
@@ -17,10 +18,19 @@ import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
 import { UseCases } from "@/components/home/use-cases"
-import { QualityWarningDialog } from "@/components/home/quality-warning-dialog"
-import { ImageCropperDialog } from "@/components/home/image-cropper-dialog"
 import { BatchResults } from "@/components/home/batch-results"
+import { trackEvent } from "@/lib/analytics"
 import type { BatchItem } from "@/lib/types"
+
+// Dynamic imports for dialogs — only loaded when opened (P-02)
+const QualityWarningDialog = dynamic(
+    () => import("@/components/home/quality-warning-dialog").then(mod => ({ default: mod.QualityWarningDialog })),
+    { ssr: false }
+)
+const ImageCropperDialog = dynamic(
+    () => import("@/components/home/image-cropper-dialog").then(mod => ({ default: mod.ImageCropperDialog })),
+    { ssr: false }
+)
 
 type AnalysisState = "idle" | "processing" | "complete"
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
@@ -46,26 +56,26 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     // Quality Check State (Global for the dialog)
     const [currentQualityItem, setCurrentQualityItem] = useState<{ id: string, issues: string[] } | null>(null)
 
+    // Track created object URLs for cleanup (P-05 — avoid stale closure)
+    const createdUrlsRef = useRef<string[]>([])
+
     // Cleanup preview URLs
     useEffect(() => {
         return () => {
-            batchItems.forEach(item => {
-                item.images.forEach(img => URL.revokeObjectURL(img.preview))
-            })
-            if (originalImageSrc) URL.revokeObjectURL(originalImageSrc)
+            createdUrlsRef.current.forEach(url => URL.revokeObjectURL(url))
         }
     }, []) // Run once on unmount
 
     const handleFilesSelect = (files: File[]) => {
         // Create ONE item for all the dropped files (User intention: 1 Drop = 1 Vehicle)
+        const previews = files.map(file => {
+            const url = URL.createObjectURL(file)
+            createdUrlsRef.current.push(url) // Track for cleanup (P-05)
+            return { id: Math.random().toString(36).substring(7), file, preview: url, publicUrl: null }
+        })
         const newItem: BatchItem = {
             id: Math.random().toString(36).substring(7),
-            images: files.map(file => ({
-                id: Math.random().toString(36).substring(7),
-                file,
-                preview: URL.createObjectURL(file), // Create preview for each file
-                publicUrl: null
-            })),
+            images: previews,
             status: "pending",
             progress: 0,
             result: null,
@@ -75,6 +85,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             loadingMessage: null
         }
 
+        trackEvent('upload_image', { file_count: files.length })
         setBatchItems(prev => [...prev, newItem])
         setAnalysisState("idle")
     }
@@ -82,12 +93,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     const handleAddImageToItem = (itemId: string, files: File[]) => {
         setBatchItems(prev => prev.map(item => {
             if (item.id === itemId) {
-                const newImages = files.map(file => ({
-                    id: Math.random().toString(36).substring(7),
-                    file,
-                    preview: URL.createObjectURL(file),
-                    publicUrl: null
-                }))
+                const newImages = files.map(file => {
+                    const url = URL.createObjectURL(file)
+                    createdUrlsRef.current.push(url)
+                    return { id: Math.random().toString(36).substring(7), file, preview: url, publicUrl: null }
+                })
                 return {
                     ...item,
                     images: [...item.images, ...newImages],
@@ -388,9 +398,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             })
 
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err)
+            trackEvent('analysis_error', { error_message: errorMsg })
             updateItem({
                 status: "error",
-                error: err instanceof Error ? err.message : String(err),
+                error: errorMsg,
                 progress: 0,
                 loadingMessage: null
             })
@@ -408,6 +420,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     const handleStartBatch = async () => {
         setAnalysisState("processing")
+        trackEvent('start_analysis', { analysis_type: selectedAnalysis, item_count: batchItems.length })
 
         // Scroll to results
         setTimeout(() => {
@@ -426,6 +439,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             await processItem(item, selectedAnalysis)
         }
 
+        trackEvent('analysis_complete', { item_count: pendingItems.length })
         setAnalysisState("complete")
     }
 

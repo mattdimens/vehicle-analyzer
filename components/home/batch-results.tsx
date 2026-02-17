@@ -85,7 +85,7 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                             {primaryImage ? (
                                                 <img
                                                     src={primaryImage.preview}
-                                                    alt={title}
+                                                    alt={`Vehicle analysis thumbnail ${items.indexOf(item) + 1} of ${items.length}`}
                                                     className="h-full w-full object-cover"
                                                 />
                                             ) : (
@@ -104,12 +104,12 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                     <div className="col-span-1 md:col-span-2 flex items-center">
                                         {isComplete ? (
                                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-100">
-                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                <CheckCircle2 className="h-3 w-3" />
                                                 Completed
                                             </span>
                                         ) : isError ? (
                                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium border border-red-100">
-                                                <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                                <AlertCircle className="h-3 w-3" />
                                                 Failed
                                             </span>
                                         ) : isProcessing ? (

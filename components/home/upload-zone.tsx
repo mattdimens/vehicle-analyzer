@@ -86,15 +86,31 @@ export function UploadZone({
         }
     }
 
+    const [dropError, setDropError] = useState<string | null>(null)
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: (acceptedFiles) => {
+            setDropError(null)
             if (acceptedFiles.length > 0) {
                 onFilesSelect(acceptedFiles)
+            }
+        },
+        onDropRejected: (rejections) => {
+            const errors = rejections.flatMap(r => r.errors.map(e => e.message))
+            const unique = [...new Set(errors)]
+            if (unique.some(e => e.includes('larger'))) {
+                setDropError('One or more files exceed the 10MB size limit.')
+            } else if (unique.some(e => e.includes('many'))) {
+                setDropError('Maximum 10 files allowed per upload.')
+            } else {
+                setDropError('Only JPEG, PNG, GIF, and WebP images are accepted.')
             }
         },
         accept: {
             "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
         },
+        maxSize: 10 * 1024 * 1024, // 10MB
+        maxFiles: 10,
         multiple: true,
         disabled: analysisState === "processing",
     })
@@ -107,6 +123,8 @@ export function UploadZone({
                 {/* Dropzone Area */}
                 <div
                     {...getRootProps()}
+                    role="button"
+                    aria-label="Upload vehicle images — drag and drop or click to select"
                     className={cn(
                         "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors rounded-t-2xl",
                         !hasItems &&
@@ -127,8 +145,13 @@ export function UploadZone({
                                     : "Drag 'n' drop images, or click to select"}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                                Upload multiple images per vehicle for better accuracy. Drag and drop multiple files to create groups.
+                                Upload multiple images per vehicle for better accuracy. Max 10MB per file.
                             </p>
+                            {dropError && (
+                                <p className="text-sm text-destructive font-medium" role="alert">
+                                    {dropError}
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -306,6 +329,7 @@ export function UploadZone({
                         onChange={(e) =>
                             onAnalysisChange(e.target.value as AnalysisSelection)
                         }
+                        aria-label="Select analysis type"
                         className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
                         disabled={analysisState !== "idle"}
                     >

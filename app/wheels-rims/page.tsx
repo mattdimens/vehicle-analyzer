@@ -1,13 +1,29 @@
-"use client"
+import type { Metadata } from "next"
+import WheelsRimsClient from "./vehicle-analyzer-client"
 
-import { VehicleAnalyzer } from "@/components/home/vehicle-analyzer"
+export const metadata: Metadata = {
+    title: "Vehicle Wheel & Rim Analyzer | Visual Fitment",
+    description:
+        "Upload images to identify your vehicle's wheel fitment and find the perfect wheels, rims, and tires. AI-powered bolt pattern and offset analysis.",
+    openGraph: {
+        title: "Vehicle Wheel & Rim Analyzer | Visual Fitment",
+        description:
+            "Upload images to identify your vehicle's wheel fitment and find the perfect wheels, rims, and tires.",
+        url: "https://visualfitment.com/wheels-rims",
+        siteName: "Visual Fitment",
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Vehicle Wheel & Rim Analyzer | Visual Fitment",
+        description:
+            "Upload images to identify your vehicle's wheel fitment and find the perfect wheels, rims, and tires.",
+    },
+    alternates: {
+        canonical: "/wheels-rims",
+    },
+}
 
 export default function WheelsAndRimsPage() {
-    return (
-        <VehicleAnalyzer
-            title="Vehicle Wheel & Rim Analyzer"
-            description="Upload images to identify your vehicle's fitment and find the perfect wheels, rims, and tires. Get AI-powered recommendations based on your bolt pattern and offset."
-            promptContext="wheels, rims, tires, lug nuts, and hubcaps"
-        />
-    )
+    return <WheelsRimsClient />
 }

@@ -66,6 +66,9 @@ export function SiteHeader() {
               <DropdownMenuItem asChild>
                 <Link href="/nerf-bars-running-boards">Running Boards</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/part-identifier">Part Identifier</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
@@ -126,6 +129,13 @@ export function SiteHeader() {
                     onClick={() => setIsOpen(false)}
                   >
                     Running Boards
+                  </Link>
+                  <Link
+                    href="/part-identifier"
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Part Identifier
                   </Link>
                 </div>
               </div>

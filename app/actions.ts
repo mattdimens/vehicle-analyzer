@@ -473,3 +473,101 @@ export async function checkImageQuality(
     }
   }
 }
+
+// --- Visual Part Identifier ---
+
+export interface PartIdentification {
+  partName: string
+  category: string
+  function: string
+  estimatedVehicle: string | null
+  confidence: number
+  amazonSearchTerm: string
+  reasoning: string
+}
+
+const PartIdentificationSchema = z.object({
+  partName: z.string(),
+  category: z.string(),
+  function: z.string(),
+  estimatedVehicle: z.string().nullable(),
+  confidence: z.number(),
+  amazonSearchTerm: z.string(),
+  reasoning: z.string(),
+})
+
+// Function 6: Identify a Car Part from an Image
+export async function identifyPart(
+  publicImageUrl: string
+): Promise<
+  | { success: true; data: PartIdentification }
+  | { success: false; error: string }
+> {
+  try {
+    const imageParts = [await urlToGenerativePart(publicImageUrl, 'image/jpeg')]
+
+    const prompt =
+      'You are an expert automotive parts specialist. Analyze this image and identify the car part shown. ' +
+      'Provide the following information: ' +
+      '1. `partName` (string) — The specific name of the part (e.g., "Brake Caliper", "Mass Air Flow Sensor", "CV Axle") ' +
+      '2. `category` (string) — The category (e.g., "Braking System", "Engine", "Suspension", "Exhaust", "Electrical", "Interior", "Exterior", "Drivetrain") ' +
+      '3. `function` (string) — A concise 1-2 sentence description of what this part does ' +
+      '4. `estimatedVehicle` (string | null) — If you can identify the make/model/year from the part\'s design, OEM number, or branding, include it. Otherwise null. ' +
+      '5. `confidence` (number, 0-100) — How certain you are about this identification ' +
+      '6. `amazonSearchTerm` (string) — A good Amazon search query to find this part (e.g., "2019 Ford F-150 brake caliper front") ' +
+      '7. `reasoning` (string) — Brief explanation of how you identified this part (visual cues, logos, shape, etc.) ' +
+      'If the image does NOT appear to be a car/vehicle part, still respond with your best guess but set confidence below 30 and explain in reasoning why it may not be a car part. ' +
+      'Respond ONLY with a valid, minified JSON object: ' +
+      '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string}'
+
+    // --- Cascading Model: Scout pass (Flash) ---
+    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
+    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
+    const scoutText = cleanJsonResponse(scoutResult.response.text())
+
+    const scoutRaw = JSON.parse(scoutText)
+    const scoutParse = PartIdentificationSchema.safeParse(scoutRaw)
+    if (!scoutParse.success) {
+      console.error('Scout part identification validation failed:', scoutParse.error.flatten())
+      throw new Error('The AI returned an unexpected response format. Please try again.')
+    }
+    let identification = scoutParse.data
+
+    // --- Gatekeeper: check Scout confidence ---
+    if (identification.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
+      console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`)
+      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
+      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
+      const sniperText = cleanJsonResponse(sniperResult.response.text())
+
+      const sniperRaw = JSON.parse(sniperText)
+      const sniperParse = PartIdentificationSchema.safeParse(sniperRaw)
+      if (sniperParse.success) {
+        identification = sniperParse.data
+      } else {
+        console.warn('Sniper part identification validation failed, keeping Scout result:', sniperParse.error.flatten())
+      }
+    }
+
+    // Save to Supabase
+    const { error: dbError } = await supabase
+      .from('analysis_results')
+      .insert({
+        analysis_data: identification,
+        image_url: publicImageUrl,
+      })
+      .select()
+
+    if (dbError) {
+      console.error('Supabase DB error:', dbError.message)
+      // Don't throw — part identification still succeeded
+    }
+
+    return { success: true, data: identification }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
+  }
+}

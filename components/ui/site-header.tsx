@@ -66,11 +66,14 @@ export function SiteHeader() {
               <DropdownMenuItem asChild>
                 <Link href="/nerf-bars-running-boards">Running Boards</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/part-identifier">Part Identifier</Link>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Link
+            href="/part-identifier"
+            className="text-muted-foreground transition-colors hover:text-primary"
+          >
+            Part Identifier
+          </Link>
         </nav>
 
         {/* Desktop CTA */}
@@ -130,15 +133,15 @@ export function SiteHeader() {
                   >
                     Running Boards
                   </Link>
-                  <Link
-                    href="/part-identifier"
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Part Identifier
-                  </Link>
                 </div>
               </div>
+              <Link
+                href="/part-identifier"
+                className="text-lg font-medium hover:text-primary transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Part Identifier
+              </Link>
               <div className="pt-4">
                 <Button asChild className="w-full">
                   <Link href="#upload-zone" onClick={() => setIsOpen(false)}>

@@ -1,4 +1,4 @@
-import type { AnalysisResults, DetectedProduct } from "@/app/actions"
+import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 
 export interface BatchItem {
     id: string
@@ -12,6 +12,7 @@ export interface BatchItem {
     progress: number
     result: AnalysisResults | null
     detectedProducts: DetectedProduct[]
+    partIdentification: PartIdentification | null
     error: string | null
     qualityIssues: string[]
     loadingMessage: string | null

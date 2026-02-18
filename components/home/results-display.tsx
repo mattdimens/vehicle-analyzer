@@ -6,33 +6,186 @@ import {
     CardContent,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Loader, ExternalLink } from "lucide-react"
-import type { AnalysisResults, DetectedProduct } from "@/app/actions"
+import { Loader, ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
+import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
+import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 import { addAmazonAffiliateTag } from "@/lib/amazon"
 import { trackEvent } from "@/lib/analytics"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 interface ResultsDisplayProps {
     results: AnalysisResults | null
     detectedProducts: DetectedProduct[]
+    partIdentification?: PartIdentification | null
     error: string | null
     productError: string | null
     loadingMessage?: string | null
     progress: number
     detectedProductsTitle?: string
+    analysisMode?: AnalysisMode
 }
 
 export function ResultsDisplay({
     results,
     detectedProducts,
+    partIdentification,
     error,
     productError,
     loadingMessage,
     progress,
     detectedProductsTitle = "Detected Products",
+    analysisMode = "vehicle",
 }: ResultsDisplayProps) {
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
+    // --- Part Identification Mode ---
+    if (analysisMode === "part") {
+        if (!isLoading && !partIdentification && !error) return null
+
+        if (isLoading) {
+            return (
+                <section className="w-full bg-card py-24">
+                    <div className="container max-w-4xl">
+                        <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                            <div className="w-full max-w-md space-y-2">
+                                <Progress value={progress} className="w-full h-2" />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>{progress}%</span>
+                                </div>
+                            </div>
+                            <p className="text-lg text-muted-foreground font-medium animate-pulse">
+                                {loadingMessage}
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            )
+        }
+
+        if (error) {
+            return (
+                <section className="w-full bg-card py-24">
+                    <div className="container max-w-4xl">
+                        <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                            <p className="text-sm text-destructive">{error}</p>
+                        </div>
+                    </div>
+                </section>
+            )
+        }
+
+        if (!partIdentification) return null
+
+        const isLowConfidence = partIdentification.confidence < 30
+        const confidenceColor =
+            partIdentification.confidence >= 80 ? "text-emerald-600"
+                : partIdentification.confidence >= 50 ? "text-amber-600"
+                    : "text-red-500"
+        const confidenceBarColor =
+            partIdentification.confidence >= 80 ? "bg-emerald-500"
+                : partIdentification.confidence >= 50 ? "bg-amber-500"
+                    : "bg-red-500"
+
+        return (
+            <div className="space-y-6">
+                {isLowConfidence && (
+                    <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                        <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-sm text-amber-800">
+                            Low confidence — this may not be a recognizable car part, or the image may be unclear.
+                        </p>
+                    </div>
+                )}
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium tracking-wider text-primary uppercase">
+                                {partIdentification.category}
+                            </span>
+                        </div>
+                        <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Confidence Bar */}
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Confidence</span>
+                            <div
+                                className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
+                                role="progressbar"
+                                aria-valuenow={partIdentification.confidence}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label="Identification confidence"
+                            >
+                                <div
+                                    className={cn("h-full rounded-full transition-all duration-500", confidenceBarColor)}
+                                    style={{ width: `${partIdentification.confidence}%` }}
+                                />
+                            </div>
+                            <span className={cn("text-sm font-bold tabular-nums w-12 text-right", confidenceColor)}>
+                                {partIdentification.confidence}%
+                            </span>
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50">
+                                <Wrench className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Function</p>
+                                    <p className="text-sm text-foreground">{partIdentification.function}</p>
+                                </div>
+                            </div>
+
+                            {partIdentification.estimatedVehicle && (
+                                <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50">
+                                    <Car className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Vehicle Match</p>
+                                        <p className="text-sm text-foreground">{partIdentification.estimatedVehicle}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={cn("flex items-start gap-3 p-4 rounded-xl bg-muted/50", !partIdentification.estimatedVehicle && "md:col-span-2")}>
+                                <Brain className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">How We Identified It</p>
+                                    <p className="text-sm text-muted-foreground">{partIdentification.reasoning}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Amazon CTA */}
+                        <a
+                            href={addAmazonAffiliateTag(
+                                `https://www.amazon.com/s?k=${encodeURIComponent(partIdentification.amazonSearchTerm)}`
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => trackEvent("amazon_click", { product: partIdentification.partName })}
+                        >
+                            <Button size="lg" className="w-full sm:w-auto gap-2">
+                                <Image
+                                    src="/amazon-logo.png"
+                                    alt="Amazon"
+                                    width={70}
+                                    height={21}
+                                    className="h-4 w-auto object-contain"
+                                />
+                                <span>Find on Amazon</span>
+                                <ExternalLink className="h-4 w-4" />
+                            </Button>
+                        </a>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    // --- Vehicle Analysis Mode (original) ---
     if (
         !isLoading &&
         !results &&

@@ -7,16 +7,18 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { ResultsDisplay } from "@/components/home/results-display"
 import type { BatchItem } from "@/lib/types"
+import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 
 interface BatchResultsProps {
     items: BatchItem[]
     detectedProductsTitle?: string
+    analysisMode?: AnalysisMode
 }
 
 /**
  * BatchResults component displays analysis results for multiple uploaded images
  */
-export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps) {
+export function BatchResults({ items, detectedProductsTitle, analysisMode = "vehicle" }: BatchResultsProps) {
     // Track expanded items by ID
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
@@ -55,7 +57,7 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
             <div className="rounded-[2rem] border border-border/40 bg-white shadow-sm overflow-hidden">
                 {/* Table Header */}
                 <div className="hidden md:grid grid-cols-12 gap-6 px-8 py-4 border-b border-border/40 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <div className="col-span-5 pl-2">Vehicle</div>
+                    <div className="col-span-5 pl-2">{analysisMode === "part" ? "Part" : "Vehicle"}</div>
                     <div className="col-span-2">Status</div>
                     <div className="col-span-4">Progress</div>
                     <div className="col-span-1"></div>
@@ -142,7 +144,10 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                         ) : isComplete ? (
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium text-foreground/90 truncate">
-                                                    {item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Ready"}
+                                                    {analysisMode === "part"
+                                                        ? (item.partIdentification ? item.partIdentification.partName : "Identification Ready")
+                                                        : (item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Ready")
+                                                    }
                                                 </span>
                                                 <div className="h-2 w-24 rounded-full bg-emerald-100 mt-1.5 overflow-hidden">
                                                     <div className="h-full w-full bg-emerald-500 rounded-full" />
@@ -175,11 +180,13 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                             <ResultsDisplay
                                                 results={item.result}
                                                 detectedProducts={item.detectedProducts}
+                                                partIdentification={item.partIdentification}
                                                 error={item.error}
                                                 productError={null}
                                                 loadingMessage={null}
                                                 progress={100}
                                                 detectedProductsTitle={detectedProductsTitle}
+                                                analysisMode={analysisMode}
                                             />
                                         ) : isError ? (
                                             <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-900 text-sm">

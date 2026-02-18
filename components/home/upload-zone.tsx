@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle, Search, Tag, Zap, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BatchItem } from "@/lib/types"
+import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 
 type AnalysisState = "idle" | "processing" | "complete"
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
@@ -26,6 +27,7 @@ interface UploadZoneProps {
     onAnalysisChange: (value: AnalysisSelection) => void
     onStart: () => void
     onReset?: () => void
+    analysisMode?: AnalysisMode
 }
 
 export function UploadZone({
@@ -43,6 +45,7 @@ export function UploadZone({
     onAnalysisChange,
     onStart,
     onReset,
+    analysisMode = "vehicle",
 }: UploadZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
@@ -315,7 +318,7 @@ export function UploadZone({
                                     }}
                                 >
                                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                                    <span className="text-xs text-muted-foreground">Add another vehicle</span>
+                                    <span className="text-xs text-muted-foreground">{analysisMode === "part" ? "Add another part" : "Add another vehicle"}</span>
                                 </div>
                             </div>
                         </div>
@@ -324,22 +327,24 @@ export function UploadZone({
 
                 {/* Control Bar */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
-                    <select
-                        value={selectedAnalysis}
-                        onChange={(e) =>
-                            onAnalysisChange(e.target.value as AnalysisSelection)
-                        }
-                        aria-label="Select analysis type"
-                        className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
-                        disabled={analysisState !== "idle"}
-                    >
-                        <option value="default" disabled>
-                            Choose Analysis...
-                        </option>
-                        <option value="fitment">Analyze Fitment</option>
-                        <option value="products">Detect Products</option>
-                        <option value="all">Fitment & Products</option>
-                    </select>
+                    {analysisMode !== "part" && (
+                        <select
+                            value={selectedAnalysis}
+                            onChange={(e) =>
+                                onAnalysisChange(e.target.value as AnalysisSelection)
+                            }
+                            aria-label="Select analysis type"
+                            className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
+                            disabled={analysisState !== "idle"}
+                        >
+                            <option value="default" disabled>
+                                Choose Analysis...
+                            </option>
+                            <option value="fitment">Analyze Fitment</option>
+                            <option value="products">Detect Products</option>
+                            <option value="all">Fitment &amp; Products</option>
+                        </select>
+                    )}
 
                     <div className="hidden sm:block flex-1"></div>
 
@@ -349,7 +354,7 @@ export function UploadZone({
                             analysisState !== "complete" && (
                                 !hasItems ||
                                 analysisState !== "idle" ||
-                                selectedAnalysis === "default"
+                                (analysisMode !== "part" && selectedAnalysis === "default")
                             )
                         }
                         size="default"
@@ -357,7 +362,7 @@ export function UploadZone({
                     >
                         {analysisState === "idle" ? (
                             <>
-                                {batchItems.length >= 2 ? "Start Batch Analysis" : "Start Analysis"}
+                                {batchItems.length >= 2 ? "Start Batch Analysis" : analysisMode === "part" ? "Identify Part" : "Start Analysis"}
                                 <Send className="w-4 h-4 ml-2" />
                             </>
                         ) : analysisState === "complete" ? (
@@ -376,24 +381,46 @@ export function UploadZone({
             </div>
 
             {/* Pills */}
-            {/* Pills */}
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-                    <Search className="h-4 w-4" />
-                    Fitment Identification
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
-                    <Tag className="h-4 w-4" />
-                    Product Detection
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
-                    <Zap className="h-4 w-4" />
-                    Instant Results
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
-                    <Layers className="h-4 w-4" />
-                    Multi-Image Processing
-                </div>
+                {analysisMode === "part" ? (
+                    <>
+                        <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
+                            <Search className="h-4 w-4" />
+                            Part Identification
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
+                            <Tag className="h-4 w-4" />
+                            AI Confidence Score
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
+                            <Zap className="h-4 w-4" />
+                            Instant Results
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
+                            <Layers className="h-4 w-4" />
+                            Amazon Search
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
+                            <Search className="h-4 w-4" />
+                            Fitment Identification
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
+                            <Tag className="h-4 w-4" />
+                            Product Detection
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
+                            <Zap className="h-4 w-4" />
+                            Instant Results
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
+                            <Layers className="h-4 w-4" />
+                            Multi-Image Processing
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )

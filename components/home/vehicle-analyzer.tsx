@@ -8,9 +8,11 @@ import {
     detectVisibleProducts,
     refineProductDetails,
     checkImageQuality,
+    identifyPart,
     type ImageQualityResult,
     type AnalysisResults,
-    type DetectedProduct
+    type DetectedProduct,
+    type PartIdentification
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
 import { UploadZone } from "@/components/home/upload-zone"
@@ -35,15 +37,18 @@ const ImageCropperDialog = dynamic(
 type AnalysisState = "idle" | "processing" | "complete"
 type AnalysisSelection = "default" | "fitment" | "products" | "all"
 
+export type AnalysisMode = "vehicle" | "part"
+
 interface VehicleAnalyzerProps {
     title?: string
     description?: string
     promptContext?: string
     showCategories?: boolean
     detectedProductsTitle?: string
+    analysisMode?: AnalysisMode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode = "vehicle" }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>("default")
@@ -80,6 +85,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             progress: 0,
             result: null,
             detectedProducts: [],
+            partIdentification: null,
             error: null,
             qualityIssues: [],
             loadingMessage: null
@@ -124,6 +130,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 progress: 0,
                 result: null,
                 detectedProducts: [],
+                partIdentification: null,
                 error: null,
                 qualityIssues: [],
                 loadingMessage: null
@@ -345,57 +352,72 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             }
         }
 
-        updateItem({ status: "analyzing", progress: 40, loadingMessage: "Analyzing vehicle..." })
+        updateItem({ status: "analyzing", progress: 40, loadingMessage: analysisMode === "part" ? "Identifying part..." : "Analyzing vehicle..." })
 
         // 3. Analysis
         try {
-            let result: AnalysisResults | null = null
-            let detectedProducts: DetectedProduct[] = []
-            let vehicleDetailsString: string | null = null
+            if (analysisMode === "part") {
+                // --- Part Identification Mode ---
+                updateItem({ loadingMessage: "AI is identifying your part...", progress: 50 })
+                const partRes = await identifyPart(publicUrls[0])
+                if (!partRes.success) throw new Error(partRes.error)
 
-            // Fitment
-            if (analysisType === "fitment" || analysisType === "all") {
-                updateItem({ loadingMessage: "Analyzing vehicle details..." })
-                // PASS PROMPT CONTEXT HERE
-                const fitmentRes = await analyzeVehicleImage(publicUrls, promptContext)
-                if (fitmentRes.success) {
-                    result = fitmentRes.data
-                    const v = fitmentRes.data.primary
-                    vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
-                } else {
-                    throw new Error(fitmentRes.error)
-                }
-            }
+                updateItem({
+                    status: "complete",
+                    progress: 100,
+                    partIdentification: partRes.data,
+                    loadingMessage: null
+                })
+            } else {
+                // --- Vehicle Analysis Mode ---
+                let result: AnalysisResults | null = null
+                let detectedProducts: DetectedProduct[] = []
+                let vehicleDetailsString: string | null = null
 
-            updateItem({ progress: 60 })
-
-            // Products
-            if (analysisType === "products" || analysisType === "all") {
-                updateItem({ loadingMessage: "Detecting products..." })
-                // PASS PROMPT CONTEXT HERE
-                const detectRes = await detectVisibleProducts(publicUrls, vehicleDetailsString, promptContext)
-                if (detectRes.success) {
-                    const types = detectRes.data
-                    for (let i = 0; i < types.length; i++) {
-                        updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 60 + Math.floor((i / types.length) * 35) })
-                        // Maybe pass context here too if needed? For now just types.
-                        const details = await refineProductDetails(publicUrls, types[i], vehicleDetailsString, promptContext)
-                        detectedProducts.push(details)
-                        // Update intermediate products
-                        updateItem({ detectedProducts: [...detectedProducts] })
+                // Fitment
+                if (analysisType === "fitment" || analysisType === "all") {
+                    updateItem({ loadingMessage: "Analyzing vehicle details..." })
+                    // PASS PROMPT CONTEXT HERE
+                    const fitmentRes = await analyzeVehicleImage(publicUrls, promptContext)
+                    if (fitmentRes.success) {
+                        result = fitmentRes.data
+                        const v = fitmentRes.data.primary
+                        vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
+                    } else {
+                        throw new Error(fitmentRes.error)
                     }
-                } else {
-                    updateItem({ error: detectRes.error })
                 }
-            }
 
-            updateItem({
-                status: "complete",
-                progress: 100,
-                result,
-                detectedProducts,
-                loadingMessage: null
-            })
+                updateItem({ progress: 60 })
+
+                // Products
+                if (analysisType === "products" || analysisType === "all") {
+                    updateItem({ loadingMessage: "Detecting products..." })
+                    // PASS PROMPT CONTEXT HERE
+                    const detectRes = await detectVisibleProducts(publicUrls, vehicleDetailsString, promptContext)
+                    if (detectRes.success) {
+                        const types = detectRes.data
+                        for (let i = 0; i < types.length; i++) {
+                            updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 60 + Math.floor((i / types.length) * 35) })
+                            // Maybe pass context here too if needed? For now just types.
+                            const details = await refineProductDetails(publicUrls, types[i], vehicleDetailsString, promptContext)
+                            detectedProducts.push(details)
+                            // Update intermediate products
+                            updateItem({ detectedProducts: [...detectedProducts] })
+                        }
+                    } else {
+                        updateItem({ error: detectRes.error })
+                    }
+                }
+
+                updateItem({
+                    status: "complete",
+                    progress: 100,
+                    result,
+                    detectedProducts,
+                    loadingMessage: null
+                })
+            }
 
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err)
@@ -465,6 +487,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             onAnalysisChange={setSelectedAnalysis}
                             onStart={handleStartBatch}
                             onReset={handleReset}
+                            analysisMode={analysisMode}
                         />
                     </div>
                 </div>
@@ -473,7 +496,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {batchItems.length > 0 && (
                     <section id="analysis-results" className="bg-white w-full py-12">
                         <div className="container mx-auto px-4">
-                            <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} />
+                            <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} analysisMode={analysisMode} />
                         </div>
                     </section>
                 )}

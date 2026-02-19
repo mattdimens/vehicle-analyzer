@@ -56,6 +56,14 @@ export function UploadZone({
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [showExampleModal, setShowExampleModal] = useState(false)
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+    const cameraInputRef = useRef<HTMLInputElement>(null)
+
+    const handleCameraSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            onFilesSelect(Array.from(e.target.files))
+        }
+        e.target.value = ""
+    }
 
     // ... (rest of the component logic remains unchanged until the button)
 
@@ -98,7 +106,7 @@ export function UploadZone({
 
     const [dropError, setDropError] = useState<string | null>(null)
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop: (acceptedFiles) => {
             setDropError(null)
             if (acceptedFiles.length > 0) {
@@ -147,22 +155,70 @@ export function UploadZone({
                     <input {...getInputProps()} />
 
                     {!hasItems && (
-                        <div className="flex flex-col items-center justify-center gap-4 text-center">
-                            <Upload className="h-10 w-10 text-muted-foreground" />
-                            <p className="text-lg font-medium text-muted-foreground">
-                                {isDragActive
-                                    ? "Drop the images here ..."
-                                    : "Drag 'n' drop images, or click to select"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                Upload multiple images per vehicle for better accuracy. Max 10MB per file.
-                            </p>
-                            {dropError && (
-                                <p className="text-sm text-destructive font-medium" role="alert">
-                                    {dropError}
+                        <>
+                            {/* Desktop: Drag & Drop UI */}
+                            <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
+                                <Upload className="h-10 w-10 text-muted-foreground" />
+                                <p className="text-lg font-medium text-muted-foreground">
+                                    {isDragActive
+                                        ? "Drop the images here ..."
+                                        : "Drag 'n' drop images, or click to select"}
                                 </p>
-                            )}
-                        </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Upload multiple images per vehicle for better accuracy. Max 10MB per file.
+                                </p>
+                                {dropError && (
+                                    <p className="text-sm text-destructive font-medium" role="alert">
+                                        {dropError}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Mobile: Buttons UI */}
+                            <div className="flex md:hidden flex-col w-full gap-4 py-4">
+                                <Button
+                                    size="lg"
+                                    className="w-full h-14 text-lg font-semibold shadow-lg rounded-xl"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        cameraInputRef.current?.click()
+                                    }}
+                                >
+                                    <Camera className="mr-2 h-6 w-6" />
+                                    Take a Photo
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="w-full h-12 text-base font-medium border-2 border-dashed border-primary/20 hover:bg-primary/5 rounded-xl text-primary"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        open()
+                                    }}
+                                >
+                                    <Upload className="mr-2 h-5 w-5" />
+                                    Upload from Gallery
+                                </Button>
+                                <p className="text-xs text-center text-muted-foreground/80">
+                                    Upload multiple angles for better accuracy
+                                </p>
+                                {dropError && (
+                                    <p className="text-sm text-center text-destructive font-medium" role="alert">
+                                        {dropError}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Hidden Camera Input */}
+                            <input
+                                type="file"
+                                ref={cameraInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={handleCameraSelect}
+                            />
+                        </>
                     )}
 
                     {hasItems && (

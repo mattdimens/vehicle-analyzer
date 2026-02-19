@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import {
     createSignedUploadUrl,
     analyzeVehicleImage,
@@ -17,9 +18,11 @@ import {
 import { HeroSection } from "@/components/home/hero-section"
 import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
-import { HowItWorks } from "@/components/home/how-it-works"
+import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
-import { UseCases } from "@/components/home/use-cases"
+import { UseCases, type UseCaseCard } from "@/components/home/use-cases"
+import { StatsBar } from "@/components/home/stats-bar"
+import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-nav"
 import { BatchResults } from "@/components/home/batch-results"
 import { trackEvent } from "@/lib/analytics"
 import type { BatchItem } from "@/lib/types"
@@ -46,12 +49,35 @@ interface VehicleAnalyzerProps {
     showCategories?: boolean
     detectedProductsTitle?: string
     analysisMode?: AnalysisMode
+    howItWorksSteps?: [HowItWorksStep, HowItWorksStep, HowItWorksStep]
+    howItWorksHeading?: React.ReactNode
+    useCaseCards?: UseCaseCard[]
+    useCaseHeading?: string
+    useCaseSubtitle?: string
+    categoryLabel?: string
+    educationalContent?: React.ReactNode
+    faqContent?: React.ReactNode
+    breadcrumbs?: BreadcrumbItem[]
+    relatedContent?: React.ReactNode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode = "vehicle" }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
-    const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>("default")
+    const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
+    const [activeMode, setActiveMode] = useState<AnalysisMode>(analysisModeProp)
+
+    // On the homepage, mode is controlled by cards; on sub-pages, it's the prop
+    const analysisMode = showCategories ? activeMode : analysisModeProp
+
+    const handleModeSwitch = useCallback((mode: AnalysisMode) => {
+        if (mode === activeMode) return
+        setActiveMode(mode)
+        // Reset state when switching modes
+        setBatchItems([])
+        setAnalysisState("idle")
+        setSelectedAnalysis(mode === "part" ? "all" : "all")
+    }, [activeMode])
 
     // Cropping State
     const [showCropper, setShowCropper] = useState(false)
@@ -470,8 +496,54 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             <main className="flex-1">
                 <div className="bg-[#003223]">
                     <HeroSection title={title} description={description} />
+                    {breadcrumbs && <BreadcrumbNav items={breadcrumbs} />}
 
                     <div id="upload-zone" className="scroll-mt-20">
+                        {/* Homepage Mode Selector Cards */}
+                        {showCategories && (
+                            <div className="container mx-auto px-4 mb-6">
+                                <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleModeSwitch("vehicle")}
+                                        className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "vehicle"
+                                            ? "border-orange-400 shadow-lg shadow-orange-400/20"
+                                            : "border-white/20 hover:border-white/40"
+                                            }`}
+                                    >
+                                        <div className={`flex h-14 w-14 items-center justify-center rounded-xl transition-colors ${analysisMode === "vehicle" ? "bg-orange-400/20 text-orange-300" : "bg-white/10 text-white/70 group-hover:bg-white/15"
+                                            }`}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 10.8 5H5.6c-.8 0-1.5.5-1.8 1.2L2 11c-.5 1.1-.2 2.3.7 3" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
+                                        </div>
+                                        <div className="text-center">
+                                            <h3 className={`font-heading text-base md:text-lg font-bold ${analysisMode === "vehicle" ? "text-orange-300" : "text-white"
+                                                }`}>Identify My Vehicle</h3>
+                                            <p className="text-xs md:text-sm text-white/60 mt-1">Upload a vehicle photo to find fitment and compatible parts.</p>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleModeSwitch("part")}
+                                        className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "part"
+                                            ? "border-orange-400 shadow-lg shadow-orange-400/20"
+                                            : "border-white/20 hover:border-white/40"
+                                            }`}
+                                    >
+                                        <div className={`flex h-14 w-14 items-center justify-center rounded-xl transition-colors ${analysisMode === "part" ? "bg-orange-400/20 text-orange-300" : "bg-white/10 text-white/70 group-hover:bg-white/15"
+                                            }`}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                                        </div>
+                                        <div className="text-center">
+                                            <h3 className={`font-heading text-base md:text-lg font-bold ${analysisMode === "part" ? "text-orange-300" : "text-white"
+                                                }`}>Identify a Part</h3>
+                                            <p className="text-xs md:text-sm text-white/60 mt-1">Upload a photo of any car part to learn what it is.</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <UploadZone
                             onFilesSelect={handleFilesSelect}
                             batchItems={batchItems}
@@ -488,6 +560,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             onStart={handleStartBatch}
                             onReset={handleReset}
                             analysisMode={analysisMode}
+                            isHomepage={showCategories}
+                            categoryLabel={categoryLabel}
                         />
                     </div>
                 </div>
@@ -501,13 +575,48 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     </section>
                 )}
 
-                <HowItWorks />
+                {educationalContent}
+
+                <StatsBar />
+
+                <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
 
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
 
                 {showCategories && <ProductCategories />}
-                <UseCases />
+
+                {/* Cross-link: Homepage → Part Identifier */}
+                {showCategories && (
+                    <div className="w-full bg-white pb-8">
+                        <div className="container max-w-6xl text-center">
+                            <p className="text-muted-foreground">
+                                Need to identify an individual part instead?{" "}
+                                <Link href="/part-identifier" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">
+                                    Identify any car part from a photo with our Visual Part Identifier
+                                </Link>
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Cross-link: Part Identifier → Vehicle Analyzer */}
+                {analysisMode === "part" && (
+                    <div className="w-full bg-white py-8">
+                        <div className="container max-w-6xl text-center">
+                            <p className="text-muted-foreground">
+                                Looking to identify your full vehicle fitment instead?{" "}
+                                <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">
+                                    Analyze your vehicle's year, make, model, and compatible accessories
+                                </Link>
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <UseCases cards={useCaseCards} heading={useCaseHeading} subtitle={useCaseSubtitle} />
+                {faqContent}
+                {relatedContent}
             </main>
 
             <QualityWarningDialog

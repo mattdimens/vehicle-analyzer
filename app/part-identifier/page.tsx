@@ -24,6 +24,30 @@ export const metadata: Metadata = {
     },
 }
 
+const softwareAppJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Visual Part Identifier",
+    applicationCategory: "UtilityApplication",
+    operatingSystem: "Web",
+    url: "https://visualfitment.com/part-identifier",
+    description:
+        "AI-powered car part identification tool. Upload a photo of any automotive part and instantly get the part name, category, function, vehicle compatibility, confidence score, and a direct link to purchase on Amazon. Uses Google Gemini vision models with a cascading accuracy strategy.",
+    offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+    },
+}
+
 export default function PartIdentifierPage() {
-    return <PartIdentifierClient />
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+            />
+            <PartIdentifierClient />
+        </>
+    )
 }

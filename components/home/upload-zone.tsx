@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle, Search, Tag, Zap, Layers } from "lucide-react"
+import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle, Search, Tag, Zap, Layers, ChevronDown, ChevronUp, Camera, Maximize, RotateCw, XCircle, Eye, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BatchItem } from "@/lib/types"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
@@ -28,6 +28,8 @@ interface UploadZoneProps {
     onStart: () => void
     onReset?: () => void
     analysisMode?: AnalysisMode
+    isHomepage?: boolean
+    categoryLabel?: string
 }
 
 export function UploadZone({
@@ -46,9 +48,14 @@ export function UploadZone({
     onStart,
     onReset,
     analysisMode = "vehicle",
+    isHomepage = false,
+    categoryLabel,
 }: UploadZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
+    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [showExampleModal, setShowExampleModal] = useState(false)
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
 
     // ... (rest of the component logic remains unchanged until the button)
 
@@ -325,25 +332,191 @@ export function UploadZone({
                     )}
                 </div>
 
-                {/* Control Bar */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
-                    {analysisMode !== "part" && (
-                        <select
-                            value={selectedAnalysis}
-                            onChange={(e) =>
-                                onAnalysisChange(e.target.value as AnalysisSelection)
-                            }
-                            aria-label="Select analysis type"
-                            className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
-                            disabled={analysisState !== "idle"}
+                {/* Tips for Best Results */}
+                <div className="px-4 py-3 border-t border-border/50">
+                    <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Camera className="w-3.5 h-3.5 flex-shrink-0" />
+                            Clear, well-lit photos work best
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Maximize className="w-3.5 h-3.5 flex-shrink-0" />
+                            Include the full vehicle or the full part
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <RotateCw className="w-3.5 h-3.5 flex-shrink-0" />
+                            Multiple angles improve accuracy
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            Avoid heavily filtered or edited images
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowExampleModal(true)}
+                            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                         >
-                            <option value="default" disabled>
-                                Choose Analysis...
-                            </option>
-                            <option value="fitment">Analyze Fitment</option>
-                            <option value="products">Detect Products</option>
-                            <option value="all">Fitment &amp; Products</option>
-                        </select>
+                            <Eye className="w-3.5 h-3.5" />
+                            See example
+                        </button>
+                    </div>
+                </div>
+
+                {/* Example Photo Modal */}
+                {showExampleModal && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                        onClick={() => setShowExampleModal(false)}
+                    >
+                        <div
+                            className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between p-4 border-b">
+                                <h3 className="font-heading text-lg font-bold">Photo Tips</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowExampleModal(false)}
+                                    className="text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
+                                {/* Good Example */}
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-sky-100 to-emerald-50 border-2 border-green-400 flex flex-col items-center justify-center">
+                                        <svg className="w-20 h-20 text-green-600/60" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="5" y="30" width="70" height="25" rx="6" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" />
+                                            <circle cx="20" cy="55" r="8" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" />
+                                            <circle cx="60" cy="55" r="8" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" />
+                                            <path d="M15 30 L22 18 H58 L68 30" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.05" />
+                                            <rect x="28" y="20" width="18" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
+                                        </svg>
+                                        <div className="flex items-center gap-1 mt-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+                                            <span className="text-[10px] text-green-700/60 font-medium">Well-lit &bull; Full frame &bull; Sharp</span>
+                                        </div>
+                                        <div className="absolute top-2 right-2">
+                                            <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-semibold text-green-600">✓ Good Photo</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Full vehicle visible, good lighting, clear &amp; sharp</p>
+                                    </div>
+                                </div>
+                                {/* Bad Example */}
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 border-2 border-red-400 flex flex-col items-center justify-center">
+                                        <svg className="w-20 h-20 text-red-500/40" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'blur(1.5px)' }}>
+                                            <rect x="-10" y="30" width="70" height="25" rx="6" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" transform="rotate(-5 35 42)" />
+                                            <circle cx="10" cy="55" r="8" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" />
+                                            <circle cx="50" cy="55" r="8" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.1" />
+                                        </svg>
+                                        <div className="flex items-center gap-1 mt-2">
+                                            <span className="text-[10px] text-red-600/60 font-medium">Dark &bull; Cropped &bull; Blurry</span>
+                                        </div>
+                                        <div className="absolute top-2 right-2">
+                                            <XCircle className="w-6 h-6 text-red-500" />
+                                        </div>
+                                        {/* Simulated dark overlay */}
+                                        <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-semibold text-red-600">✗ Bad Photo</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Vehicle cut off, low light, blurry or filtered</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-muted/50 p-4 text-center">
+                                <p className="text-xs text-muted-foreground">The AI can still process imperfect photos, but better input = better results.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Control Bar */}
+                <div className="flex flex-col items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
+                    {/* Homepage: collapsible advanced radio buttons */}
+                    {isHomepage && analysisMode !== "part" && (
+                        <div className="w-full">
+                            <button
+                                type="button"
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                                disabled={analysisState !== "idle"}
+                            >
+                                Advanced: Choose specific analysis type
+                                {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
+                            {showAdvanced && (
+                                <div className="flex flex-wrap justify-center gap-4 mt-3 py-2">
+                                    {[
+                                        { value: "fitment" as const, label: "Fitment Only" },
+                                        { value: "products" as const, label: "Products Only" },
+                                        { value: "all" as const, label: "Both" },
+                                    ].map((opt) => (
+                                        <label
+                                            key={opt.value}
+                                            className={cn(
+                                                "flex items-center gap-2 cursor-pointer text-sm px-3 py-1.5 rounded-full border transition-colors",
+                                                selectedAnalysis === opt.value
+                                                    ? "border-primary bg-primary/10 text-primary font-medium"
+                                                    : "border-border text-muted-foreground hover:border-primary/50"
+                                            )}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="analysis-type"
+                                                value={opt.value}
+                                                checked={selectedAnalysis === opt.value}
+                                                onChange={() => onAnalysisChange(opt.value)}
+                                                className="sr-only"
+                                            />
+                                            {opt.label}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Category pages: contextual label + optional dropdown */}
+                    {!isHomepage && analysisMode !== "part" && (
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            {!showCategoryDropdown ? (
+                                <>
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                                        <Zap className="w-3.5 h-3.5 text-primary" />
+                                        Analyzing for: <span className="text-primary font-semibold">{categoryLabel ?? "All Categories"}</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCategoryDropdown(true)}
+                                        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                                        disabled={analysisState !== "idle"}
+                                    >
+                                        change
+                                    </button>
+                                </>
+                            ) : (
+                                <select
+                                    value={selectedAnalysis}
+                                    onChange={(e) => {
+                                        onAnalysisChange(e.target.value as AnalysisSelection)
+                                        setShowCategoryDropdown(false)
+                                    }}
+                                    aria-label="Select analysis type"
+                                    className="h-9 w-full sm:w-auto px-3 rounded-md border bg-card text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring"
+                                    disabled={analysisState !== "idle"}
+                                >
+                                    <option value="fitment">Analyze Fitment Only</option>
+                                    <option value="products">Detect Products Only</option>
+                                    <option value="all">Fitment &amp; Products</option>
+                                </select>
+                            )}
+                        </div>
                     )}
 
                     <div className="hidden sm:block flex-1"></div>

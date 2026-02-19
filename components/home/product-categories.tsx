@@ -25,8 +25,11 @@ export function ProductCategories() {
                             <Disc className="h-7 w-7" />
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Wheels & Rims</h3>
-                        <p className="mb-6 flex-1 text-muted-foreground">
+                        <p className="mb-3 flex-1 text-muted-foreground">
                             Identify fitment, bolt patterns, and offsets. Find the perfect wheel and tire package for your vehicle.
+                        </p>
+                        <p className="mb-6 text-xs text-muted-foreground/70">
+                            Read our <span className="text-primary underline underline-offset-2">wheel fitment guide covering bolt pattern, offset, and rim sizing</span>
                         </p>
                         <div className="flex items-center text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
                             Analyze Wheels <ArrowRight className="ml-2 h-4 w-4" />
@@ -39,8 +42,11 @@ export function ProductCategories() {
                             <Truck className="h-7 w-7" />
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Truck Bed Covers</h3>
-                        <p className="mb-6 flex-1 text-muted-foreground">
+                        <p className="mb-3 flex-1 text-muted-foreground">
                             Determine bed length and cabin style to match with the correct tonneau cover or bed liner.
+                        </p>
+                        <p className="mb-6 text-xs text-muted-foreground/70">
+                            Read our <span className="text-primary underline underline-offset-2">bed cover guide comparing tri-fold, roll-up, and retractable styles</span>
                         </p>
                         <div className="flex items-center text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
                             Analyze Bed Covers <ArrowRight className="ml-2 h-4 w-4" />
@@ -53,8 +59,11 @@ export function ProductCategories() {
                             <Layers className="h-7 w-7" />
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Running Boards</h3>
-                        <p className="mb-6 flex-1 text-muted-foreground">
+                        <p className="mb-3 flex-1 text-muted-foreground">
                             Verify cab size and mounting compatibility for nerf bars, side steps, and rock sliders.
+                        </p>
+                        <p className="mb-6 text-xs text-muted-foreground/70">
+                            Read our <span className="text-primary underline underline-offset-2">running board guide on cab fit, mounting types, and materials</span>
                         </p>
                         <div className="flex items-center text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
                             Analyze Running Boards <ArrowRight className="ml-2 h-4 w-4" />

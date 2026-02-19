@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
+import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
@@ -51,6 +51,17 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-900 leading-relaxed">
                     <span className="font-semibold">Disclaimer:</span> AI-generated results may vary in accuracy. We recommend verifying all vehicle details and product compatibility before making a purchase.
+                </p>
+            </div>
+
+            {/* Inline Affiliate Disclosure */}
+            <div className="mx-2 flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                <Info className="h-3 w-3 flex-shrink-0" />
+                <p>
+                    We earn a small commission from Amazon purchases made through our links — at no extra cost to you. This helps keep Visual Fitment free.{" "}
+                    <a href="/privacy#affiliate-disclosure" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                        Learn more
+                    </a>
                 </p>
             </div>
 

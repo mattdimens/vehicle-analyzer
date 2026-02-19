@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Menu, ArrowRight } from 'lucide-react'
+import { Menu, Upload } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,19 @@ import { useState } from 'react'
 
 export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+  const isHomepage = pathname === '/'
+
+  const handleCtaClick = (e: React.MouseEvent) => {
+    if (isHomepage) {
+      e.preventDefault()
+      const el = document.getElementById('upload-zone')
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    setIsOpen(false)
+  }
+
+  const ctaHref = isHomepage ? '#upload-zone' : '/#upload-zone'
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-white backdrop-blur-sm">
@@ -41,24 +55,24 @@ export function SiteHeader() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
           <Link
-            href="#how-it-works"
+            href="/#upload-zone"
             className="text-muted-foreground transition-colors hover:text-primary"
           >
-            How It Works
+            Vehicle Analysis
           </Link>
           <Link
-            href="#use-cases"
+            href="/part-identifier"
             className="text-muted-foreground transition-colors hover:text-primary"
           >
-            Use Cases
+            Part Identifier
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
-              By Product Category <ChevronDown className="h-4 w-4" />
+              Categories <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/wheels-rims">Wheels & Rims</Link>
+                <Link href="/wheels-rims">Wheels &amp; Rims</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/truck-bed-covers">Truck Bed Covers</Link>
@@ -68,19 +82,13 @@ export function SiteHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link
-            href="/part-identifier"
-            className="text-muted-foreground transition-colors hover:text-primary"
-          >
-            Part Identifier
-          </Link>
         </nav>
 
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center justify-end flex-1">
           <Button asChild>
-            <Link href="#upload-zone">
-              Try it now <ArrowRight className="ml-2 h-4 w-4" />
+            <Link href={ctaHref} onClick={handleCtaClick}>
+              <Upload className="mr-2 h-4 w-4" /> Upload Photo
             </Link>
           </Button>
         </div>
@@ -95,18 +103,18 @@ export function SiteHeader() {
           <SheetContent side="right" className="w-[300px] sm:w-[400px] p-6">
             <nav className="flex flex-col gap-4 mt-8">
               <Link
-                href="#how-it-works"
+                href="/#upload-zone"
                 className="text-lg font-medium hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                How It Works
+                Vehicle Analysis
               </Link>
               <Link
-                href="#use-cases"
+                href="/part-identifier"
                 className="text-lg font-medium hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                Use Cases
+                Part Identifier
               </Link>
 
               <div className="py-2">
@@ -117,7 +125,7 @@ export function SiteHeader() {
                     className="text-base font-medium hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    Wheels & Rims
+                    Wheels &amp; Rims
                   </Link>
                   <Link
                     href="/truck-bed-covers"
@@ -135,17 +143,10 @@ export function SiteHeader() {
                   </Link>
                 </div>
               </div>
-              <Link
-                href="/part-identifier"
-                className="text-lg font-medium hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Part Identifier
-              </Link>
               <div className="pt-4">
                 <Button asChild className="w-full">
-                  <Link href="#upload-zone" onClick={() => setIsOpen(false)}>
-                    Try it now
+                  <Link href={ctaHref} onClick={handleCtaClick}>
+                    <Upload className="mr-2 h-4 w-4" /> Upload Photo
                   </Link>
                 </Button>
               </div>

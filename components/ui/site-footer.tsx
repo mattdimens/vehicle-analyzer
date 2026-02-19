@@ -20,7 +20,7 @@ export function SiteFooter() {
             Use Cases
           </Link>
           <Link
-            href="#"
+            href="/privacy"
             className="text-sm text-muted-foreground transition-colors hover:text-primary"
           >
             Privacy

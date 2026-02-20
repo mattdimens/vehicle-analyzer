@@ -5,7 +5,6 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import {
     createSignedUploadUrl,
-    analyzeVehicleImage,
     detectVisibleProducts,
     refineProductDetails,
     checkImageQuality,
@@ -403,10 +402,15 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 // Fitment
                 if (analysisType === "fitment" || analysisType === "all") {
                     updateItem({ loadingMessage: "Analyzing vehicle details..." })
-                    // PASS PROMPT CONTEXT HERE
-                    const fitmentRes = await analyzeVehicleImage(publicUrls, promptContext)
+                    // Call the /api/analyze route (upgraded @google/genai SDK + cascading models)
+                    const analyzeResponse = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageUrls: publicUrls, promptContext }),
+                    })
+                    const fitmentRes = await analyzeResponse.json()
                     if (fitmentRes.success) {
-                        result = fitmentRes.data
+                        result = fitmentRes.data as AnalysisResults
                         const v = fitmentRes.data.primary
                         vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
                     } else {

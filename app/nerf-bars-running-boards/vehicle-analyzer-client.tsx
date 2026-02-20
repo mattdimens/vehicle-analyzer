@@ -17,7 +17,7 @@ const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
     {
         title: "AI Determines Mounting Fit",
         description:
-            "Your vehicle's cab configuration — regular, extended, or crew — is detected along with body dimensions. The AI checks these against manufacturer mounting specs to ensure a correct, no-drill fit.",
+            "Your vehicle's cab configuration (regular, extended, or crew) is detected along with body dimensions. The AI checks these against manufacturer mounting specs to ensure a correct, no-drill fit.",
     },
     {
         title: "Shop Matched Running Boards",
@@ -29,7 +29,7 @@ const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
 const useCaseCards: UseCaseCard[] = [
     {
         title: "Making Entry Easier",
-        desc: "Your family struggles to climb into your lifted F-250. Upload a side shot and the AI identifies your cab type and rocker panel height, then recommends running boards with the right drop — from low-profile power steps for grandma to heavy-duty nerf bars for everyday use.",
+        desc: "Your family struggles to climb into your lifted F-250. Upload a side shot and the AI identifies your cab type and rocker panel height, then recommends running boards with the right drop, from low-profile power steps for grandma to heavy-duty nerf bars for everyday use.",
         icon: Footprints,
     },
     {
@@ -39,7 +39,7 @@ const useCaseCards: UseCaseCard[] = [
     },
     {
         title: "Fleet & Commercial Vehicles",
-        desc: "You manage a fleet of work trucks and need to outfit twenty Silverados with the same side steps. Upload a photo of one truck, confirm the AI's fitment match, and order with confidence — knowing every truck in the fleet gets the correct bolt-on kit without individual measurements.",
+        desc: "You manage a fleet of work trucks and need to outfit twenty Silverados with the same side steps. Upload a photo of one truck, confirm the AI's fitment match, and order with confidence, knowing every truck in the fleet gets the correct bolt-on kit without individual measurements.",
         icon: Users,
     },
 ]
@@ -51,7 +51,7 @@ const runningBoardFaqs: FaqItem[] = [
     },
     {
         question: "Do I need a specific mounting bracket for my truck?",
-        answer: "Yes — brackets are vehicle-specific because each truck has unique rocker panel dimensions and factory mounting points. Most quality running board kits include the correct brackets for your year, make, and model. Universal brackets exist but may require drilling and don't always fit as securely."
+        answer: "Yes, brackets are vehicle-specific because each truck has unique rocker panel dimensions and factory mounting points. Most quality running board kits include the correct brackets for your year, make, and model. Universal brackets exist but may require drilling and don't always fit as securely."
     },
     {
         question: "Can I install running boards myself?",
@@ -59,7 +59,7 @@ const runningBoardFaqs: FaqItem[] = [
     },
     {
         question: "What material is best for running boards?",
-        answer: "Aluminum is lightweight and corrosion-resistant, ideal for daily drivers especially in salty climates. Stainless steel is heavier but gives a polished chrome look. Powder-coated steel is the toughest option for off-road use — it hides trail damage and handles heavy loads without bending."
+        answer: "Aluminum is lightweight and corrosion-resistant, ideal for daily drivers especially in salty climates. Stainless steel is heavier but gives a polished chrome look. Powder-coated steel is the toughest option for off-road use; it hides trail damage and handles heavy loads without bending."
     },
     {
         question: "How does cab size affect running board fitment?",
@@ -71,14 +71,14 @@ export default function RunningBoardsClient() {
     return (
         <VehicleAnalyzer
             title="Running Board Analyzer"
-            description="The right running boards depend on your cab size, door count, and mounting points. Upload a photo and we'll figure out the specs so you get a perfect fit — no measuring tape required."
+            description="The right running boards depend on your cab size, door count, and mounting points. Upload a photo and we'll figure out the specs so you get a perfect fit, no measuring tape required."
             promptContext="nerf bars, running boards, side steps, rock sliders, and power steps"
             categoryLabel="Running Boards & Nerf Bars"
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Running Board Analyzer</span> Works</>}
             useCaseCards={useCaseCards}
             useCaseHeading="Why People Use the Running Board Analyzer"
-            useCaseSubtitle="From daily drivers to trail rigs and work fleets — find the right side step without crawling under the truck with a tape measure."
+            useCaseSubtitle="From daily drivers to trail rigs and work fleets, find the right side step without crawling under the truck with a tape measure."
             educationalContent={<RunningBoardGuide />}
             faqContent={<FaqAccordion items={runningBoardFaqs} />}
             breadcrumbs={[

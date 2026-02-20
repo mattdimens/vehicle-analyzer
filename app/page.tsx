@@ -51,7 +51,7 @@ export default function Home() {
             items={[
               {
                 title: "Part Identifier",
-                description: "Identify individual car parts from a photo — perfect for loose parts or unknown components.",
+                description: "Identify individual car parts from a photo, perfect for loose parts or unknown components.",
                 href: "/part-identifier"
               },
               {

@@ -15,22 +15,22 @@ interface UseCasesProps {
 const defaultCards: UseCaseCard[] = [
     {
         title: "Accessory Shoppers",
-        desc: "You just bought a used 4Runner and want to add a roof rack, but you're not sure of the exact generation or trim. Upload a photo and get the precise year, model, and trim — then browse compatible racks on Amazon without second-guessing fitment.",
+        desc: "You just bought a used 4Runner and want to add a roof rack, but you're not sure of the exact generation or trim. Upload a photo and get the precise year, model, and trim, then browse compatible racks on Amazon without second-guessing fitment.",
         icon: ShoppingBag,
     },
     {
         title: "Enthusiasts",
-        desc: "You spot a Ford Raptor at a car show with aggressive fender flares and a killer wheel setup. Snap a photo, run the product detector, and walk away with a list of every visible mod — brand names, styles, and purchase links — so you can replicate the look on your own truck.",
+        desc: "You spot a Ford Raptor at a car show with aggressive fender flares and a killer wheel setup. Snap a photo, run the product detector, and walk away with a list of every visible mod (brand names, styles, and purchase links) so you can replicate the look on your own truck.",
         icon: Camera,
     },
     {
         title: "Detailers & Shops",
-        desc: "A customer pulls in for ceramic coating work. Before you touch the car, upload a quick photo to auto-fill make, model, trim, color, and any visible aftermarket parts — creating a complete vehicle record for your shop management system in seconds, not minutes.",
+        desc: "A customer pulls in for ceramic coating work. Before you touch the car, upload a quick photo to auto-fill make, model, trim, color, and any visible aftermarket parts, creating a complete vehicle record for your shop management system in seconds, not minutes.",
         icon: Wrench,
     },
     {
         title: "Build Inspiration",
-        desc: "You've been saving Instagram photos of your dream overlanding setup. Upload those inspiration shots and the AI will identify every part — from the bumper guard to the rooftop tent — and tell you exactly which pieces are compatible with your own vehicle.",
+        desc: "You've been saving Instagram photos of your dream overlanding setup. Upload those inspiration shots and the AI will identify every part, from the bumper guard to the rooftop tent, and tell you exactly which pieces are compatible with your own vehicle.",
         icon: Sparkles,
     },
 ]

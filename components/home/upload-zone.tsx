@@ -142,7 +142,7 @@ export function UploadZone({
                 <div
                     {...getRootProps()}
                     role="button"
-                    aria-label="Upload vehicle images — drag and drop or click to select"
+                    aria-label="Upload vehicle images: drag and drop or click to select"
                     className={cn(
                         "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors rounded-t-2xl",
                         !hasItems &&

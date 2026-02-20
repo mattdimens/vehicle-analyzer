@@ -58,7 +58,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
             <div className="mx-2 flex items-center gap-1.5 text-xs text-muted-foreground/70">
                 <Info className="h-3 w-3 flex-shrink-0" />
                 <p>
-                    We earn a small commission from Amazon purchases made through our links — at no extra cost to you. This helps keep Visual Fitment free.{" "}
+                    We earn a small commission from Amazon purchases made through our links, at no extra cost to you. This helps keep Visual Fitment free.{" "}
                     <a href="/privacy#affiliate-disclosure" className="underline underline-offset-2 hover:text-foreground transition-colors">
                         Learn more
                     </a>

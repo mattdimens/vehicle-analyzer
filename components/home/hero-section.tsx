@@ -10,7 +10,7 @@ interface HeroSectionProps {
 
 export function HeroSection({
     title = "Find vehicle fitment, parts, & accessories from an image",
-    description = "See a truck with the perfect setup? Snap a photo and we'll tell you exactly what's on it — make, model, trim, and every visible mod — plus links to buy the right parts for your ride."
+    description = "See a truck with the perfect setup? Snap a photo and we'll tell you exactly what's on it: make, model, trim, and every visible mod, plus links to buy the right parts for your ride."
 }: HeroSectionProps) {
     return (
         <section

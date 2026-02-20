@@ -93,7 +93,7 @@ export function ResultsDisplay({
                     <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
                         <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                         <p className="text-sm text-amber-800">
-                            Low confidence — this may not be a recognizable car part, or the image may be unclear.
+                            Low confidence: this may not be a recognizable car part, or the image may be unclear.
                         </p>
                     </div>
                 )}

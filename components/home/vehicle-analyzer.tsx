@@ -76,6 +76,14 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         setBatchItems([])
         setAnalysisState("idle")
         setSelectedAnalysis(mode === "part" ? "all" : "all")
+
+        // Smooth scroll to the upload zone after state updates
+        setTimeout(() => {
+            const uploadTarget = document.getElementById("upload-target")
+            if (uploadTarget) {
+                uploadTarget.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+        }, 100)
     }, [activeMode])
 
     // Cropping State
@@ -548,25 +556,27 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             </div>
                         )}
 
-                        <UploadZone
-                            onFilesSelect={handleFilesSelect}
-                            batchItems={batchItems}
-                            onRemove={handleRemoveItem}
-                            onRemoveImage={handleRemoveImageFromItem}
-                            onCrop={handleCropClick}
-                            onAddImages={handleAddImageToItem}
-                            onSplit={handleSplitItem}
-                            onMerge={handleMergeItems}
-                            onClearAll={handleClearAll}
-                            analysisState={analysisState}
-                            selectedAnalysis={selectedAnalysis}
-                            onAnalysisChange={setSelectedAnalysis}
-                            onStart={handleStartBatch}
-                            onReset={handleReset}
-                            analysisMode={analysisMode}
-                            isHomepage={showCategories}
-                            categoryLabel={categoryLabel}
-                        />
+                        <div id="upload-target" className="scroll-mt-24">
+                            <UploadZone
+                                onFilesSelect={handleFilesSelect}
+                                batchItems={batchItems}
+                                onRemove={handleRemoveItem}
+                                onRemoveImage={handleRemoveImageFromItem}
+                                onCrop={handleCropClick}
+                                onAddImages={handleAddImageToItem}
+                                onSplit={handleSplitItem}
+                                onMerge={handleMergeItems}
+                                onClearAll={handleClearAll}
+                                analysisState={analysisState}
+                                selectedAnalysis={selectedAnalysis}
+                                onAnalysisChange={setSelectedAnalysis}
+                                onStart={handleStartBatch}
+                                onReset={handleReset}
+                                analysisMode={analysisMode}
+                                isHomepage={showCategories}
+                                categoryLabel={categoryLabel}
+                            />
+                        </div>
                     </div>
                 </div>
 

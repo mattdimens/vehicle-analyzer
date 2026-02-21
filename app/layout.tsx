@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Domine, Inter } from 'next/font/google'
+import { Space_Grotesk, Inter } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { cn } from '../lib/utils'
@@ -12,7 +12,7 @@ const fontSans = Inter({
   variable: '--font-sans',
 })
 
-const fontHeading = Domine({
+const fontHeading = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-heading',
   weight: ['400', '500', '600', '700'],

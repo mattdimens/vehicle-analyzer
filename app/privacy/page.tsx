@@ -22,8 +22,8 @@ export default function PrivacyPage() {
                                 When you upload a photo, here&apos;s exactly what happens:
                             </p>
                             <ol className="list-decimal pl-6 space-y-2">
-                                <li>Your image is uploaded to our cloud storage (Supabase) so we can pass it to the AI.</li>
-                                <li>The image URL is sent to <strong>Google&apos;s Gemini API</strong> for analysis. Google processes the image to generate results but <strong>does not use your images to train their models</strong> when accessed via their paid API.</li>
+                                <li>Your image is uploaded to our secure cloud storage so our AI can analyze it.</li>
+                                <li>We use third-party AI services to process your images for vehicle and part identification. These services process your images solely to generate results and do not use your images for model training.</li>
                                 <li>The AI&apos;s analysis results (vehicle details, part identification, etc.) are saved to our database.</li>
                             </ol>
                             <p className="mt-3">
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Analytics &amp; cookies</h2>
                             <p>
-                                We use basic, anonymous analytics to understand which features people use (e.g., how many analyses are run, which pages are visited). We <strong>do not</strong> use advertising cookies or track you across other websites. The only cookies we set are essential ones required for the site to function.
+                                We use a third-party hosting provider that provides anonymous web analytics to understand which features people use (e.g., how many analyses are run, which pages are visited). We <strong>do not</strong> use advertising cookies or track you across other websites. The only cookies we set are essential ones required for the site to function.
                             </p>
                         </section>
 
@@ -47,18 +47,7 @@ export default function PrivacyPage() {
                             </p>
                         </section>
 
-                        {/* 4. Third-Party Services */}
-                        <section>
-                            <h2 className="text-lg font-semibold text-foreground mb-3">Third-party services we use</h2>
-                            <ul className="list-disc pl-6 space-y-2">
-                                <li><strong>Google Gemini API</strong> — processes your images for vehicle/part identification. Subject to <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google&apos;s API terms</a>.</li>
-                                <li><strong>Supabase</strong> — securely stores uploaded images and analysis results.</li>
-                                <li><strong>Amazon Associates</strong> — powers affiliate product links. Subject to <a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=468496" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Amazon&apos;s privacy policy</a>.</li>
-                                <li><strong>Vercel</strong> — hosts the website and provides anonymous web analytics.</li>
-                            </ul>
-                        </section>
-
-                        {/* 5. Data Retention */}
+                        {/* 4. Data Retention */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">How long we keep your data</h2>
                             <p>
@@ -66,15 +55,11 @@ export default function PrivacyPage() {
                             </p>
                         </section>
 
-                        {/* 6. Contact & Deletion */}
+                        {/* 5. Contact & Deletion */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Data deletion &amp; contact</h2>
                             <p>
-                                Want your images or data removed? Email us at{" "}
-                                <a href="mailto:privacy@visualfitment.com" className="text-primary hover:underline">
-                                    privacy@visualfitment.com
-                                </a>{" "}
-                                and we&apos;ll delete it within 30 days. Include any details that help us find your data (e.g., approximate upload date, what the image was of).
+                                A contact form for data deletion requests is coming soon.
                             </p>
                         </section>
 

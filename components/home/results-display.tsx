@@ -13,6 +13,7 @@ import { addAmazonAffiliateTag } from "@/lib/amazon"
 import { trackEvent } from "@/lib/analytics"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { SaveToGarageButton } from "@/components/save-to-garage-button"
 
 interface ResultsDisplayProps {
     results: AnalysisResults | null
@@ -24,6 +25,7 @@ interface ResultsDisplayProps {
     progress: number
     detectedProductsTitle?: string
     analysisMode?: AnalysisMode
+    imageUrls?: string[] // Added to surface image URLs for SaveToGarageButton
 }
 
 export function ResultsDisplay({
@@ -36,6 +38,7 @@ export function ResultsDisplay({
     progress,
     detectedProductsTitle = "Detected Products",
     analysisMode = "vehicle",
+    imageUrls = [],
 }: ResultsDisplayProps) {
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
@@ -250,12 +253,18 @@ export function ResultsDisplay({
                                 </h2>
 
                                 <div className="rounded-[1.5rem] border border-border/40 bg-white shadow-sm overflow-hidden p-6 md:p-8">
-                                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                                        Primary Identification
-                                        <div className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                            {results.primary.confidence}% Confidence
-                                        </div>
-                                    </h3>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            Primary Identification
+                                            <div className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                                {results.primary.confidence}% Confidence
+                                            </div>
+                                        </h3>
+                                        <SaveToGarageButton
+                                            vehicleImageUrl={imageUrls[0]}
+                                            results={results}
+                                        />
+                                    </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
                                         <div className="space-y-1">

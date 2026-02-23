@@ -198,6 +198,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                                 progress={100}
                                                 detectedProductsTitle={detectedProductsTitle}
                                                 analysisMode={analysisMode}
+                                                imageUrls={item.images.map(img => img.publicUrl as string).filter(Boolean)}
                                             />
                                         ) : isError ? (
                                             <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-900 text-sm">

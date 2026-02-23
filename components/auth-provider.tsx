@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { createClient, Session, User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { PENDING_GARAGE_SAVE_KEY } from '@/components/save-to-garage-button'
+import { PENDING_PARTS_SAVE_KEY } from '@/components/save-to-parts-button'
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -47,6 +48,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     // Short timeout to ensure toast renders if we are redirecting
                     setTimeout(() => {
                         toast.success("Pending vehicle successfully saved to your garage!")
+                    }, 500)
+                }
+
+                const pendingPartsSave = localStorage.getItem(PENDING_PARTS_SAVE_KEY)
+                if (pendingPartsSave) {
+                    const partData = JSON.parse(pendingPartsSave)
+
+                    const { error } = await supabase.from('identified_parts').insert({
+                        ...partData,
+                        user_id: userId,
+                    })
+
+                    if (error) throw error
+
+                    localStorage.removeItem(PENDING_PARTS_SAVE_KEY)
+                    setTimeout(() => {
+                        toast.success("Pending part successfully saved to your garage!")
                     }, 500)
                 }
             } catch (error) {

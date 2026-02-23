@@ -594,7 +594,7 @@ export async function updateAnalysisResultsProducts(
 
     // append to JSON
     const updatedAnalysisData = {
-      ...(record.analysis_data as any),
+      ...(record.analysis_data as Record<string, unknown>),
       detectedProducts,
     }
 

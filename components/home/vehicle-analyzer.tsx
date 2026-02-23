@@ -405,7 +405,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             } else {
                 // --- Vehicle Analysis Mode ---
                 let result: AnalysisResults | null = null
-                let detectedProducts: DetectedProduct[] = []
+                const detectedProducts: DetectedProduct[] = []
                 let vehicleDetailsString: string | null = null
 
                 // Fitment
@@ -627,7 +627,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             <p className="text-muted-foreground">
                                 Looking to identify your full vehicle fitment instead?{" "}
                                 <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">
-                                    Analyze your vehicle's year, make, model, and compatible accessories
+                                    Analyze your vehicle&apos;s year, make, model, and compatible accessories
                                 </Link>
                             </p>
                         </div>

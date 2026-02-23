@@ -1,4 +1,4 @@
-import { Trash2, Link as IconLink, Pencil, Search, Expand } from "lucide-react"
+import { Trash2, Link as IconLink, Expand } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GarageVehicle } from "./garage-dashboard"
 import { useState } from "react"

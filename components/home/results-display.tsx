@@ -14,6 +14,7 @@ import { trackEvent } from "@/lib/analytics"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
+import { SaveToPartsButton } from "@/components/save-to-parts-button"
 
 interface ResultsDisplayProps {
     results: AnalysisResults | null
@@ -108,7 +109,13 @@ export function ResultsDisplay({
                                 {partIdentification.category}
                             </span>
                         </div>
-                        <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
+                            <SaveToPartsButton
+                                partImageUrl={imageUrls[0]}
+                                partIdentification={partIdentification}
+                            />
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {/* Confidence Bar */}

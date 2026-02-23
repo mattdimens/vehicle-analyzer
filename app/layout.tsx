@@ -5,6 +5,7 @@ import './globals.css'
 import { cn } from '../lib/utils'
 import { SiteHeader } from '../components/ui/site-header'
 import { SiteFooter } from '../components/ui/site-footer'
+import { AuthProvider } from '../components/auth-provider'
 
 // Setup your new fonts
 const fontSans = Inter({
@@ -87,32 +88,34 @@ export default function RootLayout({
           fontHeading.variable
         )}
       >
-        {/* GA4 — conditionally rendered, placed in body with afterInteractive strategy */}
-        {GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_ID}');
-              `}
-            </Script>
-          </>
-        )}
+        <AuthProvider>
+          {/* GA4 — conditionally rendered, placed in body with afterInteractive strategy */}
+          {GA_ID && (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+                strategy="afterInteractive"
+              />
+              <Script id="google-analytics" strategy="afterInteractive">
+                {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_ID}');
+                `}
+              </Script>
+            </>
+          )}
 
-        {/* Site Header */}
-        <SiteHeader />
+          {/* Site Header */}
+          <SiteHeader />
 
-        {/* Main content — offset for the fixed header */}
-        <main className="flex-1 pt-14">{children}</main>
+          {/* Main content — offset for the fixed header */}
+          <main className="flex-1 pt-14">{children}</main>
 
-        {/* Site Footer */}
-        <SiteFooter />
+          {/* Site Footer */}
+          <SiteFooter />
+        </AuthProvider>
       </body>
     </html>
   )

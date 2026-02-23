@@ -16,14 +16,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, LogOut, User as UserIcon, LayoutDashboard } from "lucide-react"
 
 import { useState } from 'react'
+import { useAuth } from '@/components/auth-provider'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const isHomepage = pathname === '/'
+  const { session, user, signInWithGoogle, signOut } = useAuth()
 
   const handleCtaClick = (e: React.MouseEvent) => {
     if (isHomepage) {
@@ -84,8 +87,47 @@ export function SiteHeader() {
           </DropdownMenu>
         </nav>
 
-        {/* Desktop CTA */}
-        <div className="hidden md:flex items-center justify-end flex-1">
+        {/* Desktop CTA & Auth */}
+        <div className="hidden md:flex items-center justify-end flex-1 gap-4">
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none">
+                <Avatar className="h-9 w-9 border border-border/50 hover:border-primary/50 transition-colors">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback><UserIcon className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    {user?.user_metadata?.full_name && (
+                      <p className="font-medium">{user.user_metadata.full_name}</p>
+                    )}
+                    {user?.email && (
+                      <p className="w-[150px] truncate text-sm text-muted-foreground">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/my-garage">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>My Garage</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut} className="cursor-pointer text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" onClick={signInWithGoogle}>
+              Sign In
+            </Button>
+          )}
+
           <Button asChild>
             <Link href={ctaHref} onClick={handleCtaClick}>
               <Upload className="mr-2 h-4 w-4" /> Upload Photo
@@ -143,7 +185,32 @@ export function SiteHeader() {
                   </Link>
                 </div>
               </div>
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col gap-3 border-t">
+                {session ? (
+                  <>
+                    <Link
+                      href="/my-garage"
+                      className="text-base font-medium hover:text-primary transition-colors flex items-center"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> My Garage
+                    </Link>
+                    <button
+                      onClick={() => {
+                        signOut()
+                        setIsOpen(false)
+                      }}
+                      className="text-base font-medium text-red-600 hover:text-red-700 transition-colors flex items-center text-left"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <Button variant="outline" onClick={signInWithGoogle} className="w-full justify-start">
+                    Sign In
+                  </Button>
+                )}
+
                 <Button asChild className="w-full">
                   <Link href={ctaHref} onClick={handleCtaClick}>
                     <Upload className="mr-2 h-4 w-4" /> Upload Photo

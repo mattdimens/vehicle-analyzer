@@ -128,7 +128,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
         return acc
     }, {} as Record<string, SavedPart[]>)
 
-    const detectedProducts: DetectedProduct[] = vehicle.ai_identification_data?.detectedProducts || []
+    const detectedProducts: DetectedProduct[] = (vehicle.ai_identification_data?.detectedProducts as DetectedProduct[]) || []
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

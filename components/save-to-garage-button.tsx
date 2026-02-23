@@ -6,17 +6,16 @@ import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { supabaseClient } from "@/lib/supabase-client"
 import { toast } from "sonner"
-import type { AnalysisResults, DetectedProduct } from "@/app/actions"
+import type { AnalysisResults } from "@/app/actions"
 
 interface SaveToGarageButtonProps {
     vehicleImageUrl: string
     results: AnalysisResults
-    detectedProducts: DetectedProduct[]
 }
 
 export const PENDING_GARAGE_SAVE_KEY = "pending_garage_save"
 
-export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts }: SaveToGarageButtonProps) {
+export function SaveToGarageButton({ vehicleImageUrl, results }: SaveToGarageButtonProps) {
     const { session, signInWithGoogle } = useAuth()
     const [isSaving, setIsSaving] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
@@ -31,10 +30,7 @@ export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts 
             trim: results.primary.trim,
             photo_url: vehicleImageUrl,
             identified_via: "ai_photo",
-            ai_identification_data: {
-                ...results,
-                detectedProducts,
-            },
+            ai_identification_data: results,
         }
 
         if (!session?.user) {

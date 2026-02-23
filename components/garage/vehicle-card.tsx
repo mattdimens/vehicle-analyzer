@@ -1,4 +1,4 @@
-import { Trash2, Link as IconLink, Expand } from "lucide-react"
+import { Trash2, Expand } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GarageVehicle } from "./garage-dashboard"
 import { useState } from "react"
@@ -16,10 +16,6 @@ export function VehicleCard({ vehicle, onDeleted, onUpdated }: VehicleCardProps)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
-    // Ensure we handle the count array from the join properly
-    const partsCount = Array.isArray(vehicle.saved_parts)
-        ? vehicle.saved_parts[0]?.count || 0
-        : 0
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.stopPropagation() // Don't trigger sheet open
@@ -71,13 +67,6 @@ export function VehicleCard({ vehicle, onDeleted, onUpdated }: VehicleCardProps)
                         </div>
                     </div>
 
-                    {/* Badge */}
-                    <div className="absolute top-4 left-4 z-10">
-                        <div className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1.5">
-                            <IconLink className="h-3 w-3" />
-                            {partsCount} Parts
-                        </div>
-                    </div>
                 </div>
 
                 {/* Content Section */}

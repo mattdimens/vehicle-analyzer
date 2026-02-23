@@ -22,7 +22,6 @@ export type GarageVehicle = {
     nickname: string | null
     photo_url: string | null
     ai_identification_data: Record<string, unknown>
-    saved_parts: [{ count: number }]
 }
 
 export type IdentifiedPart = {
@@ -79,7 +78,7 @@ export function GarageDashboard() {
                 // Fetch vehicles and get the count of associated saved parts
                 const vehiclesPromise = supabaseClient
                     .from("garage_vehicles")
-                    .select("*, saved_parts(count)")
+                    .select("*")
                     .order("created_at", { ascending: false })
 
                 // Fetch identified parts

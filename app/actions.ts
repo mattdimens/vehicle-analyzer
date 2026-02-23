@@ -571,3 +571,45 @@ export async function identifyPart(
     }
   }
 }
+
+// Function 7: Update Analysis Results with Detected Products
+export async function updateAnalysisResultsProducts(
+  imageUrl: string,
+  detectedProducts: DetectedProduct[]
+) {
+  try {
+    // Get the most recent analysis for this image
+    const { data: record, error: fetchError } = await supabase
+      .from('analysis_results')
+      .select('id, analysis_data')
+      .eq('image_url', imageUrl)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (fetchError || !record) {
+      console.error('Could not find record to update:', fetchError)
+      return { success: false, error: fetchError?.message || 'Record not found' }
+    }
+
+    // append to JSON
+    const updatedAnalysisData = {
+      ...(record.analysis_data as any),
+      detectedProducts,
+    }
+
+    const { error: updateError } = await supabase
+      .from('analysis_results')
+      .update({ analysis_data: updatedAnalysisData })
+      .eq('id', record.id)
+
+    if (updateError) {
+      console.error('Error updating analysis_results:', updateError.message)
+      return { success: false, error: updateError.message }
+    }
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}

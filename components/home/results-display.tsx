@@ -263,6 +263,7 @@ export function ResultsDisplay({
                                         <SaveToGarageButton
                                             vehicleImageUrl={imageUrls[0]}
                                             results={results}
+                                            detectedProducts={detectedProducts}
                                         />
                                     </div>
 

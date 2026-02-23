@@ -9,6 +9,7 @@ import {
     refineProductDetails,
     checkImageQuality,
     identifyPart,
+    updateAnalysisResultsProducts,
     type ImageQualityResult,
     type AnalysisResults,
     type DetectedProduct,
@@ -442,6 +443,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             detectedProducts.push(details)
                             // Update intermediate products
                             updateItem({ detectedProducts: [...detectedProducts] })
+                        }
+
+                        // Update the database analysis_results with the fully detected products
+                        if (publicUrls[0] && detectedProducts.length > 0) {
+                            await updateAnalysisResultsProducts(publicUrls[0], detectedProducts)
                         }
                     } else {
                         updateItem({ error: detectRes.error })

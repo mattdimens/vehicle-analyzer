@@ -11,9 +11,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabaseClient } from "@/lib/supabase-client"
-import { Loader2, Trash2, ExternalLink, Edit2, Check, X, Car } from "lucide-react"
+import { Loader2, Trash2, ExternalLink, Edit2, Check, X, Car, Sparkles, Search } from "lucide-react"
 import { toast } from "sonner"
 import type { GarageVehicle } from "./garage-dashboard"
+import type { DetectedProduct } from "@/app/actions"
+import { addAmazonAffiliateTag } from "@/lib/amazon"
 
 interface SavedPart {
     id: string
@@ -125,6 +127,8 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
         acc[cat].push(part)
         return acc
     }, {} as Record<string, SavedPart[]>)
+
+    const detectedProducts: DetectedProduct[] = vehicle.ai_identification_data?.detectedProducts || []
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -238,6 +242,66 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    )}
+
+                    {/* AI Detected Products Section */}
+                    {detectedProducts.length > 0 && (
+                        <div className="mt-12">
+                            <h3 className="text-lg font-bold font-heading mb-6 border-b pb-2 flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-amber-500" />
+                                AI Detected Products
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {detectedProducts.map((product, index) => {
+                                    const isUnknownBrand = !product.brand || product.brand.toLowerCase().includes("unknown")
+                                    const isUnknownModel = !product.model || product.model.toLowerCase().includes("unknown")
+
+                                    const vehicleDetails = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+                                    let searchQuery = ""
+                                    if (isUnknownBrand || isUnknownModel) {
+                                        searchQuery = `${vehicleDetails} ${product.type}`
+                                    } else {
+                                        searchQuery = `${vehicleDetails} ${product.brand} ${product.model}`
+                                    }
+
+                                    return (
+                                        <div key={index} className="group relative flex flex-col justify-between p-4 rounded-xl border border-amber-200/50 bg-amber-50/30 hover:bg-white hover:shadow-sm hover:border-amber-300 transition-all">
+                                            <div>
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <span className="font-semibold leading-tight text-foreground/90">{product.type}</span>
+                                                    <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-xs shrink-0 flex items-center gap-1">
+                                                        {product.confidence}% Match
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground mt-2 space-y-1">
+                                                    <div><span className="font-medium text-foreground/70">Brand:</span> {!isUnknownBrand ? product.brand : <span className="italic">Unknown</span>}</div>
+                                                    <div><span className="font-medium text-foreground/70">Model:</span> {!isUnknownModel ? product.model : <span className="italic">Unknown</span>}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end mt-4 pt-4 border-t border-amber-100">
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full h-8 px-4 rounded-full hover:bg-[#D1E7F0] border-primary/20 text-xs"
+                                                >
+                                                    <a
+                                                        href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-2"
+                                                    >
+                                                        <Search className="h-3 w-3" />
+                                                        Search on Amazon
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>

@@ -7,6 +7,14 @@ import { supabaseClient } from "@/lib/supabase-client"
 import { Loader2, Plus, CarFront, Wrench, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 import { VehicleCard } from "./vehicle-card"
 import { PartCard } from "./part-card"
@@ -51,6 +59,12 @@ export function GarageDashboard() {
     const [parts, setParts] = useState<IdentifiedPart[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isAuthChecking, setIsAuthChecking] = useState(true)
+
+    // Filter & Sort State
+    const [activeTab, setActiveTab] = useState("vehicles")
+    const [searchQuery, setSearchQuery] = useState("")
+    const [sortOrder, setSortOrder] = useState("date-desc")
+    const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
 
     // Auth protection layer
     useEffect(() => {
@@ -128,6 +142,52 @@ export function GarageDashboard() {
         setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
     }
 
+    // Derived State: Filtering and Sorting
+    const filteredAndSortedVehicles = [...vehicles]
+        .filter(v => {
+            if (!searchQuery) return true
+            const q = searchQuery.toLowerCase()
+            return (
+                (v.nickname?.toLowerCase().includes(q)) ||
+                (v.make?.toLowerCase().includes(q)) ||
+                (v.model?.toLowerCase().includes(q))
+            )
+        })
+        .sort((a, b) => {
+            if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            if (sortOrder === "name-asc" || sortOrder === "name-desc") {
+                const nameA = a.nickname || `${a.year} ${a.make} ${a.model}`
+                const nameB = b.nickname || `${b.year} ${b.make} ${b.model}`
+                return sortOrder === "name-asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
+            }
+            return 0
+        })
+
+    const filteredAndSortedParts = [...parts]
+        .filter(p => {
+            if (activeCategoryFilter && p.part_category !== activeCategoryFilter) return false
+            if (!searchQuery) return true
+            const q = searchQuery.toLowerCase()
+            return (
+                (p.part_name?.toLowerCase().includes(q)) ||
+                (p.brand?.toLowerCase().includes(q)) ||
+                (p.part_number?.toLowerCase().includes(q))
+            )
+        })
+        .sort((a, b) => {
+            if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            if (sortOrder === "name-asc") return a.part_name.localeCompare(b.part_name)
+            if (sortOrder === "name-desc") return b.part_name.localeCompare(a.part_name)
+            if (sortOrder === "category") return (a.part_category || "").localeCompare(b.part_category || "")
+            return 0
+        })
+
+    const uniqueCategories = Array.from(new Set(parts.map(p => p.part_category))).filter(Boolean) as string[]
+    const currentTabLength = activeTab === "vehicles" ? vehicles.length : parts.length
+    const showFilters = currentTabLength > 6
+
     if (isAuthChecking || (!session && !isAuthChecking)) {
         return (
             <div className="flex flex-col items-center justify-center py-24 min-h-[400px]">
@@ -159,13 +219,75 @@ export function GarageDashboard() {
                 </div>
             )}
 
-            <Tabs defaultValue="vehicles" className="w-full">
-                <div className="flex justify-between items-center mb-6">
+            <Tabs defaultValue="vehicles" className="w-full" onValueChange={setActiveTab}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-                        <TabsTrigger value="vehicles">My Vehicles ({vehicles.length})</TabsTrigger>
-                        <TabsTrigger value="parts">My Parts ({parts.length})</TabsTrigger>
+                        <TabsTrigger value="vehicles" className="flex items-center gap-2">
+                            My Vehicles
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white">
+                                {vehicles.length}
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="parts" className="flex items-center gap-2">
+                            My Parts
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white">
+                                {parts.length}
+                            </span>
+                        </TabsTrigger>
                     </TabsList>
+
+                    <div className="w-full sm:w-auto">
+                        <Select value={sortOrder} onValueChange={setSortOrder}>
+                            <SelectTrigger className="w-full sm:w-[180px] bg-white rounded-xl">
+                                <SelectValue placeholder="Sort by..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="date-desc">Newest First</SelectItem>
+                                <SelectItem value="date-asc">Oldest First</SelectItem>
+                                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                                {activeTab === "parts" && (
+                                    <SelectItem value="category">Category</SelectItem>
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
+
+                {showFilters && (
+                    <div className="mb-6 space-y-4 bg-white/50 p-4 rounded-2xl border border-border/40">
+                        <Input
+                            type="search"
+                            placeholder={activeTab === "vehicles" ? "Search vehicles by name, make, model..." : "Search parts by name, brand, part number..."}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-white rounded-xl"
+                        />
+                        {activeTab === "parts" && uniqueCategories.length > 0 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                <Button
+                                    variant={activeCategoryFilter === null ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setActiveCategoryFilter(null)}
+                                    className={`rounded-full whitespace-nowrap ${activeCategoryFilter === null ? 'bg-primary text-primary-foreground' : 'bg-white'}`}
+                                >
+                                    All Parts
+                                </Button>
+                                {uniqueCategories.map(cat => (
+                                    <Button
+                                        key={cat}
+                                        variant={activeCategoryFilter === cat ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setActiveCategoryFilter(cat)}
+                                        className={`rounded-full whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-white'}`}
+                                    >
+                                        {cat}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <TabsContent value="vehicles" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
                     {vehicles.length === 0 ? (
@@ -184,7 +306,7 @@ export function GarageDashboard() {
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* Add New Vehicle Card */}
                             <Link
                                 href="/#upload-zone"
@@ -199,7 +321,7 @@ export function GarageDashboard() {
                             </Link>
 
                             {/* Vehicle Cards */}
-                            {vehicles.map((vehicle, index) => (
+                            {filteredAndSortedVehicles.map((vehicle, index) => (
                                 <VehicleCard
                                     key={vehicle.id}
                                     vehicle={vehicle}
@@ -229,7 +351,7 @@ export function GarageDashboard() {
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {/* Add New Part Card */}
                             <Link
                                 href="/part-identifier"
@@ -244,7 +366,7 @@ export function GarageDashboard() {
                             </Link>
 
                             {/* Part Cards */}
-                            {parts.map((part, index) => (
+                            {filteredAndSortedParts.map((part, index) => (
                                 <PartCard
                                     key={part.id}
                                     part={part}

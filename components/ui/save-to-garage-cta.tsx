@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth-provider"
-import { X, CheckCircle2, ChevronDown, ChevronUp, LayoutDashboard } from "lucide-react"
+import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { GoogleSignInButton } from "@/components/GoogleSignInButton"
 import { cn } from "@/lib/utils"
@@ -68,99 +68,68 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
     const content = getContent()
 
     return (
-        <div className={cn(
-            "relative w-full rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-white p-6 shadow-sm overflow-hidden",
-            className
-        )}>
-            {/* Dismiss Button */}
-            <button
-                onClick={handleDismiss}
-                className="absolute top-4 right-4 p-1 rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground transition-colors"
-                aria-label="Dismiss"
-            >
-                <X className="h-4 w-4" />
-            </button>
+        <section className={cn("w-full bg-[#003223] py-24", className)}>
+            <div className="container max-w-6xl text-center flex flex-col items-center px-4">
+                <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mb-6">
+                    {content.headline}
+                </h2>
+                <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+                    {content.subtext}
+                </p>
 
-            <div className="flex flex-col md:flex-row gap-6 md:items-start">
-
-                {/* Icon Column */}
-                <div className="hidden md:flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <LayoutDashboard className="h-6 w-6" />
-                </div>
-
-                {/* Content Column */}
-                <div className="flex-1 space-y-4 pr-6 md:pr-0">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2 md:hidden">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                <LayoutDashboard className="h-4 w-4" />
-                            </div>
-                            <h3 className="font-heading text-xl font-bold text-foreground">
-                                {content.headline}
-                            </h3>
-                        </div>
-                        <h3 className="hidden md:block font-heading text-xl font-bold text-foreground mb-2">
-                            {content.headline}
-                        </h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            {content.subtext}
-                        </p>
-                    </div>
-
-                    {/* Learn More Collapsible Section (Homepage Only) */}
-                    {content.showLearnMore && (
-                        <div className="pt-2">
-                            <button
-                                onClick={() => setIsExpanded(!isExpanded)}
-                                className="flex items-center text-sm font-medium text-primary hover:underline group"
-                            >
-                                Learn more about My Garage
-                                {isExpanded ? (
-                                    <ChevronUp className="ml-1 h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                                ) : (
-                                    <ChevronDown className="ml-1 h-4 w-4 transition-transform group-hover:translate-y-0.5" />
-                                )}
-                            </button>
-
-                            {isExpanded && (
-                                <div className="mt-4 grid gap-3 animate-in slide-in-from-top-2 fade-in duration-200">
-                                    <div className="flex items-start gap-2 text-sm text-foreground/80">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                        <span>Save identified vehicles and parts in one place</span>
-                                    </div>
-                                    <div className="flex items-start gap-2 text-sm text-foreground/80">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                        <span>Build a collection of your rides and dream builds</span>
-                                    </div>
-                                    <div className="flex items-start gap-2 text-sm text-foreground/80">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                                        <span>Quickly re-find parts and fitment info anytime</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                        <GoogleSignInButton
-                            onClick={signInWithGoogle}
-                            variant="filled"
-                            size="medium"
-                            fullWidth={false}
-                            className="w-full sm:w-auto"
-                        />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full sm:w-auto text-muted-foreground"
-                            onClick={handleDismiss}
+                {/* Learn More Collapsible Section (Homepage Only) */}
+                {content.showLearnMore && (
+                    <div className="mb-8 w-full max-w-md mx-auto">
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="flex items-center justify-center w-full text-base font-medium text-primary hover:text-primary/80 transition-colors group"
                         >
-                            Maybe later
-                        </Button>
+                            Learn more about My Garage
+                            {isExpanded ? (
+                                <ChevronUp className="ml-1 h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+                            ) : (
+                                <ChevronDown className="ml-1 h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+                            )}
+                        </button>
+
+                        {isExpanded && (
+                            <div className="mt-6 text-left space-y-3 animate-in slide-in-from-top-2 fade-in duration-200 bg-white/5 p-6 rounded-xl border border-white/10">
+                                <div className="flex items-start gap-3 text-base text-white/90">
+                                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <span>Save identified vehicles and parts in one place</span>
+                                </div>
+                                <div className="flex items-start gap-3 text-base text-white/90">
+                                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <span>Build a collection of your rides and dream builds</span>
+                                </div>
+                                <div className="flex items-start gap-3 text-base text-white/90">
+                                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                                    <span>Quickly re-find parts and fitment info anytime</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full sm:w-auto mt-2">
+                    <GoogleSignInButton
+                        onClick={signInWithGoogle}
+                        variant="filled"
+                        size="large"
+                        fullWidth={false}
+                        className="w-full sm:w-auto"
+                    />
+                    <Button
+                        variant="ghost"
+                        size="lg"
+                        className="w-full sm:w-auto text-white/60 hover:text-white hover:bg-white/10"
+                        onClick={handleDismiss}
+                    >
+                        Maybe later
+                    </Button>
                 </div>
             </div>
-        </div>
+        </section>
     )
 }

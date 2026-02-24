@@ -566,7 +566,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                         {/* Homepage CTA Module */}
                         {showCategories && (
-                            <div className="container mx-auto px-4 mb-12 max-w-2xl">
+                            <div className="w-full">
                                 <SaveToGarageCTA placement="homepage" />
                             </div>
                         )}
@@ -610,7 +610,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {/* Inject optional CTA Module mid-page for Category flows */}
                 {ctaModule && (
-                    <div className="container mx-auto px-4 py-8 mb-4 max-w-2xl">
+                    <div className="w-full">
                         {ctaModule}
                     </div>
                 )}

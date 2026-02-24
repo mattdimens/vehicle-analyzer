@@ -10,13 +10,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabaseClient } from "@/lib/supabase-client"
-import { Loader2, Edit2, Check, X, Car, Sparkles, Search, ArrowRight } from "lucide-react"
+import { Loader2, Edit2, Check, X, Car, Sparkles, Search } from "lucide-react"
 import { toast } from "sonner"
 import type { GarageVehicle } from "./garage-dashboard"
 import type { DetectedProduct } from "@/app/actions"
 import { addAmazonAffiliateTag } from "@/lib/amazon"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import Link from "next/link"
 
 interface VehicleDetailSheetProps {
     isOpen: boolean
@@ -165,22 +164,6 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                             </div>
                         </div>
                     )}
-
-                    {/* Find More Parts CTA */}
-                    <div className="bg-[#D1E7F0]/30 rounded-xl border border-[#D1E7F0] p-6 flex flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden group">
-                        <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                            <Search className="w-32 h-32" />
-                        </div>
-                        <div className="relative z-10 text-center sm:text-left">
-                            <h4 className="font-bold text-foreground mb-1.5">Looking for more accessories?</h4>
-                            <p className="text-sm text-muted-foreground/80 max-w-[280px]">Identify unknown parts or find upgrades using our AI visual search.</p>
-                        </div>
-                        <Button asChild className="shrink-0 w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md relative z-10 font-medium px-6">
-                            <Link href={`/part-identifier?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${vehicle.year}`}>
-                                Find Parts <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
 
                     {/* AI Detected Products Section */}
                     {detectedProducts.length > 0 && (

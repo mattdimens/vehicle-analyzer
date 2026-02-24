@@ -1,21 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog"
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetTitle
+} from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabaseClient } from "@/lib/supabase-client"
-import { Loader2, Edit2, Check, X, Car, Sparkles, Search } from "lucide-react"
+import { Loader2, Edit2, Check, X, Car, Sparkles, Search, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import type { GarageVehicle } from "./garage-dashboard"
 import type { DetectedProduct } from "@/app/actions"
 import { addAmazonAffiliateTag } from "@/lib/amazon"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import Link from "next/link"
 
 interface VehicleDetailSheetProps {
     isOpen: boolean
@@ -25,43 +26,51 @@ interface VehicleDetailSheetProps {
 }
 
 export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: VehicleDetailSheetProps) {
-    const [isEditingNickname, setIsEditingNickname] = useState(false)
+    const isDesktop = useMediaQuery("(min-width: 768px)")
+
+    const [isEditingVehicle, setIsEditingVehicle] = useState(false)
     const [nicknameInput, setNicknameInput] = useState(vehicle.nickname || "")
-    const [isSavingNickname, setIsSavingNickname] = useState(false)
+    const [yearInput, setYearInput] = useState(vehicle.year.toString())
+    const [makeInput, setMakeInput] = useState(vehicle.make)
+    const [modelInput, setModelInput] = useState(vehicle.model)
+    const [trimInput, setTrimInput] = useState(vehicle.trim || "")
+    const [isSaving, setIsSaving] = useState(false)
 
-    const handleSaveNickname = async () => {
-        const newNickname = nicknameInput.trim() || null
-        if (newNickname === vehicle.nickname) {
-            setIsEditingNickname(false)
-            return
-        }
-
-        setIsSavingNickname(true)
+    const handleSaveVehicle = async () => {
+        setIsSaving(true)
         try {
+            const updates = {
+                nickname: nicknameInput.trim() || null,
+                year: parseInt(yearInput) || vehicle.year,
+                make: makeInput.trim() || vehicle.make,
+                model: modelInput.trim() || vehicle.model,
+                trim: trimInput.trim() || null,
+            }
+
             const { error } = await supabaseClient
                 .from("garage_vehicles")
-                .update({ nickname: newNickname })
+                .update(updates)
                 .eq("id", vehicle.id)
 
             if (error) throw error
 
-            onUpdated(vehicle.id, { nickname: newNickname })
-            toast.success("Vehicle nickname updated")
-            setIsEditingNickname(false)
+            onUpdated(vehicle.id, updates)
+            toast.success("Vehicle details updated")
+            setIsEditingVehicle(false)
         } catch (error) {
-            console.error("Error updating nickname:", error)
-            toast.error("Failed to update nickname")
+            console.error("Error updating vehicle:", error)
+            toast.error("Failed to update vehicle details")
         } finally {
-            setIsSavingNickname(false)
+            setIsSaving(false)
         }
     }
 
     const detectedProducts: DetectedProduct[] = (vehicle.ai_identification_data?.detectedProducts as DetectedProduct[]) || []
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-                <div className="relative w-full h-48 md:h-64 bg-muted shrink-0">
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <SheetContent side={isDesktop ? "right" : "bottom"} className="max-w-3xl w-full sm:max-w-md md:max-w-xl lg:max-w-2xl p-0 gap-0 overflow-y-auto max-h-[96vh] md:max-h-screen rounded-t-[2rem] md:rounded-t-none md:rounded-l-[2rem]">
+                <div className="relative w-full h-56 md:h-72 bg-muted shrink-0 rounded-t-[2rem] md:rounded-t-none md:rounded-tl-[2rem] overflow-hidden">
                     {vehicle.photo_url ? (
                         <img
                             src={vehicle.photo_url}
@@ -73,53 +82,114 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                             <Car className="h-12 w-12 text-muted-foreground/50" />
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-                    <div className="absolute bottom-4 left-6 right-6">
-                        {isEditingNickname ? (
-                            <div className="flex items-center gap-2 max-w-sm">
-                                <Input
-                                    className="bg-white/90 text-black placeholder:text-gray-500 h-9"
-                                    value={nicknameInput}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNicknameInput(e.target.value)}
-                                    placeholder="Enter a nickname..."
-                                    autoFocus
-                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSaveNickname()}
-                                />
-                                <Button size="icon" className="h-9 w-9 shrink-0 bg-emerald-600 hover:bg-emerald-700" onClick={handleSaveNickname} disabled={isSavingNickname}>
-                                    {isSavingNickname ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                </Button>
-                                <Button size="icon" variant="secondary" className="h-9 w-9 shrink-0" onClick={() => { setIsEditingNickname(false); setNicknameInput(vehicle.nickname || "") }}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3">
-                                <DialogTitle className="text-2xl md:text-3xl font-bold font-heading text-white">
-                                    {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                                </DialogTitle>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/20 rounded-full" onClick={() => setIsEditingNickname(true)}>
+                    <div className="absolute bottom-6 left-6 right-6">
+                        <div className="flex items-center gap-3">
+                            <SheetTitle className="text-2xl md:text-3xl font-bold font-heading text-white truncate pr-6">
+                                {vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                            </SheetTitle>
+                            {!isEditingVehicle && (
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/20 rounded-full shrink-0" onClick={() => setIsEditingVehicle(true)}>
                                     <Edit2 className="h-4 w-4" />
                                 </Button>
-                            </div>
-                        )}
-                        {!isEditingNickname && vehicle.nickname && (
-                            <DialogDescription className="text-white/80 font-medium text-sm md:text-base mt-1">
+                            )}
+                        </div>
+                        {!isEditingVehicle && vehicle.nickname && (
+                            <SheetDescription className="text-white/80 font-medium text-sm md:text-base mt-2 flex items-center gap-2">
+                                <Car className="h-4 w-4 opacity-70" />
                                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : ""}
-                            </DialogDescription>
+                            </SheetDescription>
                         )}
                     </div>
                 </div>
 
-                <div className="p-6 md:p-8">
+                <div className="p-6 md:p-8 space-y-8">
+                    {/* Editable Specs Grid */}
+                    {isEditingVehicle ? (
+                        <div className="space-y-4 bg-muted/30 p-5 rounded-xl border border-border/50 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                    <Edit2 className="h-4 w-4 text-emerald-600" />
+                                    Edit Vehicle Details
+                                </h3>
+                                <div className="flex gap-2">
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-muted" onClick={() => setIsEditingVehicle(false)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700 shadow-sm" onClick={handleSaveVehicle} disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Nickname (Optional)</label>
+                                    <Input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)} placeholder="e.g. My Truck" className="bg-background border-border/60" />
+                                </div>
+                                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Year</label>
+                                    <Input type="number" value={yearInput} onChange={e => setYearInput(e.target.value)} className="bg-background border-border/60" />
+                                </div>
+                                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Make</label>
+                                    <Input value={makeInput} onChange={e => setMakeInput(e.target.value)} className="bg-background border-border/60" />
+                                </div>
+                                <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Model</label>
+                                    <Input value={modelInput} onChange={e => setModelInput(e.target.value)} className="bg-background border-border/60" />
+                                </div>
+                                <div className="space-y-1.5 col-span-2">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Trim</label>
+                                    <Input value={trimInput} onChange={e => setTrimInput(e.target.value)} className="bg-background border-border/60" />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-muted/20 p-5 rounded-xl border border-border/40 shadow-sm">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Year</p>
+                                <p className="font-semibold text-foreground">{vehicle.year}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Make</p>
+                                <p className="font-semibold text-foreground">{vehicle.make}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Model</p>
+                                <p className="font-semibold text-foreground truncate pr-2" title={vehicle.model}>{vehicle.model}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trim</p>
+                                <p className="font-semibold text-foreground truncate pr-2" title={vehicle.trim || "—"}>{vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : "—"}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Find More Parts CTA */}
+                    <div className="bg-[#D1E7F0]/30 rounded-xl border border-[#D1E7F0] p-6 flex flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden group">
+                        <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                            <Search className="w-32 h-32" />
+                        </div>
+                        <div className="relative z-10 text-center sm:text-left">
+                            <h4 className="font-bold text-foreground mb-1.5">Looking for more accessories?</h4>
+                            <p className="text-sm text-muted-foreground/80 max-w-[280px]">Identify unknown parts or find upgrades using our AI visual search.</p>
+                        </div>
+                        <Button asChild className="shrink-0 w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md relative z-10 font-medium px-6">
+                            <Link href={`/part-identifier?make=${encodeURIComponent(vehicle.make)}&model=${encodeURIComponent(vehicle.model)}&year=${vehicle.year}`}>
+                                Find Parts <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </div>
+
                     {/* AI Detected Products Section */}
                     {detectedProducts.length > 0 && (
-                        <div className="mt-12">
-                            <h3 className="text-lg font-bold font-heading mb-6 border-b pb-2 flex items-center gap-2">
+                        <div className="pt-2 pb-6">
+                            <h3 className="text-xl font-bold font-heading mb-5 flex items-center gap-2">
                                 <Sparkles className="h-5 w-5 text-amber-500" />
                                 AI Detected Products
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {detectedProducts.map((product, index) => {
                                     const isUnknownBrand = !product.brand || product.brand.toLowerCase().includes("unknown")
                                     const isUnknownModel = !product.model || product.model.toLowerCase().includes("unknown")
@@ -133,26 +203,37 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                                     }
 
                                     return (
-                                        <div key={index} className="group relative flex flex-col justify-between p-4 rounded-xl border border-amber-200/50 bg-amber-50/30 hover:bg-white hover:shadow-sm hover:border-amber-300 transition-all">
+                                        <div key={index} className="group relative flex flex-col justify-between p-5 rounded-xl border border-border/60 bg-white hover:border-amber-300 hover:shadow-md transition-all">
                                             <div>
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <span className="font-semibold leading-tight text-foreground/90">{product.type}</span>
-                                                    <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-xs shrink-0 flex items-center gap-1">
+                                                <div className="flex justify-between items-start gap-4 mb-3">
+                                                    <span className="font-bold leading-tight text-foreground">{product.type}</span>
+                                                    <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] shrink-0 flex items-center gap-1 shadow-sm">
                                                         {product.confidence}% Match
                                                     </span>
                                                 </div>
-                                                <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                                                    <div><span className="font-medium text-foreground/70">Brand:</span> {!isUnknownBrand ? product.brand : <span className="italic">Unknown</span>}</div>
-                                                    <div><span className="font-medium text-foreground/70">Model:</span> {!isUnknownModel ? product.model : <span className="italic">Unknown</span>}</div>
+                                                <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3 border border-border/40 space-y-2">
+                                                    <div className="flex items-center">
+                                                        <span className="font-semibold text-foreground/80 w-16 text-xs uppercase tracking-wider">Brand</span>
+                                                        <span className="truncate">{!isUnknownBrand ? product.brand : <span className="italic opacity-60">Unknown</span>}</span>
+                                                    </div>
+                                                    <div className="h-px w-full bg-border/40" />
+                                                    <div className="flex items-center">
+                                                        <span className="font-semibold text-foreground/80 w-16 text-xs uppercase tracking-wider">Model</span>
+                                                        <span className="truncate">{!isUnknownModel ? product.model : <span className="italic opacity-60">Unknown</span>}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center justify-end mt-4 pt-4 border-t border-amber-100">
+                                            <div className="mt-5 flex flex-col gap-3">
+                                                <div className="text-[11px] text-muted-foreground italic flex items-start gap-1.5 bg-muted/40 p-2 rounded-md border border-border/40">
+                                                    <Search className="h-3 w-3 shrink-0 mt-0.5 opacity-60" />
+                                                    <span className="leading-tight">Searching Amazon for: <span className="font-medium text-foreground/70">"{searchQuery}"</span></span>
+                                                </div>
                                                 <Button
                                                     asChild
                                                     variant="outline"
                                                     size="sm"
-                                                    className="w-full h-8 px-4 rounded-full hover:bg-[#D1E7F0] border-primary/20 text-xs"
+                                                    className="w-full h-10 rounded-lg hover:bg-[#D1E7F0] hover:text-[#003223] border-primary/20 text-sm font-semibold transition-colors shadow-sm"
                                                 >
                                                     <a
                                                         href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
@@ -160,7 +241,6 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                                                         rel="noopener noreferrer"
                                                         className="flex items-center justify-center gap-2"
                                                     >
-                                                        <Search className="h-3 w-3" />
                                                         Search on Amazon
                                                     </a>
                                                 </Button>
@@ -172,7 +252,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                         </div>
                     )}
                 </div>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     )
 }

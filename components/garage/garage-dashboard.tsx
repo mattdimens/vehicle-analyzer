@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
 import { supabaseClient } from "@/lib/supabase-client"
-import { Loader2, Plus, CarFront } from "lucide-react"
+import { Loader2, Plus, CarFront, Wrench, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
@@ -146,120 +146,115 @@ export function GarageDashboard() {
         )
     }
 
-    if (vehicles.length === 0 && parts.length === 0) {
-        return (
-            <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-8 md:p-16 flex flex-col items-center justify-center text-center">
-                <div className="flex gap-4 mb-6">
-                    <div className="h-20 w-20 rounded-full bg-[#E5F1E8] flex items-center justify-center">
-                        <CarFront className="h-10 w-10 text-[#00A95D]" />
-                    </div>
-                </div>
-                <h2 className="text-2xl font-bold font-heading mb-2">Your garage is empty</h2>
-                <p className="text-muted-foreground mb-8 max-w-md">
-                    Upload a photo of your car, truck, or SUV to identify it, or upload a photo of a specific part to figure out what it is!
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <Button asChild size="lg" className="rounded-full px-8">
-                        <Link href="/#upload-zone">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Identify a Vehicle
-                        </Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline" className="rounded-full px-8">
-                        <Link href="/part-identifier">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Identify a Part
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
     return (
-        <Tabs defaultValue="vehicles" className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-                    <TabsTrigger value="vehicles">My Vehicles ({vehicles.length})</TabsTrigger>
-                    <TabsTrigger value="parts">My Parts ({parts.length})</TabsTrigger>
-                </TabsList>
-            </div>
-
-            <TabsContent value="vehicles" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
-                {vehicles.length === 0 ? (
-                    <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center">
-                        <h2 className="text-xl font-bold font-heading mb-2">No vehicles saved yet</h2>
-                        <Button asChild size="lg" className="rounded-full mt-4">
-                            <Link href="/#upload-zone">
-                                Identify a Vehicle
-                            </Link>
-                        </Button>
+        <div className="space-y-6">
+            {vehicles.length === 0 && parts.length === 0 && (
+                <div className="bg-[#003223] text-white p-4 rounded-xl flex items-center gap-3 shadow-md max-w-3xl mx-auto">
+                    <div className="bg-white/20 p-2 rounded-full shrink-0">
+                        <Sparkles className="h-5 w-5 text-amber-300" />
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Add New Vehicle Card */}
-                        <Link
-                            href="/#upload-zone"
-                            className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
-                        >
-                            <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                                <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <p className="text-sm font-medium">
+                        Welcome to your garage! Save vehicles and parts you identify to build your personal fitment library.
+                    </p>
+                </div>
+            )}
+
+            <Tabs defaultValue="vehicles" className="w-full">
+                <div className="flex justify-between items-center mb-6">
+                    <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+                        <TabsTrigger value="vehicles">My Vehicles ({vehicles.length})</TabsTrigger>
+                        <TabsTrigger value="parts">My Parts ({parts.length})</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent value="vehicles" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+                    {vehicles.length === 0 ? (
+                        <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
+                            <div className="h-20 w-20 rounded-full bg-[#E5F1E8] flex items-center justify-center mb-6">
+                                <CarFront className="h-10 w-10 text-[#00A95D]" />
                             </div>
-                            <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                                Identify New Vehicle
-                            </span>
-                        </Link>
-
-                        {/* Vehicle Cards */}
-                        {vehicles.map((vehicle) => (
-                            <VehicleCard
-                                key={vehicle.id}
-                                vehicle={vehicle}
-                                onDeleted={handleVehicleDeleted}
-                                onUpdated={handleVehicleUpdated}
-                            />
-                        ))}
-                    </div>
-                )}
-            </TabsContent>
-
-            <TabsContent value="parts" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
-                {parts.length === 0 ? (
-                    <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center">
-                        <h2 className="text-xl font-bold font-heading mb-2">No parts saved yet</h2>
-                        <Button asChild size="lg" className="rounded-full mt-4">
-                            <Link href="/part-identifier">
-                                Identify a Part
+                            <h2 className="text-2xl font-bold font-heading mb-4">Your garage is empty</h2>
+                            <p className="text-muted-foreground mb-8 max-w-md">
+                                Upload a photo of any vehicle to identify it and start tracking compatible parts.
+                            </p>
+                            <Button asChild size="lg" className="rounded-full px-8 bg-[#EF5A2A] hover:bg-[#D44A20] text-white font-semibold shadow-md border-0">
+                                <Link href="/#upload-zone">
+                                    Upload Vehicle Photo
+                                </Link>
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Add New Vehicle Card */}
+                            <Link
+                                href="/#upload-zone"
+                                className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
+                            >
+                                <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
+                                    <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                                    Identify New Vehicle
+                                </span>
                             </Link>
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Add New Part Card */}
-                        <Link
-                            href="/part-identifier"
-                            className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
-                        >
-                            <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                                <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                            </div>
-                            <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                                Identify New Part
-                            </span>
-                        </Link>
 
-                        {/* Part Cards */}
-                        {parts.map((part) => (
-                            <PartCard
-                                key={part.id}
-                                part={part}
-                                onDeleted={handlePartDeleted}
-                                onUpdated={handlePartUpdated}
-                            />
-                        ))}
-                    </div>
-                )}
-            </TabsContent>
-        </Tabs>
+                            {/* Vehicle Cards */}
+                            {vehicles.map((vehicle) => (
+                                <VehicleCard
+                                    key={vehicle.id}
+                                    vehicle={vehicle}
+                                    onDeleted={handleVehicleDeleted}
+                                    onUpdated={handleVehicleUpdated}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="parts" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+                    {parts.length === 0 ? (
+                        <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
+                            <div className="h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center mb-6">
+                                <Wrench className="h-10 w-10 text-amber-500" />
+                            </div>
+                            <h2 className="text-2xl font-bold font-heading mb-4">No parts saved yet</h2>
+                            <p className="text-muted-foreground mb-8 max-w-md">
+                                Upload a photo of any automotive part to identify it and find where to buy.
+                            </p>
+                            <Button asChild size="lg" className="rounded-full px-8 bg-[#EF5A2A] hover:bg-[#D44A20] text-white font-semibold shadow-md border-0">
+                                <Link href="/part-identifier">
+                                    Upload Part Photo
+                                </Link>
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Add New Part Card */}
+                            <Link
+                                href="/part-identifier"
+                                className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
+                            >
+                                <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
+                                    <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                                    Identify New Part
+                                </span>
+                            </Link>
+
+                            {/* Part Cards */}
+                            {parts.map((part) => (
+                                <PartCard
+                                    key={part.id}
+                                    part={part}
+                                    onDeleted={handlePartDeleted}
+                                    onUpdated={handlePartUpdated}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+            </Tabs>
+        </div>
     )
 }

@@ -29,6 +29,17 @@ export function SiteHeader() {
   const isHomepage = pathname === '/'
   const { session, user, signInWithGoogle, signOut } = useAuth()
 
+  const fullName = user?.user_metadata?.full_name || ''
+  const firstName = fullName.split(' ')[0]
+  const email = user?.email || ''
+
+  let userInitial = ''
+  if (firstName) {
+    userInitial = firstName.charAt(0).toUpperCase()
+  } else if (email) {
+    userInitial = email.charAt(0).toUpperCase()
+  }
+
   const handleCtaClick = (e: React.MouseEvent) => {
     if (isHomepage) {
       e.preventDefault()
@@ -92,11 +103,23 @@ export function SiteHeader() {
         <div className="hidden md:flex items-center justify-end flex-1 gap-4">
           {session ? (
             <DropdownMenu>
-              <DropdownMenuTrigger className="focus:outline-none">
-                <Avatar className="h-9 w-9 border border-border/50 hover:border-primary/50 transition-colors">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback><UserIcon className="h-4 w-4" /></AvatarFallback>
+              <DropdownMenuTrigger className="focus:outline-none flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Avatar className="h-8 w-8 border border-border/50">
+                  {userInitial ? (
+                    <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
+                      {userInitial}
+                    </AvatarFallback>
+                  ) : (
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      <UserIcon className="h-4 w-4" />
+                    </AvatarFallback>
+                  )}
                 </Avatar>
+                {firstName && (
+                  <span className="text-sm font-medium text-foreground">
+                    {firstName}
+                  </span>
+                )}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <div className="flex items-center justify-start gap-2 p-2">
@@ -139,93 +162,114 @@ export function SiteHeader() {
         </div>
 
         {/* Mobile Menu Trigger */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" aria-label="Menu">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] sm:w-[400px] p-6">
-            <nav className="flex flex-col gap-4 mt-8">
-              <Link
-                href="/#upload-zone"
-                className="text-lg font-medium hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Vehicle Analysis
-              </Link>
-              <Link
-                href="/part-identifier"
-                className="text-lg font-medium hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Part Identifier
-              </Link>
+        <div className="md:hidden flex items-center gap-2">
+          {session ? (
+            <Avatar className="h-8 w-8 border border-border/50">
+              {userInitial ? (
+                <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
+                  {userInitial}
+                </AvatarFallback>
+              ) : (
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  <UserIcon className="h-4 w-4" />
+                </AvatarFallback>
+              )}
+            </Avatar>
+          ) : (
+            <Avatar className="h-8 w-8 border border-border/50">
+              <AvatarFallback className="bg-muted">
+                <UserIcon className="h-4 w-4 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+          )}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Menu">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] p-6">
+              <nav className="flex flex-col gap-4 mt-8">
+                <Link
+                  href="/#upload-zone"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Vehicle Analysis
+                </Link>
+                <Link
+                  href="/part-identifier"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Part Identifier
+                </Link>
 
-              <div className="py-2">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Categories</p>
-                <div className="flex flex-col gap-3 pl-4 border-l">
-                  <Link
-                    href="/wheels-rims"
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Wheels &amp; Rims
-                  </Link>
-                  <Link
-                    href="/truck-bed-covers"
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Truck Bed Covers
-                  </Link>
-                  <Link
-                    href="/nerf-bars-running-boards"
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Running Boards
-                  </Link>
-                </div>
-              </div>
-              <div className="pt-4 flex flex-col gap-3 border-t">
-                {session ? (
-                  <>
+                <div className="py-2">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Categories</p>
+                  <div className="flex flex-col gap-3 pl-4 border-l">
                     <Link
-                      href="/my-garage"
-                      className="text-base font-medium hover:text-primary transition-colors flex items-center"
+                      href="/wheels-rims"
+                      className="text-base font-medium hover:text-primary transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> My Garage
+                      Wheels &amp; Rims
                     </Link>
-                    <button
-                      onClick={() => {
-                        signOut()
-                        setIsOpen(false)
-                      }}
-                      className="text-base font-medium text-red-600 hover:text-red-700 transition-colors flex items-center text-left"
+                    <Link
+                      href="/truck-bed-covers"
+                      className="text-base font-medium hover:text-primary transition-colors"
+                      onClick={() => setIsOpen(false)}
                     >
-                      <LogOut className="mr-2 h-4 w-4" /> Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <GoogleSignInButton
-                    onClick={signInWithGoogle}
-                    size="medium"
-                    variant="outline"
-                    fullWidth
-                  />
-                )}
+                      Truck Bed Covers
+                    </Link>
+                    <Link
+                      href="/nerf-bars-running-boards"
+                      className="text-base font-medium hover:text-primary transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Running Boards
+                    </Link>
+                  </div>
+                </div>
+                <div className="pt-4 flex flex-col gap-3 border-t">
+                  {session ? (
+                    <>
+                      <Link
+                        href="/my-garage"
+                        className="text-base font-medium hover:text-primary transition-colors flex items-center"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <LayoutDashboard className="mr-2 h-4 w-4" /> My Garage
+                      </Link>
+                      <button
+                        onClick={() => {
+                          signOut()
+                          setIsOpen(false)
+                        }}
+                        className="text-base font-medium text-red-600 hover:text-red-700 transition-colors flex items-center text-left"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <GoogleSignInButton
+                      onClick={signInWithGoogle}
+                      size="medium"
+                      variant="outline"
+                      fullWidth
+                    />
+                  )}
 
-                <Button asChild className="w-full">
-                  <Link href={ctaHref} onClick={handleCtaClick}>
-                    <Upload className="mr-2 h-4 w-4" /> Upload Photo
-                  </Link>
-                </Button>
-              </div>
-            </nav>
-          </SheetContent>
-        </Sheet>
+                  <Button asChild className="w-full">
+                    <Link href={ctaHref} onClick={handleCtaClick}>
+                      <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                    </Link>
+                  </Button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   )

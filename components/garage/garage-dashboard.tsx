@@ -361,7 +361,7 @@ export function GarageDashboard() {
                             progress={100}
                             imageUrls={selectedVehicle.photo_url ? [selectedVehicle.photo_url] : []}
                             isSavedToGarage={true} // Need to pass these so it knows it is saved
-                            hideSaveActions={false} // Adjust as needed based on ResultsDisplay API
+                            hideSaveActions={true} // Adjust as needed based on ResultsDisplay API
                         />
                     </div>
                 ) : selectedPart ? (
@@ -384,7 +384,7 @@ export function GarageDashboard() {
                             progress={100}
                             imageUrls={selectedPart.photo_url ? [selectedPart.photo_url] : []}
                             isSavedToParts={true}
-                            hideSaveActions={false}
+                            hideSaveActions={true}
                         />
                     </div>
                 ) : (

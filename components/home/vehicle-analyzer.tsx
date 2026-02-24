@@ -564,13 +564,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             </div>
                         )}
 
-                        {/* Homepage CTA Module */}
-                        {showCategories && (
-                            <div className="w-full">
-                                <SaveToGarageCTA placement="homepage" />
-                            </div>
-                        )}
-
                         <div id="upload-target" className="scroll-mt-24">
                             <UploadZone
                                 onFilesSelect={handleFilesSelect}
@@ -594,6 +587,13 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         </div>
                     </div>
                 </div>
+
+                {/* Homepage CTA Module */}
+                {showCategories && (
+                    <div className="w-full">
+                        <SaveToGarageCTA placement="homepage" />
+                    </div>
+                )}
 
                 {/* Batch Results Display */}
                 {batchItems.length > 0 && (

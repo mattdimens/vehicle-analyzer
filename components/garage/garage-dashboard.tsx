@@ -18,6 +18,7 @@ import {
 import Link from "next/link"
 import { VehicleCard } from "./vehicle-card"
 import { PartCard } from "./part-card"
+import { ResultsDisplay } from "../home/results-display"
 
 // Define a type for our vehicle with the joined count
 export type GarageVehicle = {
@@ -65,6 +66,10 @@ export function GarageDashboard() {
     const [searchQuery, setSearchQuery] = useState("")
     const [sortOrder, setSortOrder] = useState("date-desc")
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
+
+    // Selection State for Master-Detail
+    const [selectedVehicle, setSelectedVehicle] = useState<GarageVehicle | null>(null)
+    const [selectedPart, setSelectedPart] = useState<IdentifiedPart | null>(null)
 
     // Auth protection layer
     useEffect(() => {
@@ -125,21 +130,29 @@ export function GarageDashboard() {
     // Handle vehicle deletion from state
     const handleVehicleDeleted = (id: string) => {
         setVehicles(prev => prev.filter(v => v.id !== id))
+        if (selectedVehicle?.id === id) setSelectedVehicle(null)
     }
 
     // Handle vehicle update in state
     const handleVehicleUpdated = (id: string, updates: Partial<GarageVehicle>) => {
         setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v))
+        if (selectedVehicle?.id === id) {
+            setSelectedVehicle(prev => prev ? { ...prev, ...updates } : null)
+        }
     }
 
     // Handle part deletion
     const handlePartDeleted = (id: string) => {
         setParts(prev => prev.filter(p => p.id !== id))
+        if (selectedPart?.id === id) setSelectedPart(null)
     }
 
     // Handle part update
     const handlePartUpdated = (id: string, updates: Partial<IdentifiedPart>) => {
         setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
+        if (selectedPart?.id === id) {
+            setSelectedPart(prev => prev ? { ...prev, ...updates } : null)
+        }
     }
 
     // Derived State: Filtering and Sorting
@@ -186,7 +199,7 @@ export function GarageDashboard() {
 
     const uniqueCategories = Array.from(new Set(parts.map(p => p.part_category))).filter(Boolean) as string[]
     const currentTabLength = activeTab === "vehicles" ? vehicles.length : parts.length
-    const showFilters = currentTabLength > 6
+    const showFilters = currentTabLength > 0 // Always show filters in sidebar if there are items
 
     if (isAuthChecking || (!session && !isAuthChecking)) {
         return (
@@ -207,178 +220,189 @@ export function GarageDashboard() {
     }
 
     return (
-        <div className="space-y-6">
-            {vehicles.length === 0 && parts.length === 0 && (
-                <div className="bg-[#003223] text-white p-4 rounded-xl flex items-center gap-3 shadow-md max-w-3xl mx-auto">
-                    <div className="bg-white/20 p-2 rounded-full shrink-0">
-                        <Sparkles className="h-5 w-5 text-amber-300" />
-                    </div>
-                    <p className="text-sm font-medium">
-                        Welcome to your garage! Save vehicles and parts you identify to build your personal fitment library.
-                    </p>
-                </div>
-            )}
+        <div className="flex flex-col md:flex-row h-[calc(100vh-theme(spacing.16))] w-full max-w-[1600px] mx-auto bg-gray-50/50">
+            {/* Sidebar (List View) */}
+            <div className={`
+                w-full md:w-[380px] shrink-0 border-r border-border/40 bg-white flex flex-col h-full
+                ${(selectedVehicle || selectedPart) ? 'hidden md:flex' : 'flex'}
+            `}>
+                <div className="p-4 border-b border-border/40">
+                    <Tabs defaultValue="vehicles" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="vehicles" className="flex items-center gap-2">
+                                <CarFront className="h-4 w-4" />
+                                Vehicles
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white ml-auto">
+                                    {vehicles.length}
+                                </span>
+                            </TabsTrigger>
+                            <TabsTrigger value="parts" className="flex items-center gap-2">
+                                <Wrench className="h-4 w-4" />
+                                Parts
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white ml-auto">
+                                    {parts.length}
+                                </span>
+                            </TabsTrigger>
+                        </TabsList>
 
-            <Tabs defaultValue="vehicles" className="w-full" onValueChange={setActiveTab}>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-                        <TabsTrigger value="vehicles" className="flex items-center gap-2">
-                            My Vehicles
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white">
-                                {vehicles.length}
-                            </span>
-                        </TabsTrigger>
-                        <TabsTrigger value="parts" className="flex items-center gap-2">
-                            My Parts
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EF5A2A] text-[10px] font-bold text-white">
-                                {parts.length}
-                            </span>
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <div className="w-full sm:w-auto">
-                        <Select value={sortOrder} onValueChange={setSortOrder}>
-                            <SelectTrigger className="w-full sm:w-[180px] bg-white rounded-xl">
-                                <SelectValue placeholder="Sort by..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="date-desc">Newest First</SelectItem>
-                                <SelectItem value="date-asc">Oldest First</SelectItem>
-                                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                                {activeTab === "parts" && (
-                                    <SelectItem value="category">Category</SelectItem>
+                        {showFilters && (
+                            <div className="space-y-3">
+                                <Input
+                                    type="search"
+                                    placeholder={activeTab === "vehicles" ? "Search vehicles..." : "Search parts..."}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-9 bg-gray-50 border-border/50 text-sm"
+                                />
+                                {activeTab === "parts" && uniqueCategories.length > 0 && (
+                                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                                        <Button
+                                            variant={activeCategoryFilter === null ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => setActiveCategoryFilter(null)}
+                                            className={`h-7 px-3 text-xs rounded-full whitespace-nowrap ${activeCategoryFilter === null ? 'bg-primary text-primary-foreground' : 'bg-gray-50'}`}
+                                        >
+                                            All
+                                        </Button>
+                                        {uniqueCategories.map(cat => (
+                                            <Button
+                                                key={cat}
+                                                variant={activeCategoryFilter === cat ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setActiveCategoryFilter(cat)}
+                                                className={`h-7 px-3 text-xs rounded-full whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-gray-50'}`}
+                                            >
+                                                {cat}
+                                            </Button>
+                                        ))}
+                                    </div>
                                 )}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                {showFilters && (
-                    <div className="mb-6 space-y-4 bg-white/50 p-4 rounded-2xl border border-border/40">
-                        <Input
-                            type="search"
-                            placeholder={activeTab === "vehicles" ? "Search vehicles by name, make, model..." : "Search parts by name, brand, part number..."}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-white rounded-xl"
-                        />
-                        {activeTab === "parts" && uniqueCategories.length > 0 && (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                <Button
-                                    variant={activeCategoryFilter === null ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setActiveCategoryFilter(null)}
-                                    className={`rounded-full whitespace-nowrap ${activeCategoryFilter === null ? 'bg-primary text-primary-foreground' : 'bg-white'}`}
-                                >
-                                    All Parts
-                                </Button>
-                                {uniqueCategories.map(cat => (
-                                    <Button
-                                        key={cat}
-                                        variant={activeCategoryFilter === cat ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setActiveCategoryFilter(cat)}
-                                        className={`rounded-full whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-white'}`}
-                                    >
-                                        {cat}
-                                    </Button>
-                                ))}
                             </div>
                         )}
-                    </div>
-                )}
+                    </Tabs>
+                </div>
 
-                <TabsContent value="vehicles" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
-                    {vehicles.length === 0 ? (
-                        <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
-                            <div className="h-20 w-20 rounded-full bg-[#E5F1E8] flex items-center justify-center mb-6">
-                                <CarFront className="h-10 w-10 text-[#00A95D]" />
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
+                    {activeTab === "vehicles" ? (
+                        vehicles.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center px-4 opacity-70">
+                                <CarFront className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                                <p className="text-sm font-medium text-foreground">No vehicles saved</p>
+                                <p className="text-xs text-muted-foreground mt-1">Upload a photo to see it here.</p>
                             </div>
-                            <h2 className="text-2xl font-bold font-heading mb-4">Your garage is empty</h2>
-                            <p className="text-muted-foreground mb-8 max-w-md">
-                                Upload a photo of any vehicle to identify it and start tracking compatible parts.
-                            </p>
-                            <Button asChild size="lg" className="rounded-full px-8 bg-[#EF5A2A] hover:bg-[#D44A20] text-white font-semibold shadow-md border-0">
-                                <Link href="/#upload-zone">
-                                    Upload Vehicle Photo
-                                </Link>
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Add New Vehicle Card */}
-                            <Link
-                                href="/#upload-zone"
-                                className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
-                            >
-                                <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                                    <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                                    Identify New Vehicle
-                                </span>
-                            </Link>
-
-                            {/* Vehicle Cards */}
-                            {filteredAndSortedVehicles.map((vehicle, index) => (
+                        ) : (
+                            filteredAndSortedVehicles.map((vehicle, index) => (
                                 <VehicleCard
                                     key={vehicle.id}
                                     vehicle={vehicle}
                                     index={index}
+                                    isActive={selectedVehicle?.id === vehicle.id}
+                                    onClick={(v) => { setSelectedVehicle(v); setSelectedPart(null); }}
                                     onDeleted={handleVehicleDeleted}
-                                    onUpdated={handleVehicleUpdated}
                                 />
-                            ))}
-                        </div>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="parts" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
-                    {parts.length === 0 ? (
-                        <div className="bg-white rounded-[2rem] border border-border/40 shadow-sm p-12 flex flex-col items-center justify-center text-center min-h-[400px]">
-                            <div className="h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center mb-6">
-                                <Wrench className="h-10 w-10 text-amber-500" />
-                            </div>
-                            <h2 className="text-2xl font-bold font-heading mb-4">No parts saved yet</h2>
-                            <p className="text-muted-foreground mb-8 max-w-md">
-                                Upload a photo of any automotive part to identify it and find where to buy.
-                            </p>
-                            <Button asChild size="lg" className="rounded-full px-8 bg-[#EF5A2A] hover:bg-[#D44A20] text-white font-semibold shadow-md border-0">
-                                <Link href="/part-identifier">
-                                    Upload Part Photo
-                                </Link>
-                            </Button>
-                        </div>
+                            ))
+                        )
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Add New Part Card */}
-                            <Link
-                                href="/part-identifier"
-                                className="group flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-border/60 bg-white/50 hover:bg-white hover:border-primary/50 transition-all min-h-[300px] cursor-pointer"
-                            >
-                                <div className="h-16 w-16 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                                    <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                                </div>
-                                <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                                    Identify New Part
-                                </span>
-                            </Link>
-
-                            {/* Part Cards */}
-                            {filteredAndSortedParts.map((part, index) => (
+                        parts.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center px-4 opacity-70">
+                                <Wrench className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                                <p className="text-sm font-medium text-foreground">No parts saved</p>
+                                <p className="text-xs text-muted-foreground mt-1">Upload a part photo to see it here.</p>
+                            </div>
+                        ) : (
+                            filteredAndSortedParts.map((part, index) => (
                                 <PartCard
                                     key={part.id}
                                     part={part}
                                     index={index}
+                                    isActive={selectedPart?.id === part.id}
+                                    onClick={(p) => { setSelectedPart(p); setSelectedVehicle(null); }}
                                     onDeleted={handlePartDeleted}
-                                    onUpdated={handlePartUpdated}
                                 />
-                            ))}
-                        </div>
+                            ))
+                        )
                     )}
-                </TabsContent>
-            </Tabs>
+                </div>
+
+                {/* Fixed Run New Analysis Button at Bottom of Sidebar */}
+                <div className="p-4 border-t border-border/40 bg-gray-50/80 backdrop-blur-sm z-10">
+                    <Button asChild className="w-full bg-[#EF5A2A] hover:bg-[#D44A20] shadow-sm rounded-xl h-11">
+                        <Link href={activeTab === "vehicles" ? "/#upload-zone" : "/part-identifier"}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Identify New {activeTab === "vehicles" ? "Vehicle" : "Part"}
+                        </Link>
+                    </Button>
+                </div>
+            </div>
+
+            {/* Main Area (Detail View) */}
+            <div className={`
+                flex-1 flex flex-col h-full bg-gray-50/50 relative
+                ${!(selectedVehicle || selectedPart) ? 'hidden md:flex' : 'flex'}
+            `}>
+                {selectedVehicle ? (
+                    <div className="h-full overflow-y-auto">
+                        {/* Mobile Back Button */}
+                        <div className="md:hidden sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedVehicle(null)}
+                                className="pl-0 hover:bg-transparent"
+                            >
+                                ← Back to list
+                            </Button>
+                        </div>
+                        <ResultsDisplay
+                            analysisMode="vehicle"
+                            results={selectedVehicle.ai_identification_data as any}
+                            detectedProducts={selectedVehicle.ai_identification_data.detectedProducts as any[]}
+                            loadingMessage={null}
+                            progress={100}
+                            imageUrls={selectedVehicle.photo_url ? [selectedVehicle.photo_url] : []}
+                            isSavedToGarage={true} // Need to pass these so it knows it is saved
+                            hideSaveActions={false} // Adjust as needed based on ResultsDisplay API
+                        />
+                    </div>
+                ) : selectedPart ? (
+                    <div className="h-full overflow-y-auto">
+                        {/* Mobile Back Button */}
+                        <div className="md:hidden sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedPart(null)}
+                                className="pl-0 hover:bg-transparent"
+                            >
+                                ← Back to list
+                            </Button>
+                        </div>
+                        <ResultsDisplay
+                            analysisMode="part"
+                            partIdentification={selectedPart.ai_identification_data as any}
+                            loadingMessage={null}
+                            progress={100}
+                            imageUrls={selectedPart.photo_url ? [selectedPart.photo_url] : []}
+                            isSavedToParts={true}
+                            hideSaveActions={false}
+                        />
+                    </div>
+                ) : (
+                    // Empty State Main Area Template
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-border/40 max-w-sm w-full mx-auto relative overflow-hidden">
+                            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-primary/50" />
+                            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                                <Sparkles className="h-10 w-10 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-bold font-heading mb-2">Select an item</h3>
+                            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+                                Choose a vehicle or part from the sidebar to view its complete identification report and analysis details.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

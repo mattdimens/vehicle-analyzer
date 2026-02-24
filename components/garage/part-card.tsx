@@ -1,14 +1,9 @@
-"use client"
-
-import { Trash2, Edit2, Car } from "lucide-react"
+import { Trash2, Car } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { IdentifiedPart } from "./garage-dashboard"
 import { useState } from "react"
 import { supabaseClient } from "@/lib/supabase-client"
 import { toast } from "sonner"
-import { PartDetailSheet } from "./part-detail-sheet"
-import { addAmazonAffiliateTag } from "@/lib/amazon"
-import Image from "next/image"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,17 +18,17 @@ import {
 interface PartCardProps {
     part: IdentifiedPart
     index?: number
+    isActive?: boolean
+    onClick: (part: IdentifiedPart) => void
     onDeleted: (id: string) => void
-    onUpdated: (id: string, updates: Partial<IdentifiedPart>) => void
 }
 
-export function PartCard({ part, index = 0, onDeleted, onUpdated }: PartCardProps) {
-    const [isSheetOpen, setIsSheetOpen] = useState(false)
+export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted }: PartCardProps) {
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
     const handleDeleteClick = (e: React.MouseEvent) => {
-        e.stopPropagation() // Don't trigger sheet open
+        e.stopPropagation() // Don't trigger select
         setIsDeleteDialogOpen(true)
     }
 
@@ -58,112 +53,59 @@ export function PartCard({ part, index = 0, onDeleted, onUpdated }: PartCardProp
         }
     }
 
-    const searchQuery = `${part.vehicle_year || ''} ${part.vehicle_make || ''} ${part.vehicle_model || ''} ${part.part_name || ''}`.trim()
-
     return (
         <>
             <div
-                className="group relative flex flex-col bg-white rounded-[2rem] border border-border/40 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/40 transition-all duration-300 overflow-hidden cursor-pointer animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => setIsSheetOpen(true)}
+                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both 
+                ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => onClick(part)}
             >
-                {/* Image Section */}
-                <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
+                {/* Thumbnail */}
+                <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
                     {part.photo_url ? (
                         <img
                             src={part.photo_url}
                             alt={part.part_name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground bg-gray-100">
+                        <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground bg-gray-100">
                             No Photo
                         </div>
                     )}
-
-                    {/* Badge */}
-                    <div className="absolute top-4 left-4 z-10">
-                        <div className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold shadow-sm text-primary uppercase tracking-wider">
-                            {part.part_category}
-                        </div>
-                    </div>
                 </div>
 
-                {/* Content Section */}
-                <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2 group">
-                        <div className="min-w-0 pr-4">
-                            <h3 className="text-xl font-bold font-heading text-foreground/90 line-clamp-2 leading-tight mb-1">
-                                {part.part_name}
-                            </h3>
-                            {part.vehicle_make && (
-                                <p className="text-sm text-muted-foreground truncate font-medium flex items-center gap-1.5">
-                                    <Car className="h-3.5 w-3.5 shrink-0" />
-                                    {part.vehicle_year} {part.vehicle_make} {part.vehicle_model} {part.vehicle_trim && part.vehicle_trim !== "Base" ? part.vehicle_trim : ""}
-                                </p>
-                            )}
+                {/* Content */}
+                <div className="flex-1 min-w-0 pr-6">
+                    <h3 className={`font-semibold truncate text-sm leading-tight ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                        {part.part_name}
+                    </h3>
+
+                    <p className="text-xs text-muted-foreground truncate font-medium mt-0.5 uppercase tracking-wider">
+                        {part.part_category}
+                    </p>
+
+                    {part.vehicle_make && (
+                        <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                            <Car className="h-3 w-3" />
+                            <span className="truncate">{part.vehicle_year} {part.vehicle_make} {part.vehicle_model}</span>
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 -mr-2 shrink-0"
-                            onClick={handleDeleteClick}
-                            disabled={isDeleting}
-                            title="Delete part"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-
-                    {part.description && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                            {part.description}
-                        </p>
                     )}
-
-                    <div className="mt-auto pt-6 flex items-center justify-between border-t border-border/40">
-                        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                            <Edit2 className="h-3 w-3" />
-                            Notes
-                        </span>
-
-                        <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-4 rounded-full hover:bg-[#D1E7F0] border-primary/20"
-                            onClick={(e) => e.stopPropagation()} // Don't trigger the sheet
-                        >
-                            <a
-                                href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center"
-                            >
-                                <span className="sr-only">Search on Amazon</span>
-                                <Image
-                                    src="/amazon-logo.png"
-                                    alt="Amazon"
-                                    width={64}
-                                    height={20}
-                                    className="h-4 w-auto object-contain mt-1"
-                                />
-                            </a>
-                        </Button>
-                    </div>
                 </div>
-            </div>
 
-            {/* Sheet/Modal controlled by local state */}
-            {isSheetOpen && (
-                <PartDetailSheet
-                    isOpen={isSheetOpen}
-                    onClose={() => setIsSheetOpen(false)}
-                    part={part}
-                    onUpdated={onUpdated}
-                />
-            )}
+                {/* Delete Action (visible on hover) */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`absolute right-2 h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                    title="Delete part"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

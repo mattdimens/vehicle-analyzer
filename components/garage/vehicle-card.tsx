@@ -1,8 +1,7 @@
-import { Trash2, Expand, Sparkles } from "lucide-react"
+import { Trash2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GarageVehicle } from "./garage-dashboard"
 import { useState } from "react"
-import { VehicleDetailSheet } from "./vehicle-detail-sheet"
 import { supabaseClient } from "@/lib/supabase-client"
 import { toast } from "sonner"
 import {
@@ -19,12 +18,12 @@ import {
 interface VehicleCardProps {
     vehicle: GarageVehicle
     index?: number
+    isActive?: boolean
+    onClick: (vehicle: GarageVehicle) => void
     onDeleted: (id: string) => void
-    onUpdated: (id: string, updates: Partial<GarageVehicle>) => void
 }
 
-export function VehicleCard({ vehicle, index = 0, onDeleted, onUpdated }: VehicleCardProps) {
-    const [isSheetOpen, setIsSheetOpen] = useState(false)
+export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onDeleted }: VehicleCardProps) {
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
@@ -32,7 +31,7 @@ export function VehicleCard({ vehicle, index = 0, onDeleted, onUpdated }: Vehicl
     const partsCount = detectedProducts.length
 
     const handleDeleteClick = (e: React.MouseEvent) => {
-        e.stopPropagation() // Don't trigger sheet open
+        e.stopPropagation() // Don't trigger select
         setIsDeleteDialogOpen(true)
     }
 
@@ -60,94 +59,63 @@ export function VehicleCard({ vehicle, index = 0, onDeleted, onUpdated }: Vehicl
     return (
         <>
             <div
-                className="group relative flex flex-col bg-white rounded-[2rem] border border-border/40 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/40 transition-all duration-300 overflow-hidden cursor-pointer animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => setIsSheetOpen(true)}
+                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both 
+                ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => onClick(vehicle)}
             >
-                {/* Image Section */}
-                <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
+                {/* Thumbnail */}
+                <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
                     {vehicle.photo_url ? (
                         <img
                             src={vehicle.photo_url}
                             alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover"
                         />
                     ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground bg-gray-100">
+                        <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground bg-gray-100">
                             No Photo
                         </div>
                     )}
-
-                    {/* Expand overlay icon */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all bg-white/90 backdrop-blur rounded-full p-3 shadow-lg">
-                            <Expand className="h-5 w-5 text-gray-800" />
-                        </div>
-                    </div>
-
                 </div>
 
-                {/* Content Section */}
-                <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2 group">
-                        <div className="min-w-0 pr-4 flex-1">
-                            {vehicle.nickname ? (
-                                <>
-                                    <h3 className="text-xl font-bold font-heading line-clamp-2 text-foreground/90">
-                                        {vehicle.nickname}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5 font-medium">
-                                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : ""}
-                                    </p>
-                                </>
-                            ) : (
-                                <h3 className="text-xl font-bold font-heading line-clamp-2 text-foreground/90 leading-tight">
-                                    {vehicle.year} {vehicle.make} {vehicle.model}
-                                    {vehicle.trim && vehicle.trim !== "Base" && <span className="ml-1 text-muted-foreground font-normal">{vehicle.trim}</span>}
-                                </h3>
-                            )}
+                {/* Content */}
+                <div className="flex-1 min-w-0 pr-6">
+                    {vehicle.nickname ? (
+                        <>
+                            <h3 className={`font-semibold truncate text-sm leading-tight ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                                {vehicle.nickname}
+                            </h3>
+                            <p className="text-xs text-muted-foreground truncate font-medium">
+                                {vehicle.year} {vehicle.make} {vehicle.model}
+                            </p>
+                        </>
+                    ) : (
+                        <h3 className={`font-semibold truncate text-sm leading-tight ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                        </h3>
+                    )}
 
-                            {/* Parts Count Badge */}
-                            {partsCount > 0 && (
-                                <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">
-                                    <Sparkles className="h-3 w-3" />
-                                    {partsCount} part{partsCount === 1 ? "" : "s"} identified
-                                </div>
-                            )}
+                    {partsCount > 0 && (
+                        <div className="mt-1 flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                            <Sparkles className="h-3 w-3" />
+                            {partsCount} part{partsCount === 1 ? "" : "s"}
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 -mr-2"
-                            onClick={handleDeleteClick}
-                            disabled={isDeleting}
-                            title="Delete vehicle"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-
-                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-border/40">
-                        <span className="text-xs text-muted-foreground">
-                            Added {new Date(vehicle.created_at).toLocaleDateString()}
-                        </span>
-                        <div className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
-                            View Details
-                        </div>
-                    </div>
+                    )}
                 </div>
+
+                {/* Delete Action (visible on hover) */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`absolute right-2 h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                    title="Delete vehicle"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
             </div>
-
-            {/* Sheet/Modal controlled by local state */}
-            {isSheetOpen && (
-                <VehicleDetailSheet
-                    isOpen={isSheetOpen}
-                    onClose={() => setIsSheetOpen(false)}
-                    vehicle={vehicle}
-                    onUpdated={onUpdated}
-                />
-            )}
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -172,3 +140,4 @@ export function VehicleCard({ vehicle, index = 0, onDeleted, onUpdated }: Vehicl
         </>
     )
 }
+

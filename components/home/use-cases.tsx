@@ -37,9 +37,9 @@ const defaultCards: UseCaseCard[] = [
 
 export function UseCases({ heading, subtitle, cards = defaultCards }: UseCasesProps) {
     return (
-        <section id="use-cases" className="w-full py-24 bg-white">
+        <section id="use-cases" className="w-full py-16 md:py-20 bg-white">
             <div className="container max-w-6xl">
-                <div className="rounded-[2.5rem] bg-[#16232A] px-6 py-20 text-center text-white md:px-16 md:py-24">
+                <div className="rounded-[2.5rem] bg-[#16232A] px-6 py-16 text-center text-white md:px-16 md:py-20">
                     <div className="mx-auto max-w-3xl">
                         <h2 className="mb-6 font-heading text-4xl font-bold md:text-5xl">
                             {heading ?? "Built for any use case"}

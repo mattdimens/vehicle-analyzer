@@ -56,7 +56,7 @@ export function ResultsDisplay({
 
         if (isLoading) {
             return (
-                <section className="w-full bg-card py-24">
+                <section className="w-full bg-card py-16 md:py-20">
                     <div className="container max-w-4xl">
                         <div className="flex flex-col items-center justify-center py-12 space-y-6">
                             <div className="w-full max-w-md space-y-2">
@@ -76,7 +76,7 @@ export function ResultsDisplay({
 
         if (error) {
             return (
-                <section className="w-full bg-card py-24">
+                <section className="w-full bg-card py-16 md:py-20">
                     <div className="container max-w-4xl">
                         <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
                             <p className="text-sm text-destructive">{error}</p>
@@ -235,7 +235,7 @@ export function ResultsDisplay({
 
     return (
         <>
-            <section id="results" className="w-full bg-card py-24">
+            <section id="results" className="w-full bg-card py-16 md:py-20">
                 <div className="container max-w-4xl">
                     {/* Master Loading State */}
                     {isLoading && (

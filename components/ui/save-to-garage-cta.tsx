@@ -68,7 +68,7 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
     const content = getContent()
 
     return (
-        <section className={cn("w-full bg-[#003223] py-24", className)}>
+        <section className={cn("w-full bg-[#003223] py-8 md:py-12", className)}>
             <div className="container max-w-6xl text-center flex flex-col items-center px-4">
                 <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mb-6">
                     {content.headline}

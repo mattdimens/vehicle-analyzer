@@ -46,7 +46,7 @@ const stepStyles = [
 
 export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
     return (
-        <section id="how-it-works" className="w-full bg-white py-24">
+        <section id="how-it-works" className="w-full bg-white py-16 md:py-20">
             <div className="container max-w-6xl">
                 <div className="mb-20 text-center">
                     <h2 className="font-heading text-5xl font-bold text-black">

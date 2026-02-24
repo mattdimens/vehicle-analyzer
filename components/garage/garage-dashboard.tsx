@@ -203,7 +203,7 @@ export function GarageDashboard() {
 
     if (isAuthChecking || (!session && !isAuthChecking)) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 min-h-[400px]">
+            <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-muted-foreground">Authenticating securely...</p>
             </div>
@@ -212,7 +212,7 @@ export function GarageDashboard() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-24 min-h-[400px]">
+            <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-muted-foreground">Loading your garage...</p>
             </div>

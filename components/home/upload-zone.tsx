@@ -136,7 +136,7 @@ export function UploadZone({
     const hasItems = batchItems.length > 0
 
     return (
-        <div className="w-full px-4 pb-24">
+        <div className="w-full px-4 pb-8">
             <div className="w-full max-w-4xl mx-auto rounded-2xl border bg-card shadow-lg">
                 {/* Dropzone Area */}
                 <div

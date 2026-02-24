@@ -17,6 +17,8 @@ export interface GoogleSignInButtonProps {
     text?: string;
     fullWidth?: boolean;
     disabled?: boolean;
+    iconOnly?: boolean;
+    className?: string;
 }
 
 export function GoogleSignInButton({
@@ -26,6 +28,8 @@ export function GoogleSignInButton({
     text = "Sign in with Google",
     fullWidth = false,
     disabled = false,
+    iconOnly = false,
+    className = "",
 }: GoogleSignInButtonProps) {
     const baseClasses = "inline-flex items-center justify-center font-medium rounded transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 shrink-0 select-none";
 
@@ -35,20 +39,16 @@ export function GoogleSignInButton({
         small: "h-[36px] px-[16px] text-[13px]",
     };
 
-    const layoutClasses = fullWidth ? "w-full" : "";
+    const layoutClasses = fullWidth && !iconOnly ? "w-full" : "";
     const disabledClasses = disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer";
+    const iconOnlyClasses = iconOnly ? "!px-0 w-9 h-9 !rounded-full shrink-0" : "";
 
     // Outline variant (white)
-    // White background, #dadce0 border, #3c4043 text color
-    // On hover: #f8f9fa background with subtle shadow lift
     const outlineClasses = disabled
         ? "bg-white border-[1px] border-[#dadce0] text-[#3c4043]"
         : "bg-white border-[1px] border-[#dadce0] text-[#3c4043] hover:bg-[#f8f9fa] hover:shadow-[0_1px_3px_rgba(60,64,67,0.15)] active:bg-[#e8eaed]";
 
     // Filled variant (blue)
-    // #4285F4 background, white text
-    // On hover: #2b6fe0 with blue glow shadow.
-    // The Google "G" logo sits inside a small white rounded rectangle.
     const filledClasses = disabled
         ? "bg-[#4285F4] text-white border-[1px] border-transparent"
         : "bg-[#4285F4] text-white border-[1px] border-transparent hover:bg-[#2b6fe0] hover:shadow-[0_4px_12px_rgba(66,133,244,0.4)] active:bg-[#1a5bc4]";
@@ -58,9 +58,10 @@ export function GoogleSignInButton({
     return (
         <button
             type="button"
+            title={iconOnly ? text : undefined}
             onClick={onClick}
             disabled={disabled}
-            className={`${baseClasses} ${sizeClasses[size]} ${layoutClasses} ${disabledClasses} ${variantClasses}`}
+            className={`${baseClasses} ${!iconOnly ? sizeClasses[size] : ''} ${layoutClasses} ${disabledClasses} ${variantClasses} ${iconOnlyClasses} ${className}`}
             style={{
                 fontFamily: "'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 letterSpacing: "0.25px",
@@ -68,15 +69,15 @@ export function GoogleSignInButton({
             }}
         >
             {variant === "filled" ? (
-                <span className="flex items-center justify-center w-8 h-8 mr-3 bg-white rounded-[2px] shrink-0">
+                <span className={`flex items-center justify-center bg-white rounded-[2px] shrink-0 ${iconOnly ? 'w-full h-full bg-transparent rounded-full' : 'w-8 h-8 mr-3'}`}>
                     <GoogleLogo />
                 </span>
             ) : (
-                <span className="mr-3 shrink-0 flex items-center justify-center">
+                <span className={`${iconOnly ? '' : 'mr-3'} shrink-0 flex items-center justify-center`}>
                     <GoogleLogo />
                 </span>
             )}
-            <span>{text}</span>
+            {!iconOnly && <span>{text}</span>}
         </button>
     );
 }

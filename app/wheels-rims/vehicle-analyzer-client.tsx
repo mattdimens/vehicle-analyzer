@@ -6,6 +6,7 @@ import type { UseCaseCard } from "@/components/home/use-cases"
 import { WheelFitmentGuide } from "@/components/educational/wheel-fitment-guide"
 import { FaqAccordion, type FaqItem } from "@/components/ui/faq-accordion"
 import { RelatedPages } from "@/components/ui/related-pages"
+import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { ArrowUpCircle, Eye, ShieldCheck } from "lucide-react"
 
 const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
@@ -80,6 +81,7 @@ export default function WheelsRimsClient() {
             useCaseHeading="Why People Use the Wheel Analyzer"
             useCaseSubtitle="Whether you're upgrading, matching a build, or double-checking fitment — the AI does the spec work for you."
             educationalContent={<WheelFitmentGuide />}
+            ctaModule={<SaveToGarageCTA placement="category" categoryName="wheels" />}
             faqContent={<FaqAccordion items={wheelFaqs} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },

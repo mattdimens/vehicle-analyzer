@@ -176,11 +176,12 @@ export function SiteHeader() {
               )}
             </Avatar>
           ) : (
-            <Avatar className="h-8 w-8 border border-border/50">
-              <AvatarFallback className="bg-muted">
-                <UserIcon className="h-4 w-4 text-muted-foreground" />
-              </AvatarFallback>
-            </Avatar>
+            <GoogleSignInButton
+              onClick={signInWithGoogle}
+              variant="outline"
+              size="small"
+              iconOnly
+            />
           )}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>

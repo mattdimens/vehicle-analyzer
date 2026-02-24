@@ -23,6 +23,7 @@ import { ProductCategories } from "@/components/home/product-categories"
 import { UseCases, type UseCaseCard } from "@/components/home/use-cases"
 import { StatsBar } from "@/components/home/stats-bar"
 import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-nav"
+import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { BatchResults } from "@/components/home/batch-results"
 import { trackEvent } from "@/lib/analytics"
 import type { BatchItem } from "@/lib/types"
@@ -59,9 +60,10 @@ interface VehicleAnalyzerProps {
     faqContent?: React.ReactNode
     breadcrumbs?: BreadcrumbItem[]
     relatedContent?: React.ReactNode
+    ctaModule?: React.ReactNode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
@@ -562,6 +564,13 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             </div>
                         )}
 
+                        {/* Homepage CTA Module */}
+                        {showCategories && (
+                            <div className="container mx-auto px-4 mb-12 max-w-2xl">
+                                <SaveToGarageCTA placement="homepage" />
+                            </div>
+                        )}
+
                         <div id="upload-target" className="scroll-mt-24">
                             <UploadZone
                                 onFilesSelect={handleFilesSelect}
@@ -598,6 +607,13 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {educationalContent}
 
                 <StatsBar />
+
+                {/* Inject optional CTA Module mid-page for Category flows */}
+                {ctaModule && (
+                    <div className="container mx-auto px-4 py-8 mb-4 max-w-2xl">
+                        {ctaModule}
+                    </div>
+                )}
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
 

@@ -6,6 +6,7 @@ import type { UseCaseCard } from "@/components/home/use-cases"
 import { RunningBoardGuide } from "@/components/educational/running-board-guide"
 import { FaqAccordion, type FaqItem } from "@/components/ui/faq-accordion"
 import { RelatedPages } from "@/components/ui/related-pages"
+import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { Footprints, Mountain, Users } from "lucide-react"
 
 const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
@@ -80,6 +81,7 @@ export default function RunningBoardsClient() {
             useCaseHeading="Why People Use the Running Board Analyzer"
             useCaseSubtitle="From daily drivers to trail rigs and work fleets, find the right side step without crawling under the truck with a tape measure."
             educationalContent={<RunningBoardGuide />}
+            ctaModule={<SaveToGarageCTA placement="category" categoryName="running boards" />}
             faqContent={<FaqAccordion items={runningBoardFaqs} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },

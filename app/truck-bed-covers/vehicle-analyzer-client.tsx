@@ -6,6 +6,7 @@ import type { UseCaseCard } from "@/components/home/use-cases"
 import { BedCoverGuide } from "@/components/educational/bed-cover-guide"
 import { FaqAccordion, type FaqItem } from "@/components/ui/faq-accordion"
 import { RelatedPages } from "@/components/ui/related-pages"
+import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { Truck, RotateCcw, ShoppingCart } from "lucide-react"
 
 const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
@@ -81,6 +82,7 @@ export default function TruckBedCoversClient() {
             useCaseHeading="Why People Use the Bed Cover Analyzer"
             useCaseSubtitle="From first-time buyers to seasoned truck owners upgrading their setup — get the right cover without the guesswork."
             educationalContent={<BedCoverGuide />}
+            ctaModule={<SaveToGarageCTA placement="category" categoryName="truck bed covers" />}
             faqContent={<FaqAccordion items={bedCoverFaqs} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },

@@ -15,6 +15,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
 import { SaveToPartsButton } from "@/components/save-to-parts-button"
+import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 
 interface ResultsDisplayProps {
     results?: AnalysisResults | null
@@ -260,6 +261,13 @@ export function ResultsDisplay({
                 {/* Results */}
                 {!isLoading && (
                     <div className="grid grid-cols-1 gap-12">
+                        {/* CTA for Anonymous Users */}
+                        {!hideSaveActions && (
+                            <div className="w-full">
+                                <SaveToGarageCTA placement="results" />
+                            </div>
+                        )}
+
                         {/* Fitment Results */}
                         {results && (
                             <div className="flex flex-col text-left space-y-4">

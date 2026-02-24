@@ -9,22 +9,37 @@ import { toast } from "sonner"
 import { PartDetailSheet } from "./part-detail-sheet"
 import { addAmazonAffiliateTag } from "@/lib/amazon"
 import Image from "next/image"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface PartCardProps {
     part: IdentifiedPart
+    index?: number
     onDeleted: (id: string) => void
     onUpdated: (id: string, updates: Partial<IdentifiedPart>) => void
 }
 
-export function PartCard({ part, onDeleted, onUpdated }: PartCardProps) {
+export function PartCard({ part, index = 0, onDeleted, onUpdated }: PartCardProps) {
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-    const handleDelete = async (e: React.MouseEvent) => {
+    const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation() // Don't trigger sheet open
+        setIsDeleteDialogOpen(true)
+    }
 
-        if (!confirm("Are you sure you want to delete this part?")) return
-
+    const confirmDelete = async (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation()
+        setIsDeleteDialogOpen(false)
         setIsDeleting(true)
         try {
             const { error } = await supabaseClient
@@ -48,7 +63,8 @@ export function PartCard({ part, onDeleted, onUpdated }: PartCardProps) {
     return (
         <>
             <div
-                className="group relative flex flex-col bg-white rounded-[2rem] border border-border/40 shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                className="group relative flex flex-col bg-white rounded-[2rem] border border-border/40 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/40 transition-all duration-300 overflow-hidden cursor-pointer animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+                style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => setIsSheetOpen(true)}
             >
                 {/* Image Section */}
@@ -92,7 +108,7 @@ export function PartCard({ part, onDeleted, onUpdated }: PartCardProps) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 -mr-2 shrink-0"
-                            onClick={handleDelete}
+                            onClick={handleDeleteClick}
                             disabled={isDeleting}
                             title="Delete part"
                         >
@@ -148,6 +164,27 @@ export function PartCard({ part, onDeleted, onUpdated }: PartCardProps) {
                     onUpdated={onUpdated}
                 />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent onClick={e => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Remove this part from your garage? This can&apos;t be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={e => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 }

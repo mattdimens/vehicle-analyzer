@@ -199,10 +199,11 @@ export function GarageDashboard() {
                             </Link>
 
                             {/* Vehicle Cards */}
-                            {vehicles.map((vehicle) => (
+                            {vehicles.map((vehicle, index) => (
                                 <VehicleCard
                                     key={vehicle.id}
                                     vehicle={vehicle}
+                                    index={index}
                                     onDeleted={handleVehicleDeleted}
                                     onUpdated={handleVehicleUpdated}
                                 />
@@ -243,10 +244,11 @@ export function GarageDashboard() {
                             </Link>
 
                             {/* Part Cards */}
-                            {parts.map((part) => (
+                            {parts.map((part, index) => (
                                 <PartCard
                                     key={part.id}
                                     part={part}
+                                    index={index}
                                     onDeleted={handlePartDeleted}
                                     onUpdated={handlePartUpdated}
                                 />

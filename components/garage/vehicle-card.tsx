@@ -1,4 +1,4 @@
-import { Trash2, Expand } from "lucide-react"
+import { Trash2, Expand, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { GarageVehicle } from "./garage-dashboard"
 import { useState } from "react"
@@ -16,6 +16,8 @@ export function VehicleCard({ vehicle, onDeleted, onUpdated }: VehicleCardProps)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
+    const detectedProducts = (vehicle.ai_identification_data?.detectedProducts as any[]) || []
+    const partsCount = detectedProducts.length
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.stopPropagation() // Don't trigger sheet open
@@ -72,21 +74,29 @@ export function VehicleCard({ vehicle, onDeleted, onUpdated }: VehicleCardProps)
                 {/* Content Section */}
                 <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2 group">
-                        <div className="min-w-0 pr-4">
+                        <div className="min-w-0 pr-4 flex-1">
                             {vehicle.nickname ? (
                                 <>
-                                    <h3 className="text-xl font-bold font-heading truncate flex items-center gap-2 text-foreground/90">
+                                    <h3 className="text-xl font-bold font-heading line-clamp-2 text-foreground/90">
                                         {vehicle.nickname}
                                     </h3>
-                                    <p className="text-sm text-muted-foreground truncate font-medium">
+                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5 font-medium">
                                         {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : ""}
                                     </p>
                                 </>
                             ) : (
-                                <h3 className="text-xl font-bold font-heading truncate text-foreground/90">
+                                <h3 className="text-xl font-bold font-heading line-clamp-2 text-foreground/90 leading-tight">
                                     {vehicle.year} {vehicle.make} {vehicle.model}
                                     {vehicle.trim && vehicle.trim !== "Base" && <span className="ml-1 text-muted-foreground font-normal">{vehicle.trim}</span>}
                                 </h3>
+                            )}
+
+                            {/* Parts Count Badge */}
+                            {partsCount > 0 && (
+                                <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">
+                                    <Sparkles className="h-3 w-3" />
+                                    {partsCount} part{partsCount === 1 ? "" : "s"} identified
+                                </div>
                             )}
                         </div>
 

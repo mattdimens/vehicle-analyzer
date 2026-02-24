@@ -21,6 +21,7 @@ import { ChevronDown, LogOut, User as UserIcon, LayoutDashboard } from "lucide-r
 import { useState } from 'react'
 import { useAuth } from '@/components/auth-provider'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GoogleSignInButton } from '@/components/GoogleSignInButton'
 
 export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false)
@@ -123,9 +124,11 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="ghost" onClick={signInWithGoogle}>
-              Sign In
-            </Button>
+            <GoogleSignInButton
+              onClick={signInWithGoogle}
+              size="medium"
+              variant="outline"
+            />
           )}
 
           <Button asChild>
@@ -206,9 +209,12 @@ export function SiteHeader() {
                     </button>
                   </>
                 ) : (
-                  <Button variant="outline" onClick={signInWithGoogle} className="w-full justify-start">
-                    Sign In
-                  </Button>
+                  <GoogleSignInButton
+                    onClick={signInWithGoogle}
+                    size="medium"
+                    variant="outline"
+                    fullWidth
+                  />
                 )}
 
                 <Button asChild className="w-full">

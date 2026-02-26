@@ -1,8 +1,17 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
+import {
+  getAI,
+  SCOUT_MODEL,
+  SNIPER_MODEL,
+  CASCADE_CONFIDENCE_THRESHOLD,
+  cleanJsonResponse,
+  fetchImageForGemini,
+  buildSpecificLogicInstruction,
+  sanitizePromptContext,
+} from '@/lib/gemini'
 
 // Initialize the server-side Supabase client
 const supabase = createClient(
@@ -10,38 +19,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Initialize the Google AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-// --- Cascading model constants ---
-const SCOUT_MODEL = 'gemini-3-flash-preview'   // Fast + cheap — always runs first
-const SNIPER_MODEL = 'gemini-3-pro-preview'      // Slower + smarter — fallback
-const CASCADE_CONFIDENCE_THRESHOLD = 85           // Scout confidence ≤ this → escalate to Sniper
-
-// Helper: clean markdown-wrapped JSON from AI responses
-function cleanJsonResponse(text: string): string {
-  return text.replace(/```json\s*/g, '').replace(/```/g, '').trim()
-}
-
-// Helper function to fetch an image from a URL and convert it to base64
-async function urlToGenerativePart(url: string, mimeType: string) {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.statusText}`)
-  }
-  const buffer = await response.arrayBuffer()
-  const base64 = Buffer.from(buffer).toString('base64')
-  return {
-    inlineData: {
-      data: base64,
-      mimeType,
-    },
-  }
-}
-
 // --- File upload validation constants ---
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
 
 // Function 1: Get Signed URL (with file validation)
 export async function createSignedUploadUrl(
@@ -153,160 +132,28 @@ const DetectedProductSchema = z.object({
   confidence: z.number(),
   reasoning: z.string(),
 })
+
+const ImageQualityResultSchema = z.object({
+  isHighQuality: z.boolean(),
+  score: z.number(),
+  issues: z.array(z.string()),
+})
 // --- End of Zod schemas ---
 
-// Function 2: Analyze Image (Updated)
-export async function analyzeVehicleImage(
-  publicImageUrls: string[],
-  promptContext?: string
-): Promise<
-  | {
-    success: true
-    data: AnalysisResults // Use the new interface
-  }
-  | { success: false; error: string }
-> {
-  try {
-    const contextInstruction = promptContext
-      ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.`
-      : ''
-
-    let specificLogicInstruction = '';
-    if (promptContext && (promptContext.toLowerCase().includes('truck bed cover') || promptContext.toLowerCase().includes('tonneau'))) {
-      specificLogicInstruction = `
-        For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Essential Bed Protection & Organization Add-ons": Bed Mats/Rugs (e.g. BedRug, Dee Zee), Swing-out cases (e.g. UnderCover SwingCase), BedSlides (e.g. BEDSLIDE S), Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
-        2. "Compatible Hauling Hardware & Rack Systems": Bed Racks (e.g. Yakima OverHaul, Thule), Toolboxes (e.g. UWS Low Profile).
-        3. "Alternative Truck Bed Enclosure Solutions": Camper Shells (e.g. LEER, ARE), Soft Toppers (e.g. Softopper), Canvas Tarps.
-
-        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-        
-        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-      `;
-    } else if (promptContext && (promptContext.toLowerCase().includes('wheels') || promptContext.toLowerCase().includes('rims') || promptContext.toLowerCase().includes('tires'))) {
-      specificLogicInstruction = `
-        For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Essential Tire Integration & Installation Hardware": Tires (e.g. Nitto Ridge Grappler, Falken Wildpeak), TPMS Sensors (e.g. Autel MX-Sensor), Hub Centric Rings (e.g. Gorilla), Aftermarket Lug Nuts (e.g. McGard, Gorilla).
-        2. "Stance Modification & Clearance Components": Suspension (e.g. Bilstein 5100, Rough Country Lift), Fender Flares (e.g. Bushwacker Pocket Style), Wheel Spacers (e.g. Bora, Spidertrax).
-        3. "Cosmetic Overlay & Restoration Alternatives": Wheel Skins (e.g. Coast to Coast), Hubcaps, Caliper Covers (e.g. MGP).
-
-        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-        
-        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-      `;
-    } else if (promptContext && (promptContext.toLowerCase().includes('nerf bars') || promptContext.toLowerCase().includes('running boards') || promptContext.toLowerCase().includes('side steps'))) {
-      specificLogicInstruction = `
-        For the "recommendedAccessories", follow this STRICT hierarchy:
-        1. "Supplemental Access Points & Paint Protection": Rear Access (e.g. AMP Research BedStep), Hitch Steps (e.g. WeatherTech BumpStep), Mud Flaps (e.g. WeatherTech No-Drill), Door Sill Guards (e.g. AVS).
-        2. "Heavy-Duty Frame Protection & Lighting Integration": Rock Sliders (e.g. N-Fab RKR, Tyger Auto), LED Light Strips (e.g. OPT7), Gap Guards (e.g. Performance Accessories).
-        3. "Automated & Compact Step Alternatives": Power Steps (e.g. AMP Research PowerStep), Hoop Steps (e.g. Bully, N-Fab), Drop Steps (e.g. Westin HDX).
-
-        IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-        
-        INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-      `;
-    }
-
-    const prompt =
-      'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle shown in these images (they are different views of the same vehicle). ' +
-      contextInstruction +
-      'Identify the following for the **primary, most likely vehicle**: ' +
-      '1. `make` (string) ' +
-      '2. `model` (string) ' +
-      '3. `year` (string, use a range like "2021-2024" if exact year is uncertain) ' +
-      '4. `trim` (string, e.g., "XLT", "Lariat", "Base") ' +
-      '5. `cabStyle` (string, e.g., "SuperCrew", "Quad Cab", or null if not applicable/visible) ' +
-      '6. `bedLength` (string, e.g., "67.1\\" (Short)", or null if not applicable/visible) ' +
-      '7. `vehicleType` (string, e.g., "SUV", "Sedan", "Pickup Truck") ' +
-      '8. `color` (string) ' +
-      '9. `condition` (string, e.g., "new", "used", "damaged") ' +
-      '10. `confidence` (number, 0-100, representing your confidence in this primary identification) ' +
-      'Also identify: ' +
-      '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
-      '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
-      '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. ALWAYS format each string as "Product Name (e.g. Example 1, Example 2)". IF tiered recommendations are requested, keep this as a fallback summary list). ' +
-      specificLogicInstruction +
-      'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
-      '{' +
-      '"primary": {' +
-      '"make": string, "model": string, "year": string, "trim": string, "cabStyle": string | null, "bedLength": string | null, ' +
-      '"vehicleType": string, "color": string, "condition": string, "confidence": number' +
-      '}, ' +
-      '"engineDetails": string | null, ' +
-      '"otherPossibilities": [' +
-      '{ "vehicle": string, "yearRange": string, "trim": string, "confidence": number }' +
-      '], ' +
-      '"recommendedAccessories": [string], ' +
-      '"tieredRecommendations": [{ "title": string, "items": [string] }] (OPTIONAL, include only if instructed)' +
-      '}'
-
-    const imageParts = await Promise.all(
-      publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
-    )
-
-    // --- Cascading Model: Scout pass (Flash) ---
-    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
-    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
-    const scoutText = cleanJsonResponse(scoutResult.response.text())
-
-    const scoutRaw = JSON.parse(scoutText)
-    const scoutParse = AnalysisResultsSchema.safeParse(scoutRaw)
-    if (!scoutParse.success) {
-      console.error('Scout AI response validation failed:', scoutParse.error.flatten())
-      throw new Error('The AI returned an unexpected response format. Please try again.')
-    }
-    let analysis: AnalysisResults = scoutParse.data
-
-    // --- Gatekeeper: check Scout confidence ---
-    if (analysis.primary.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
-      console.log(`Scout confidence ${analysis.primary.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`)
-      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
-      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
-      const sniperText = cleanJsonResponse(sniperResult.response.text())
-
-      const sniperRaw = JSON.parse(sniperText)
-      const sniperParse = AnalysisResultsSchema.safeParse(sniperRaw)
-      if (sniperParse.success) {
-        analysis = sniperParse.data // Sniper overrides Scout
-      } else {
-        // Sniper failed validation — keep Scout result rather than crashing
-        console.warn('Sniper response validation failed, keeping Scout result:', sniperParse.error.flatten())
-      }
-    }
-
-    // Save to Supabase
-    const { error: dbError } = await supabase
-      .from('analysis_results')
-      .insert({
-        analysis_data: analysis,
-        image_url: publicImageUrls[0],
-      })
-      .select()
-
-    if (dbError) {
-      console.error('Supabase DB error:', dbError.message)
-      throw new Error(dbError.message)
-    }
-
-    return {
-      success: true,
-      data: {
-        primary: analysis.primary,
-        engineDetails: analysis.engineDetails,
-        otherPossibilities: analysis.otherPossibilities,
-        recommendedAccessories: analysis.recommendedAccessories,
-        tieredRecommendations: analysis.tieredRecommendations,
-      },
-    }
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : String(err),
-    }
-  }
+// ---------------------------------------------------------------------------
+// Helper: call Gemini via the new @google/genai SDK
+// ---------------------------------------------------------------------------
+async function callGemini(model: string, prompt: string, imageParts: ReturnType<typeof fetchImageForGemini> extends Promise<infer T> ? T[] : never[]) {
+  const response = await getAI().models.generateContent({
+    model,
+    contents: [{ role: 'user' as const, parts: [{ text: prompt }, ...imageParts] }],
+  })
+  return cleanJsonResponse(response.text ?? '')
 }
 
-// Function 3: Detect Visible Products (Stage 1)
+// ---------------------------------------------------------------------------
+// Function 2: Detect Visible Products (Stage 1)
+// ---------------------------------------------------------------------------
 export async function detectVisibleProducts(
   publicImageUrls: string[],
   vehicleDetails: string | null,
@@ -316,28 +163,26 @@ export async function detectVisibleProducts(
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: SCOUT_MODEL })
     const imageParts = await Promise.all(
-      publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
+      publicImageUrls.map((url) => fetchImageForGemini(url))
     )
 
     const vehicleContext = vehicleDetails
       ? `Given that this is a ${vehicleDetails}`
       : ''
 
-    const contextInstruction = promptContext
-      ? `Focus specifically on detecting products related to: ${promptContext}. `
+    const safeContext = sanitizePromptContext(promptContext)
+    const contextInstruction = safeContext
+      ? `Focus specifically on detecting products related to: ${safeContext}. `
       : ''
 
     const prompt =
       `You are a vehicle product specialist. ${vehicleContext}, scan these images and detect all visible aftermarket or OEM products (like Tonneau Cover, Wheels, Tires, Hitch, Roof Rack, Bumper, Side Steps, etc.). ` +
       contextInstruction +
       'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
-      'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
       'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
-    const result = await model.generateContent([prompt, ...imageParts])
-    const cleanedText = cleanJsonResponse(result.response.text())
+    const cleanedText = await callGemini(SCOUT_MODEL, prompt, imageParts)
 
     const rawProductTypes = JSON.parse(cleanedText)
     const productTypesResult = z.array(z.string()).safeParse(rawProductTypes)
@@ -354,9 +199,11 @@ export async function detectVisibleProducts(
       error: err instanceof Error ? err.message : String(err),
     }
   }
-} // End of detectVisibleProducts
+}
 
-// Function 4: Refine Product Details (Stage 2)
+// ---------------------------------------------------------------------------
+// Function 3: Refine Product Details (Stage 2)
+// ---------------------------------------------------------------------------
 export async function refineProductDetails(
   publicImageUrls: string[],
   productType: string,
@@ -365,19 +212,19 @@ export async function refineProductDetails(
 ): Promise<DetectedProduct> {
   try {
     const imageParts = await Promise.all(
-      publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
+      publicImageUrls.map((url) => fetchImageForGemini(url))
     )
 
     const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ''
 
-    const contextInstruction = promptContext
-      ? ` Consider that the user is specifically interested in ${promptContext}. Focus heavily on details relevant to this category.`
+    const safeContext = sanitizePromptContext(promptContext)
+    const contextInstruction = safeContext
+      ? ` Consider that the user is specifically interested in ${safeContext}. Focus heavily on details relevant to this category.`
       : ''
 
     const prompt =
       `I have detected a "${productType}" ${stage2Context}. Look very closely at this product in the provided images. ` +
       contextInstruction +
-      'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
       'Use logos, design patterns, and any other visual cues to determine its exact brand and model (e.g., "BAK / BAKFlip MX4", "Ford / 20-inch 6-Spoke Dark Alloy"). ' +
       'Also provide a confidence score (0-100) for your brand/model identification and a brief reasoning. ' +
       'Respond ONLY with a valid, minified JSON object: {"type": string, "brand": string, "model": string, "confidence": number, "reasoning": string}. ' +
@@ -386,9 +233,7 @@ export async function refineProductDetails(
       '", "brand": "Unknown", "model": "Unknown", "confidence": 50, "reasoning": "Insufficient visual details"}.'
 
     // --- Cascading Model: Scout pass (Flash) ---
-    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
-    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
-    const scoutText = cleanJsonResponse(scoutResult.response.text())
+    const scoutText = await callGemini(SCOUT_MODEL, prompt, imageParts)
 
     const scoutRaw = JSON.parse(scoutText)
     const scoutParse = DetectedProductSchema.safeParse(scoutRaw)
@@ -407,9 +252,7 @@ export async function refineProductDetails(
     // --- Gatekeeper: check Scout confidence ---
     if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
       console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType} — escalating to Sniper`)
-      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
-      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
-      const sniperText = cleanJsonResponse(sniperResult.response.text())
+      const sniperText = await callGemini(SNIPER_MODEL, prompt, imageParts)
 
       const sniperRaw = JSON.parse(sniperText)
       const sniperParse = DetectedProductSchema.safeParse(sniperRaw)
@@ -427,8 +270,8 @@ export async function refineProductDetails(
       type: productType,
       brand: "Unknown Brand",
       model: "Unknown Model",
-      confidence: 0.8,
-      reasoning: "Detected based on visual features."
+      confidence: 0,
+      reasoning: "Error during product refinement — could not analyze."
     }
   }
 }
@@ -439,7 +282,9 @@ export interface ImageQualityResult {
   issues: string[]
 }
 
-// Function 5: Check Image Quality
+// ---------------------------------------------------------------------------
+// Function 4: Check Image Quality (with Zod validation — Issue #20)
+// ---------------------------------------------------------------------------
 export async function checkImageQuality(
   publicImageUrls: string[]
 ): Promise<
@@ -447,9 +292,8 @@ export async function checkImageQuality(
   | { success: false; error: string }
 > {
   try {
-    const model = genAI.getGenerativeModel({ model: SCOUT_MODEL })
     const imageParts = await Promise.all(
-      publicImageUrls.map((url) => urlToGenerativePart(url, 'image/jpeg'))
+      publicImageUrls.map((url) => fetchImageForGemini(url))
     )
 
     const prompt =
@@ -462,10 +306,17 @@ export async function checkImageQuality(
       '{ "isHighQuality": boolean, "score": number (0-100), "issues": string[] (list of specific problems found across the images, or empty if good) }. ' +
       'Set isHighQuality to false if the score is below 70.'
 
-    const result = await model.generateContent([prompt, ...imageParts])
-    const cleanedText = cleanJsonResponse(result.response.text())
+    const cleanedText = await callGemini(SCOUT_MODEL, prompt, imageParts)
 
-    return { success: true, data: JSON.parse(cleanedText) as ImageQualityResult }
+    const rawResult = JSON.parse(cleanedText)
+    const parseResult = ImageQualityResultSchema.safeParse(rawResult)
+    if (!parseResult.success) {
+      console.error('Image quality check validation failed:', parseResult.error.flatten())
+      // Return a safe default rather than crashing
+      return { success: true, data: { isHighQuality: true, score: 100, issues: [] } }
+    }
+
+    return { success: true, data: parseResult.data }
   } catch (err) {
     return {
       success: false,
@@ -496,7 +347,9 @@ const PartIdentificationSchema = z.object({
   reasoning: z.string(),
 })
 
-// Function 6: Identify a Car Part from an Image
+// ---------------------------------------------------------------------------
+// Function 5: Identify a Car Part from an Image
+// ---------------------------------------------------------------------------
 export async function identifyPart(
   publicImageUrl: string
 ): Promise<
@@ -504,7 +357,7 @@ export async function identifyPart(
   | { success: false; error: string }
 > {
   try {
-    const imageParts = [await urlToGenerativePart(publicImageUrl, 'image/jpeg')]
+    const imageParts = [await fetchImageForGemini(publicImageUrl)]
 
     const prompt =
       'You are an expert automotive parts specialist. Analyze this image and identify the car part shown. ' +
@@ -521,9 +374,8 @@ export async function identifyPart(
       '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string}'
 
     // --- Cascading Model: Scout pass (Flash) ---
-    const scoutModel = genAI.getGenerativeModel({ model: SCOUT_MODEL })
-    const scoutResult = await scoutModel.generateContent([prompt, ...imageParts])
-    const scoutText = cleanJsonResponse(scoutResult.response.text())
+    let modelUsed = SCOUT_MODEL
+    const scoutText = await callGemini(SCOUT_MODEL, prompt, imageParts)
 
     const scoutRaw = JSON.parse(scoutText)
     const scoutParse = PartIdentificationSchema.safeParse(scoutRaw)
@@ -536,25 +388,25 @@ export async function identifyPart(
     // --- Gatekeeper: check Scout confidence ---
     if (identification.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
       console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`)
-      const sniperModel = genAI.getGenerativeModel({ model: SNIPER_MODEL })
-      const sniperResult = await sniperModel.generateContent([prompt, ...imageParts])
-      const sniperText = cleanJsonResponse(sniperResult.response.text())
+      const sniperText = await callGemini(SNIPER_MODEL, prompt, imageParts)
 
       const sniperRaw = JSON.parse(sniperText)
       const sniperParse = PartIdentificationSchema.safeParse(sniperRaw)
       if (sniperParse.success) {
         identification = sniperParse.data
+        modelUsed = SNIPER_MODEL
       } else {
         console.warn('Sniper part identification validation failed, keeping Scout result:', sniperParse.error.flatten())
       }
     }
 
-    // Save to Supabase
+    // Save to Supabase (Issue #29 — include model_used)
     const { error: dbError } = await supabase
       .from('analysis_results')
       .insert({
         analysis_data: identification,
         image_url: publicImageUrl,
+        model_used: modelUsed,
       })
       .select()
 
@@ -572,7 +424,9 @@ export async function identifyPart(
   }
 }
 
-// Function 7: Update Analysis Results with Detected Products
+// ---------------------------------------------------------------------------
+// Function 6: Update Analysis Results with Detected Products
+// ---------------------------------------------------------------------------
 export async function updateAnalysisResultsProducts(
   imageUrl: string,
   detectedProducts: DetectedProduct[]

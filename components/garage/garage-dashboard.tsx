@@ -1,65 +1,32 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
 import { supabaseClient } from "@/lib/supabase-client"
-import { Loader2, Plus, CarFront, Wrench, Sparkles } from "lucide-react"
+import { Loader2, Plus, CarFront, Wrench, Sparkles, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import Link from "next/link"
 import { VehicleCard } from "./vehicle-card"
 import { PartCard } from "./part-card"
 import { ResultsDisplay } from "../home/results-display"
+import type { GarageVehicleRow, IdentifiedPartRow } from "@/types/supabase"
+import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 
-// Define a type for our vehicle with the joined count
-export type GarageVehicle = {
-    id: string
-    created_at: string
-    year: number
-    make: string
-    model: string
-    trim: string | null
-    nickname: string | null
-    photo_url: string | null
-    ai_identification_data: Record<string, unknown>
-}
-
-export type IdentifiedPart = {
-    id: string
-    created_at: string
-    part_name: string
-    part_category: string
-    brand: string | null
-    part_number: string | null
-    estimated_price: number | null
-    affiliate_url: string | null
-    description: string | null
-    confidence: number | null
-    vehicle_year: string | null
-    vehicle_make: string | null
-    vehicle_model: string | null
-    vehicle_trim: string | null
-    photo_url: string | null
-    ai_identification_data: Record<string, unknown>
-}
+// Re-export for backward compat (used by VehicleCard/PartCard)
+export type GarageVehicle = GarageVehicleRow
+export type IdentifiedPart = IdentifiedPartRow
 
 export function GarageDashboard() {
-    const { session, signInWithGoogle } = useAuth()
+    const { session, isLoading: isAuthLoading, signInWithGoogle } = useAuth()
     const router = useRouter()
 
-    const [vehicles, setVehicles] = useState<GarageVehicle[]>([])
-    const [parts, setParts] = useState<IdentifiedPart[]>([])
+    const [vehicles, setVehicles] = useState<GarageVehicleRow[]>([])
+    const [parts, setParts] = useState<IdentifiedPartRow[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [isAuthChecking, setIsAuthChecking] = useState(true)
+    const [fetchError, setFetchError] = useState<string | null>(null)
 
     // Filter & Sort State
     const [activeTab, setActiveTab] = useState("vehicles")
@@ -67,145 +34,176 @@ export function GarageDashboard() {
     const [sortOrder, setSortOrder] = useState("date-desc")
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
 
-    // Selection State for Master-Detail
-    const [selectedVehicle, setSelectedVehicle] = useState<GarageVehicle | null>(null)
-    const [selectedPart, setSelectedPart] = useState<IdentifiedPart | null>(null)
+    // Selection State — derive from ID to avoid stale state (Issue #30)
+    const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
+    const [selectedPartId, setSelectedPartId] = useState<string | null>(null)
 
-    // Auth protection layer
+    const selectedVehicle = useMemo(
+        () => vehicles.find(v => v.id === selectedVehicleId) ?? null,
+        [vehicles, selectedVehicleId]
+    )
+    const selectedPart = useMemo(
+        () => parts.find(p => p.id === selectedPartId) ?? null,
+        [parts, selectedPartId]
+    )
+
+    // Issue #14 — use auth isLoading instead of arbitrary 500ms timeout
     useEffect(() => {
-        // Give the auth provider a tiny bit of time to initialize
-        // If no session after a short delay, redirect
-        const timer = setTimeout(() => {
-            setIsAuthChecking(false)
-            if (!session) {
-                router.push("/")
-                // Optionally trigger sign in
-                setTimeout(() => signInWithGoogle(), 100)
+        if (isAuthLoading) return // Wait for auth to resolve
+        if (!session) {
+            router.push("/")
+            signInWithGoogle()
+        }
+    }, [isAuthLoading, session, router, signInWithGoogle])
+
+    // Data fetching with user_id filter (Issue #4 — defense-in-depth)
+    const fetchData = useCallback(async () => {
+        if (!session?.user) return
+
+        setIsLoading(true)
+        setFetchError(null)
+        try {
+            const vehiclesPromise = supabaseClient
+                .from("garage_vehicles")
+                .select("*")
+                .eq("user_id", session.user.id)
+                .order("created_at", { ascending: false })
+
+            const partsPromise = supabaseClient
+                .from("identified_parts")
+                .select("*")
+                .eq("user_id", session.user.id)
+                .order("created_at", { ascending: false })
+
+            const [vehiclesResult, partsResult] = await Promise.all([vehiclesPromise, partsPromise])
+
+            if (vehiclesResult.error) throw vehiclesResult.error
+            if (partsResult.error) throw partsResult.error
+
+            if (vehiclesResult.data) {
+                setVehicles(vehiclesResult.data as GarageVehicleRow[])
             }
-        }, 500)
+            if (partsResult.data) {
+                setParts(partsResult.data as IdentifiedPartRow[])
+            }
+        } catch (error) {
+            console.error("Error fetching garage data:", error)
+            setFetchError(error instanceof Error ? error.message : "Failed to load garage data")
+        } finally {
+            setIsLoading(false)
+        }
+    }, [session])
 
-        return () => clearTimeout(timer)
-    }, [session, router, signInWithGoogle])
-
-    // Data fetching
     useEffect(() => {
         if (!session) return
-
-        const fetchVehicles = async () => {
-            setIsLoading(true)
-            try {
-                // Fetch vehicles and get the count of associated saved parts
-                const vehiclesPromise = supabaseClient
-                    .from("garage_vehicles")
-                    .select("*")
-                    .order("created_at", { ascending: false })
-
-                // Fetch identified parts
-                const partsPromise = supabaseClient
-                    .from("identified_parts")
-                    .select("*")
-                    .order("created_at", { ascending: false })
-
-                const [vehiclesResult, partsResult] = await Promise.all([vehiclesPromise, partsPromise])
-
-                if (vehiclesResult.error) throw vehiclesResult.error
-                if (partsResult.error) throw partsResult.error
-
-                if (vehiclesResult.data) {
-                    setVehicles(vehiclesResult.data as unknown as GarageVehicle[])
-                }
-                if (partsResult.data) {
-                    setParts(partsResult.data as IdentifiedPart[])
-                }
-            } catch (error) {
-                console.error("Error fetching vehicles:", error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        fetchVehicles()
-    }, [session])
+        fetchData()
+    }, [session, fetchData])
 
     // Handle vehicle deletion from state
     const handleVehicleDeleted = (id: string) => {
         setVehicles(prev => prev.filter(v => v.id !== id))
-        if (selectedVehicle?.id === id) setSelectedVehicle(null)
+        if (selectedVehicleId === id) setSelectedVehicleId(null)
     }
 
     // Handle vehicle update in state
-    const handleVehicleUpdated = (id: string, updates: Partial<GarageVehicle>) => {
+    const handleVehicleUpdated = (id: string, updates: Partial<GarageVehicleRow>) => {
         setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v))
-        if (selectedVehicle?.id === id) {
-            setSelectedVehicle(prev => prev ? { ...prev, ...updates } : null)
-        }
     }
 
     // Handle part deletion
     const handlePartDeleted = (id: string) => {
         setParts(prev => prev.filter(p => p.id !== id))
-        if (selectedPart?.id === id) setSelectedPart(null)
+        if (selectedPartId === id) setSelectedPartId(null)
     }
 
     // Handle part update
-    const handlePartUpdated = (id: string, updates: Partial<IdentifiedPart>) => {
+    const handlePartUpdated = (id: string, updates: Partial<IdentifiedPartRow>) => {
         setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
-        if (selectedPart?.id === id) {
-            setSelectedPart(prev => prev ? { ...prev, ...updates } : null)
-        }
     }
 
-    // Derived State: Filtering and Sorting
-    const filteredAndSortedVehicles = [...vehicles]
-        .filter(v => {
-            if (!searchQuery) return true
-            const q = searchQuery.toLowerCase()
-            return (
-                (v.nickname?.toLowerCase().includes(q)) ||
-                (v.make?.toLowerCase().includes(q)) ||
-                (v.model?.toLowerCase().includes(q))
-            )
-        })
-        .sort((a, b) => {
-            if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            if (sortOrder === "name-asc" || sortOrder === "name-desc") {
-                const nameA = a.nickname || `${a.year} ${a.make} ${a.model}`
-                const nameB = b.nickname || `${b.year} ${b.make} ${b.model}`
-                return sortOrder === "name-asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
-            }
-            return 0
-        })
+    // Issue #28 — memoize filtered/sorted lists
+    const filteredAndSortedVehicles = useMemo(() => {
+        return [...vehicles]
+            .filter(v => {
+                if (!searchQuery) return true
+                const q = searchQuery.toLowerCase()
+                return (
+                    (v.nickname?.toLowerCase().includes(q)) ||
+                    (v.make?.toLowerCase().includes(q)) ||
+                    (v.model?.toLowerCase().includes(q))
+                )
+            })
+            .sort((a, b) => {
+                if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                if (sortOrder === "name-asc" || sortOrder === "name-desc") {
+                    const nameA = a.nickname || `${a.year} ${a.make} ${a.model}`
+                    const nameB = b.nickname || `${b.year} ${b.make} ${b.model}`
+                    return sortOrder === "name-asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA)
+                }
+                return 0
+            })
+    }, [vehicles, searchQuery, sortOrder])
 
-    const filteredAndSortedParts = [...parts]
-        .filter(p => {
-            if (activeCategoryFilter && p.part_category !== activeCategoryFilter) return false
-            if (!searchQuery) return true
-            const q = searchQuery.toLowerCase()
-            return (
-                (p.part_name?.toLowerCase().includes(q)) ||
-                (p.brand?.toLowerCase().includes(q)) ||
-                (p.part_number?.toLowerCase().includes(q))
-            )
-        })
-        .sort((a, b) => {
-            if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            if (sortOrder === "name-asc") return a.part_name.localeCompare(b.part_name)
-            if (sortOrder === "name-desc") return b.part_name.localeCompare(a.part_name)
-            if (sortOrder === "category") return (a.part_category || "").localeCompare(b.part_category || "")
-            return 0
-        })
+    const filteredAndSortedParts = useMemo(() => {
+        return [...parts]
+            .filter(p => {
+                if (activeCategoryFilter && p.part_category !== activeCategoryFilter) return false
+                if (!searchQuery) return true
+                const q = searchQuery.toLowerCase()
+                return (
+                    (p.part_name?.toLowerCase().includes(q)) ||
+                    (p.brand?.toLowerCase().includes(q)) ||
+                    (p.part_number?.toLowerCase().includes(q))
+                )
+            })
+            .sort((a, b) => {
+                if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                if (sortOrder === "name-asc") return a.part_name.localeCompare(b.part_name)
+                if (sortOrder === "name-desc") return b.part_name.localeCompare(a.part_name)
+                if (sortOrder === "category") return (a.part_category || "").localeCompare(b.part_category || "")
+                return 0
+            })
+    }, [parts, searchQuery, sortOrder, activeCategoryFilter])
 
-    const uniqueCategories = Array.from(new Set(parts.map(p => p.part_category))).filter(Boolean) as string[]
+    const uniqueCategories = useMemo(
+        () => Array.from(new Set(parts.map(p => p.part_category))).filter(Boolean) as string[],
+        [parts]
+    )
     const currentTabLength = activeTab === "vehicles" ? vehicles.length : parts.length
-    const showFilters = currentTabLength > 0 // Always show filters in sidebar if there are items
+    const showFilters = currentTabLength > 0
 
-    if (isAuthChecking || (!session && !isAuthChecking)) {
+    // Loading states
+    if (isAuthLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                 <p className="text-muted-foreground">Authenticating securely...</p>
+            </div>
+        )
+    }
+
+    if (!session) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Redirecting...</p>
+            </div>
+        )
+    }
+
+    // Issue #17 — show error state with retry
+    if (fetchError) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
+                <AlertTriangle className="h-8 w-8 text-red-500 mb-4" />
+                <p className="text-foreground font-medium mb-2">Failed to load your garage</p>
+                <p className="text-muted-foreground text-sm mb-6">{fetchError}</p>
+                <Button onClick={fetchData} variant="outline">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                </Button>
             </div>
         )
     }
@@ -247,19 +245,22 @@ export function GarageDashboard() {
 
                         {showFilters && (
                             <div className="space-y-3">
+                                {/* Issue #27 — add aria-label for accessibility */}
                                 <Input
                                     type="search"
                                     placeholder={activeTab === "vehicles" ? "Search vehicles..." : "Search parts..."}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="h-9 bg-gray-50 border-border/50 text-sm"
+                                    aria-label={activeTab === "vehicles" ? "Search vehicles" : "Search parts"}
                                 />
                                 {activeTab === "parts" && uniqueCategories.length > 0 && (
-                                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="group" aria-label="Filter by category">
                                         <Button
                                             variant={activeCategoryFilter === null ? "default" : "outline"}
                                             size="sm"
                                             onClick={() => setActiveCategoryFilter(null)}
+                                            aria-pressed={activeCategoryFilter === null}
                                             className={`h-7 px-3 text-xs rounded-full whitespace-nowrap ${activeCategoryFilter === null ? 'bg-primary text-primary-foreground' : 'bg-gray-50'}`}
                                         >
                                             All
@@ -270,6 +271,7 @@ export function GarageDashboard() {
                                                 variant={activeCategoryFilter === cat ? "default" : "outline"}
                                                 size="sm"
                                                 onClick={() => setActiveCategoryFilter(cat)}
+                                                aria-pressed={activeCategoryFilter === cat}
                                                 className={`h-7 px-3 text-xs rounded-full whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-primary text-primary-foreground' : 'bg-gray-50'}`}
                                             >
                                                 {cat}
@@ -296,8 +298,8 @@ export function GarageDashboard() {
                                     key={vehicle.id}
                                     vehicle={vehicle}
                                     index={index}
-                                    isActive={selectedVehicle?.id === vehicle.id}
-                                    onClick={(v) => { setSelectedVehicle(v); setSelectedPart(null); }}
+                                    isActive={selectedVehicleId === vehicle.id}
+                                    onClick={(v) => { setSelectedVehicleId(v.id); setSelectedPartId(null); }}
                                     onDeleted={handleVehicleDeleted}
                                 />
                             ))
@@ -315,8 +317,8 @@ export function GarageDashboard() {
                                     key={part.id}
                                     part={part}
                                     index={index}
-                                    isActive={selectedPart?.id === part.id}
-                                    onClick={(p) => { setSelectedPart(p); setSelectedVehicle(null); }}
+                                    isActive={selectedPartId === part.id}
+                                    onClick={(p) => { setSelectedPartId(p.id); setSelectedVehicleId(null); }}
                                     onDeleted={handlePartDeleted}
                                 />
                             ))
@@ -347,7 +349,7 @@ export function GarageDashboard() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setSelectedVehicle(null)}
+                                onClick={() => setSelectedVehicleId(null)}
                                 className="pl-0 hover:bg-transparent"
                             >
                                 ← Back to list
@@ -355,13 +357,13 @@ export function GarageDashboard() {
                         </div>
                         <ResultsDisplay
                             analysisMode="vehicle"
-                            results={selectedVehicle.ai_identification_data as any}
-                            detectedProducts={selectedVehicle.ai_identification_data.detectedProducts as any[]}
+                            results={selectedVehicle.ai_identification_data as unknown as AnalysisResults}
+                            detectedProducts={((selectedVehicle.ai_identification_data as Record<string, unknown>)?.detectedProducts as DetectedProduct[]) ?? []}
                             loadingMessage={null}
                             progress={100}
                             imageUrls={selectedVehicle.photo_url ? [selectedVehicle.photo_url] : []}
-                            isSavedToGarage={true} // Need to pass these so it knows it is saved
-                            hideSaveActions={true} // Adjust as needed based on ResultsDisplay API
+                            isSavedToGarage={true}
+                            hideSaveActions={true}
                         />
                     </div>
                 ) : selectedPart ? (
@@ -371,7 +373,7 @@ export function GarageDashboard() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setSelectedPart(null)}
+                                onClick={() => setSelectedPartId(null)}
                                 className="pl-0 hover:bg-transparent"
                             >
                                 ← Back to list
@@ -379,7 +381,7 @@ export function GarageDashboard() {
                         </div>
                         <ResultsDisplay
                             analysisMode="part"
-                            partIdentification={selectedPart.ai_identification_data as any}
+                            partIdentification={selectedPart.ai_identification_data as unknown as PartIdentification}
                             loadingMessage={null}
                             progress={100}
                             imageUrls={selectedPart.photo_url ? [selectedPart.photo_url] : []}

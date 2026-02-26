@@ -6,6 +6,7 @@ import { cn } from '../lib/utils'
 import { SiteHeader } from '../components/ui/site-header'
 import { SiteFooter } from '../components/ui/site-footer'
 import { AuthProvider } from '../components/auth-provider'
+import { ErrorBoundary } from '../components/error-boundary'
 
 // Setup your new fonts
 const fontSans = Inter({
@@ -110,8 +111,10 @@ export default function RootLayout({
           {/* Site Header */}
           <SiteHeader />
 
-          {/* Main content — offset for the fixed header */}
-          <main className="flex-1 pt-14">{children}</main>
+          {/* Main content — offset for the fixed header (Issue #9 — error boundary) */}
+          <main className="flex-1 pt-14">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </main>
 
           {/* Site Footer */}
           <SiteFooter />

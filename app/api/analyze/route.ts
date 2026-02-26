@@ -1,92 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
+import {
+    getAI,
+    SCOUT_MODEL,
+    SNIPER_MODEL,
+    CASCADE_CONFIDENCE_THRESHOLD,
+    cleanJsonResponse,
+    fetchImageForGemini,
+    buildSpecificLogicInstruction,
+    sanitizePromptContext,
+} from '@/lib/gemini'
 
 // ---------------------------------------------------------------------------
-// Supabase client (server-side, type-safe)
+// Supabase client (server-side, lazy init to avoid build-time crashes)
 // ---------------------------------------------------------------------------
-const supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-// ---------------------------------------------------------------------------
-// Google GenAI client (@google/genai SDK)
-// ---------------------------------------------------------------------------
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const SCOUT_MODEL = 'gemini-3-flash-preview'
-const SNIPER_MODEL = 'gemini-3-pro-preview'
-const CONFIDENCE_THRESHOLD = 85
-
-// ---------------------------------------------------------------------------
-// Helper: fetch an image URL and convert it to Gemini inlineData format
-// ---------------------------------------------------------------------------
-export async function fetchImageForGemini(imageUrl: string) {
-    const response = await fetch(imageUrl)
-    if (!response.ok) throw new Error('Failed to fetch image')
-
-    const mimeType = response.headers.get('content-type') || 'image/jpeg'
-    const arrayBuffer = await response.arrayBuffer()
-    const base64Data = Buffer.from(arrayBuffer).toString('base64')
-
-    return { inlineData: { data: base64Data, mimeType: mimeType } }
+let _supabase: ReturnType<typeof createClient<Database>> | null = null
+function getSupabase() {
+    if (!_supabase) {
+        _supabase = createClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+    }
+    return _supabase
 }
 
 // ---------------------------------------------------------------------------
-// Helper: strip markdown code fences from AI responses
+// Security constants
 // ---------------------------------------------------------------------------
-function cleanJsonResponse(text: string): string {
-    return text.replace(/```json\s*/g, '').replace(/```/g, '').trim()
-}
-
-// ---------------------------------------------------------------------------
-// Helper: build the category-specific tiered recommendation instruction
-// ---------------------------------------------------------------------------
-function buildSpecificLogicInstruction(promptContext?: string): string {
-    if (!promptContext) return ''
-
-    const lower = promptContext.toLowerCase()
-
-    if (lower.includes('truck bed cover') || lower.includes('tonneau')) {
-        return `
-      For the "recommendedAccessories", follow this STRICT hierarchy:
-      1. "Essential Bed Protection & Organization Add-ons": Bed Mats/Rugs (e.g. BedRug, Dee Zee), Swing-out cases (e.g. UnderCover SwingCase), BedSlides (e.g. BEDSLIDE S), Cargo Bars, Tailgate Seals, Electronic Tailgate Locks.
-      2. "Compatible Hauling Hardware & Rack Systems": Bed Racks (e.g. Yakima OverHaul, Thule), Toolboxes (e.g. UWS Low Profile).
-      3. "Alternative Truck Bed Enclosure Solutions": Camper Shells (e.g. LEER, ARE), Soft Toppers (e.g. Softopper), Canvas Tarps.
-      IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-      INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-    `
-    }
-
-    if (lower.includes('wheels') || lower.includes('rims') || lower.includes('tires')) {
-        return `
-      For the "recommendedAccessories", follow this STRICT hierarchy:
-      1. "Essential Tire Integration & Installation Hardware": Tires (e.g. Nitto Ridge Grappler, Falken Wildpeak), TPMS Sensors (e.g. Autel MX-Sensor), Hub Centric Rings (e.g. Gorilla), Aftermarket Lug Nuts (e.g. McGard, Gorilla).
-      2. "Stance Modification & Clearance Components": Suspension (e.g. Bilstein 5100, Rough Country Lift), Fender Flares (e.g. Bushwacker Pocket Style), Wheel Spacers (e.g. Bora, Spidertrax).
-      3. "Cosmetic Overlay & Restoration Alternatives": Wheel Skins (e.g. Coast to Coast), Hubcaps, Caliper Covers (e.g. MGP).
-      IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-      INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-    `
-    }
-
-    if (lower.includes('nerf bars') || lower.includes('running boards') || lower.includes('side steps')) {
-        return `
-      For the "recommendedAccessories", follow this STRICT hierarchy:
-      1. "Supplemental Access Points & Paint Protection": Rear Access (e.g. AMP Research BedStep), Hitch Steps (e.g. WeatherTech BumpStep), Mud Flaps (e.g. WeatherTech No-Drill), Door Sill Guards (e.g. AVS).
-      2. "Heavy-Duty Frame Protection & Lighting Integration": Rock Sliders (e.g. N-Fab RKR, Tyger Auto), LED Light Strips (e.g. OPT7), Gap Guards (e.g. Performance Accessories).
-      3. "Automated & Compact Step Alternatives": Power Steps (e.g. AMP Research PowerStep), Hoop Steps (e.g. Bully, N-Fab), Drop Steps (e.g. Westin HDX).
-      IMPORTANT: For EVERY item in the "items" array, strictly follow the format: "Product Name (e.g. Example 1, Example 2)".
-      INSTEAD of a simple string array for "recommendedAccessories", return a "tieredRecommendations" array in the JSON with objects having "title" and "items" array.
-    `
-    }
-
-    return ''
-}
+const MAX_IMAGE_URLS = 10
 
 // ---------------------------------------------------------------------------
 // POST /api/analyze
@@ -96,13 +39,34 @@ export async function POST(request: NextRequest) {
         // 1. Parse request body ------------------------------------------------
         const body = await request.json()
         const imageUrls: string[] = body.imageUrls
-        const promptContext: string | undefined = body.promptContext
+        const promptContext: string | undefined = sanitizePromptContext(body.promptContext)
 
         if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
             return NextResponse.json(
                 { error: 'Missing required field: imageUrls (must be a non-empty array)' },
                 { status: 400 }
             )
+        }
+
+        // Security: cap the number of image URLs
+        if (imageUrls.length > MAX_IMAGE_URLS) {
+            return NextResponse.json(
+                { error: `Too many image URLs (max ${MAX_IMAGE_URLS})` },
+                { status: 400 }
+            )
+        }
+
+        // Security: validate that every URL points to our Supabase storage
+        const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+        if (supabaseOrigin) {
+            for (const url of imageUrls) {
+                if (!url.startsWith(supabaseOrigin)) {
+                    return NextResponse.json(
+                        { error: 'All image URLs must originate from the expected storage domain' },
+                        { status: 400 }
+                    )
+                }
+            }
         }
 
         // 2. Fetch & convert all images ----------------------------------------
@@ -155,7 +119,7 @@ export async function POST(request: NextRequest) {
             '}'
 
         // 4. Scout pass (Gemini 3 Flash) — with Code Execution ----------------
-        const scoutResponse = await ai.models.generateContent({
+        const scoutResponse = await getAI().models.generateContent({
             model: SCOUT_MODEL,
             contents: [
                 {
@@ -179,8 +143,9 @@ export async function POST(request: NextRequest) {
         try {
             finalResult = JSON.parse(scoutText)
         } catch {
+            console.error('Scout model returned invalid JSON:', scoutText)
             return NextResponse.json(
-                { success: false, error: 'Scout model returned invalid JSON', raw: scoutText },
+                { success: false, error: 'Scout model returned invalid JSON' },
                 { status: 502 }
             )
         }
@@ -190,13 +155,13 @@ export async function POST(request: NextRequest) {
             ? finalResult.confidence_score
             : 0
 
-        if (confidenceScore <= CONFIDENCE_THRESHOLD) {
+        if (confidenceScore <= CASCADE_CONFIDENCE_THRESHOLD) {
             console.log(
-                `Scout confidence_score ${confidenceScore} ≤ ${CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`
+                `Scout confidence_score ${confidenceScore} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`
             )
 
             // 6. Sniper pass (Gemini 3 Pro) — fallback ---------------------------
-            const sniperResponse = await ai.models.generateContent({
+            const sniperResponse = await getAI().models.generateContent({
                 model: SNIPER_MODEL,
                 contents: [
                     {
@@ -230,7 +195,7 @@ export async function POST(request: NextRequest) {
             model_used: modelUsed,
         }
 
-        const { error: dbError } = await supabase
+        const { error: dbError } = await getSupabase()
             .from('analysis_results')
             .insert(insertPayload)
 

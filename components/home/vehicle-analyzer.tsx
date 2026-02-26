@@ -112,10 +112,10 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         const previews = files.map(file => {
             const url = URL.createObjectURL(file)
             createdUrlsRef.current.push(url) // Track for cleanup (P-05)
-            return { id: Math.random().toString(36).substring(7), file, preview: url, publicUrl: null }
+            return { id: crypto.randomUUID(), file, preview: url, publicUrl: null }
         })
         const newItem: BatchItem = {
-            id: Math.random().toString(36).substring(7),
+            id: crypto.randomUUID(),
             images: previews,
             status: "pending",
             progress: 0,
@@ -138,7 +138,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 const newImages = files.map(file => {
                     const url = URL.createObjectURL(file)
                     createdUrlsRef.current.push(url)
-                    return { id: Math.random().toString(36).substring(7), file, preview: url, publicUrl: null }
+                    return { id: crypto.randomUUID(), file, preview: url, publicUrl: null }
                 })
                 return {
                     ...item,
@@ -160,7 +160,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
             // Create new items for each image in the split item
             const splitItems: BatchItem[] = itemToSplit.images.map(img => ({
-                id: Math.random().toString(36).substring(7),
+                id: crypto.randomUUID(),
                 images: [img], // Keep the image object as is (with preview)
                 status: "pending",
                 progress: 0,
@@ -342,29 +342,26 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         updateItem({ status: "uploading", progress: 5 })
 
+        // Issue #12 — parallel image uploads
+        const uploadResults = await Promise.allSettled(
+            item.images.map(async (img) => {
+                if (img.publicUrl) return img // Already uploaded
+                const { url, error: uploadError } = await uploadImageToSupabase(img.file)
+                if (uploadError || !url) throw new Error(`Failed to upload ${img.file.name}`)
+                return { ...img, publicUrl: url }
+            })
+        )
+
         const uploadedImages: { id: string, file: File, preview: string, publicUrl: string | null }[] = []
-
-        // Upload each image
-        let uploadedCount = 0
-        for (const img of item.images) {
-            // Skip if already uploaded? For now, re-upload to be safe or if retry logic needs it.
-            // Actually, if publicUrl exists, we could skip.
-            if (img.publicUrl) {
-                uploadedImages.push(img)
-                uploadedCount++
-                continue
-            }
-
-            const { url, error: uploadError } = await uploadImageToSupabase(img.file)
-            if (uploadError || !url) {
-                updateItem({ status: "error", error: `Failed to upload image ${img.file.name}`, progress: 0, loadingMessage: null })
+        for (const result of uploadResults) {
+            if (result.status === 'fulfilled') {
+                uploadedImages.push(result.value)
+            } else {
+                updateItem({ status: "error", error: result.reason?.message ?? "Upload failed", progress: 0, loadingMessage: null })
                 return currentItem
             }
-
-            uploadedImages.push({ ...img, publicUrl: url })
-            uploadedCount++
-            updateItem({ progress: 5 + Math.floor((uploadedCount / item.images.length) * 20) }) // Upload is 5-25%
         }
+        updateItem({ progress: 25 })
 
         // Update item with uploaded URLs
         // We update the state to preserve the publicUrls
@@ -438,14 +435,18 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     const detectRes = await detectVisibleProducts(publicUrls, vehicleDetailsString, promptContext)
                     if (detectRes.success) {
                         const types = detectRes.data
-                        for (let i = 0; i < types.length; i++) {
-                            updateItem({ loadingMessage: `Analyzing ${types[i]}...`, progress: 60 + Math.floor((i / types.length) * 35) })
-                            // Maybe pass context here too if needed? For now just types.
-                            const details = await refineProductDetails(publicUrls, types[i], vehicleDetailsString, promptContext)
-                            detectedProducts.push(details)
-                            // Update intermediate products
-                            updateItem({ detectedProducts: [...detectedProducts] })
+                        updateItem({ loadingMessage: `Analyzing ${types.length} detected product${types.length === 1 ? '' : 's'}...`, progress: 65 })
+
+                        // Issue #12 — parallel product refinement
+                        const refinementResults = await Promise.allSettled(
+                            types.map(type => refineProductDetails(publicUrls, type, vehicleDetailsString, promptContext))
+                        )
+                        for (const result of refinementResults) {
+                            if (result.status === 'fulfilled') {
+                                detectedProducts.push(result.value)
+                            }
                         }
+                        updateItem({ detectedProducts: [...detectedProducts], progress: 95 })
 
                         // Update the database analysis_results with the fully detected products
                         if (publicUrls[0] && detectedProducts.length > 0) {
@@ -522,9 +523,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         {/* Homepage Mode Selector Cards */}
                         {showCategories && (
                             <div className="container mx-auto px-4 mb-6">
-                                <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+                                <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto" role="radiogroup" aria-label="Analysis mode">
                                     <button
                                         type="button"
+                                        role="radio"
+                                        aria-checked={analysisMode === "vehicle"}
                                         onClick={() => handleModeSwitch("vehicle")}
                                         className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "vehicle"
                                             ? "border-orange-400 shadow-lg shadow-orange-400/20"
@@ -544,6 +547,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                                     <button
                                         type="button"
+                                        role="radio"
+                                        aria-checked={analysisMode === "part"}
                                         onClick={() => handleModeSwitch("part")}
                                         className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "part"
                                             ? "border-orange-400 shadow-lg shadow-orange-400/20"

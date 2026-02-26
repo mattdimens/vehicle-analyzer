@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import type { IdentifiedPart } from "./garage-dashboard"
 import { useState } from "react"
 import { supabaseClient } from "@/lib/supabase-client"
+import { useAuth } from "@/components/auth-provider"
 import { toast } from "sonner"
 import {
     AlertDialog,
@@ -24,6 +25,7 @@ interface PartCardProps {
 }
 
 export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted }: PartCardProps) {
+    const { session } = useAuth()
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
@@ -37,10 +39,17 @@ export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted
         setIsDeleteDialogOpen(false)
         setIsDeleting(true)
         try {
-            const { error } = await supabaseClient
+            // Issue #4 — defense-in-depth: include user_id in delete filter
+            const query = supabaseClient
                 .from("identified_parts")
                 .delete()
                 .eq("id", part.id)
+
+            if (session?.user?.id) {
+                query.eq("user_id", session.user.id)
+            }
+
+            const { error } = await query
 
             if (error) throw error
 
@@ -56,10 +65,14 @@ export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted
     return (
         <>
             <div
-                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both 
+                role="button"
+                tabIndex={0}
+                aria-selected={isActive}
+                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both
                 ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => onClick(part)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(part) } }}
             >
                 {/* Thumbnail */}
                 <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">

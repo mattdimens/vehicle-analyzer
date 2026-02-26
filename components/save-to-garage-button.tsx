@@ -1,11 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
-import { useAuth } from "@/components/auth-provider"
-import { supabaseClient } from "@/lib/supabase-client"
-import { toast } from "sonner"
+import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 
 interface SaveToGarageButtonProps {
@@ -17,14 +14,14 @@ interface SaveToGarageButtonProps {
 export const PENDING_GARAGE_SAVE_KEY = "pending_garage_save"
 
 export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts }: SaveToGarageButtonProps) {
-    const { session, signInWithGoogle } = useAuth()
-    const [isSaving, setIsSaving] = useState(false)
-    const [isSaved, setIsSaved] = useState(false)
+    const { save, isSaving, isSaved } = useSaveToSupabase({
+        table: "garage_vehicles",
+        pendingStorageKey: PENDING_GARAGE_SAVE_KEY,
+        entityLabel: "vehicle",
+    })
 
-    const handleSave = async () => {
-        if (isSaved) return
-
-        const vehicleData = {
+    const handleSave = () => {
+        save({
             year: results.primary.year,
             make: results.primary.make,
             model: results.primary.model,
@@ -35,34 +32,7 @@ export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts 
                 ...results,
                 detectedProducts,
             },
-        }
-
-        if (!session?.user) {
-            // Unauthenticated: Save to local storage and trigger sign in
-            localStorage.setItem(PENDING_GARAGE_SAVE_KEY, JSON.stringify(vehicleData))
-            toast("Please sign in to save this vehicle to your garage.")
-            signInWithGoogle()
-            return
-        }
-
-        // Authenticated: Save directly to Supabase
-        setIsSaving(true)
-        try {
-            const { error } = await supabaseClient.from("garage_vehicles").insert({
-                ...vehicleData,
-                user_id: session.user.id,
-            })
-
-            if (error) throw error
-
-            setIsSaved(true)
-            toast.success("Vehicle saved to your garage!")
-        } catch (error) {
-            console.error("Error saving vehicle:", error)
-            toast.error("Failed to save vehicle. Please try again.")
-        } finally {
-            setIsSaving(false)
-        }
+        })
     }
 
     return (

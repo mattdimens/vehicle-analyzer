@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import type { GarageVehicle } from "./garage-dashboard"
 import { useState } from "react"
 import { supabaseClient } from "@/lib/supabase-client"
+import { useAuth } from "@/components/auth-provider"
 import { toast } from "sonner"
 import {
     AlertDialog,
@@ -14,6 +15,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import type { DetectedProduct } from "@/app/actions"
 
 interface VehicleCardProps {
     vehicle: GarageVehicle
@@ -24,10 +26,11 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onDeleted }: VehicleCardProps) {
+    const { session } = useAuth()
     const [isDeleting, setIsDeleting] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-    const detectedProducts = (vehicle.ai_identification_data?.detectedProducts as any[]) || []
+    const detectedProducts = ((vehicle.ai_identification_data as Record<string, unknown>)?.detectedProducts as DetectedProduct[]) ?? []
     const partsCount = detectedProducts.length
 
     const handleDeleteClick = (e: React.MouseEvent) => {
@@ -35,15 +38,23 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
         setIsDeleteDialogOpen(true)
     }
 
+    // Issue #4 — defense-in-depth: include user_id in delete filter
     const confirmDelete = async (e?: React.MouseEvent) => {
         if (e) e.stopPropagation()
         setIsDeleteDialogOpen(false)
         setIsDeleting(true)
         try {
-            const { error } = await supabaseClient
+            const query = supabaseClient
                 .from("garage_vehicles")
                 .delete()
                 .eq("id", vehicle.id)
+
+            // Add user_id filter if session is available
+            if (session?.user?.id) {
+                query.eq("user_id", session.user.id)
+            }
+
+            const { error } = await query
 
             if (error) throw error
 
@@ -56,13 +67,25 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onClick(vehicle)
+        }
+    }
+
     return (
         <>
+            {/* Issue #27 — add role="button", tabIndex, keyboard handler for a11y */}
             <div
-                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both 
+                role="button"
+                tabIndex={0}
+                aria-selected={isActive}
+                className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both
                 ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => onClick(vehicle)}
+                onKeyDown={handleKeyDown}
             >
                 {/* Thumbnail */}
                 <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
@@ -111,7 +134,7 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
                     className={`absolute right-2 h-8 w-8 text-muted-foreground/50 hover:text-red-600 hover:bg-red-50 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                     onClick={handleDeleteClick}
                     disabled={isDeleting}
-                    title="Delete vehicle"
+                    aria-label={`Delete ${vehicle.nickname || `${vehicle.year} ${vehicle.make} ${vehicle.model}`}`}
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -140,4 +163,3 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
         </>
     )
 }
-

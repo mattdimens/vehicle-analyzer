@@ -1,11 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
-import { useAuth } from "@/components/auth-provider"
-import { supabaseClient } from "@/lib/supabase-client"
-import { toast } from "sonner"
+import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
 import type { PartIdentification } from "@/app/actions"
 
 interface SaveToPartsButtonProps {
@@ -16,13 +13,13 @@ interface SaveToPartsButtonProps {
 export const PENDING_PARTS_SAVE_KEY = "pending_parts_save"
 
 export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPartsButtonProps) {
-    const { session, signInWithGoogle } = useAuth()
-    const [isSaving, setIsSaving] = useState(false)
-    const [isSaved, setIsSaved] = useState(false)
+    const { save, isSaving, isSaved } = useSaveToSupabase({
+        table: "identified_parts",
+        pendingStorageKey: PENDING_PARTS_SAVE_KEY,
+        entityLabel: "part",
+    })
 
-    const handleSave = async () => {
-        if (isSaved) return
-
+    const handleSave = () => {
         // Extract vehicle info if available in estimatedVehicle string (e.g. "2019 Ford F-150")
         let year, make, model
         const trim = null
@@ -35,10 +32,10 @@ export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPa
             }
         }
 
-        const partData = {
+        save({
             part_name: partIdentification.partName,
             part_category: partIdentification.category,
-            brand: null, // AI doesn't always provide specific brand, could add later
+            brand: null,
             part_number: null,
             estimated_price: null,
             affiliate_url: null,
@@ -50,34 +47,7 @@ export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPa
             vehicle_trim: trim,
             photo_url: partImageUrl,
             ai_identification_data: partIdentification,
-        }
-
-        if (!session?.user) {
-            // Unauthenticated: Save to local storage and trigger sign in
-            localStorage.setItem(PENDING_PARTS_SAVE_KEY, JSON.stringify(partData))
-            toast("Please sign in to save this part to your garage.")
-            signInWithGoogle()
-            return
-        }
-
-        // Authenticated: Save directly to Supabase
-        setIsSaving(true)
-        try {
-            const { error } = await supabaseClient.from("identified_parts").insert({
-                ...partData,
-                user_id: session.user.id,
-            })
-
-            if (error) throw error
-
-            setIsSaved(true)
-            toast.success("Part saved to your garage!")
-        } catch (error) {
-            console.error("Error saving part:", error)
-            toast.error("Failed to save part. Please try again.")
-        } finally {
-            setIsSaving(false)
-        }
+        })
     }
 
     return (

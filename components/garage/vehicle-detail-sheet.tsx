@@ -64,7 +64,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
         }
     }
 
-    const detectedProducts: DetectedProduct[] = (vehicle.ai_identification_data?.detectedProducts as DetectedProduct[]) || []
+    const detectedProducts: DetectedProduct[] = ((vehicle.ai_identification_data as Record<string, unknown> | null)?.detectedProducts as DetectedProduct[]) || []
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>

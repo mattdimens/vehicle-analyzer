@@ -1,7 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Lazy singleton to avoid "supabaseUrl is required" at build/SSR time
+let _client: SupabaseClient | null = null
 
-// Singleton instance for client-side usage
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+export const supabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    if (!_client) {
+      _client = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+    }
+    const value = (_client as unknown as Record<string | symbol, unknown>)[prop]
+    if (typeof value === 'function') {
+      return value.bind(_client)
+    }
+    return value
+  },
+})

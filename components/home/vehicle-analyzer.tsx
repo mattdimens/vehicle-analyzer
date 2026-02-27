@@ -546,12 +546,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     </div>
                 </div>
 
-                {/* Homepage CTA Module */}
-                {showCategories && (
-                    <div className="w-full">
-                        <SaveToGarageCTA placement="homepage" />
-                    </div>
-                )}
 
                 {/* Batch Results Display */}
                 {batchItems.length > 0 && (
@@ -574,6 +568,13 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 )}
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
+
+                {/* Homepage CTA Module — after How It Works, before Categories */}
+                {showCategories && (
+                    <div className="w-full">
+                        <SaveToGarageCTA placement="homepage" />
+                    </div>
+                )}
 
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}

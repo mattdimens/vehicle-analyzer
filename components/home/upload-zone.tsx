@@ -30,6 +30,8 @@ interface UploadZoneProps {
     analysisMode?: AnalysisMode
     isHomepage?: boolean
     categoryLabel?: string
+    activeMode?: AnalysisMode
+    onModeSwitch?: (mode: AnalysisMode) => void
 }
 
 export function UploadZone({
@@ -50,6 +52,8 @@ export function UploadZone({
     analysisMode = "vehicle",
     isHomepage = false,
     categoryLabel,
+    activeMode = "vehicle",
+    onModeSwitch,
 }: UploadZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
@@ -138,13 +142,49 @@ export function UploadZone({
     return (
         <div className="w-full px-4 pb-8">
             <div className="w-full max-w-4xl mx-auto rounded-2xl border bg-card shadow-lg">
+                {/* Homepage Mode Tabs */}
+                {isHomepage && onModeSwitch && (
+                    <div className="flex rounded-t-2xl overflow-hidden border-b border-border" role="radiogroup" aria-label="Analysis mode">
+                        <button
+                            type="button"
+                            role="radio"
+                            aria-checked={activeMode === "vehicle"}
+                            onClick={() => onModeSwitch("vehicle")}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors",
+                                activeMode === "vehicle"
+                                    ? "bg-[#E8712B] text-white"
+                                    : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+                            )}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 10.8 5H5.6c-.8 0-1.5.5-1.8 1.2L2 11c-.5 1.1-.2 2.3.7 3" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
+                            Identify My Vehicle
+                        </button>
+                        <button
+                            type="button"
+                            role="radio"
+                            aria-checked={activeMode === "part"}
+                            onClick={() => onModeSwitch("part")}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors",
+                                activeMode === "part"
+                                    ? "bg-[#E8712B] text-white"
+                                    : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+                            )}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                            Identify a Part
+                        </button>
+                    </div>
+                )}
                 {/* Dropzone Area */}
                 <div
                     {...getRootProps()}
                     role="button"
                     aria-label="Upload vehicle images: drag and drop or click to select"
                     className={cn(
-                        "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors rounded-t-2xl",
+                        "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors",
+                        !(isHomepage && onModeSwitch) && "rounded-t-2xl",
                         !hasItems &&
                         (isDragActive
                             ? "bg-primary/5 cursor-pointer"

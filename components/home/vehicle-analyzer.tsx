@@ -520,55 +520,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     {breadcrumbs && <BreadcrumbNav items={breadcrumbs} />}
 
                     <div id="upload-zone" className="scroll-mt-20">
-                        {/* Homepage Mode Selector Cards */}
-                        {showCategories && (
-                            <div className="container mx-auto px-4 mb-6">
-                                <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto" role="radiogroup" aria-label="Analysis mode">
-                                    <button
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={analysisMode === "vehicle"}
-                                        onClick={() => handleModeSwitch("vehicle")}
-                                        className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "vehicle"
-                                            ? "border-orange-400 shadow-lg shadow-orange-400/20"
-                                            : "border-white/20 hover:border-white/40"
-                                            }`}
-                                    >
-                                        <div className={`flex h-14 w-14 items-center justify-center rounded-xl transition-colors ${analysisMode === "vehicle" ? "bg-orange-400/20 text-orange-300" : "bg-white/10 text-white/70 group-hover:bg-white/15"
-                                            }`}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 10.8 5H5.6c-.8 0-1.5.5-1.8 1.2L2 11c-.5 1.1-.2 2.3.7 3" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
-                                        </div>
-                                        <div className="text-center">
-                                            <h3 className={`font-heading text-base md:text-lg font-bold ${analysisMode === "vehicle" ? "text-orange-300" : "text-white"
-                                                }`}>Identify My Vehicle</h3>
-                                            <p className="text-xs md:text-sm text-white/60 mt-1">Upload a vehicle photo to find fitment and compatible parts.</p>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={analysisMode === "part"}
-                                        onClick={() => handleModeSwitch("part")}
-                                        className={`group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 md:p-8 transition-all duration-200 bg-white/5 backdrop-blur-sm hover:bg-white/10 ${analysisMode === "part"
-                                            ? "border-orange-400 shadow-lg shadow-orange-400/20"
-                                            : "border-white/20 hover:border-white/40"
-                                            }`}
-                                    >
-                                        <div className={`flex h-14 w-14 items-center justify-center rounded-xl transition-colors ${analysisMode === "part" ? "bg-orange-400/20 text-orange-300" : "bg-white/10 text-white/70 group-hover:bg-white/15"
-                                            }`}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
-                                        </div>
-                                        <div className="text-center">
-                                            <h3 className={`font-heading text-base md:text-lg font-bold ${analysisMode === "part" ? "text-orange-300" : "text-white"
-                                                }`}>Identify a Part</h3>
-                                            <p className="text-xs md:text-sm text-white/60 mt-1">Upload a photo of any car part to learn what it is.</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
                         <div id="upload-target" className="scroll-mt-24">
                             <UploadZone
                                 onFilesSelect={handleFilesSelect}
@@ -588,6 +539,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                                 analysisMode={analysisMode}
                                 isHomepage={showCategories}
                                 categoryLabel={categoryLabel}
+                                activeMode={analysisMode}
+                                onModeSwitch={handleModeSwitch}
                             />
                         </div>
                     </div>

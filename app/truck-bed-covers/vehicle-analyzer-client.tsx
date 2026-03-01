@@ -9,7 +9,7 @@ import { RelatedPages } from "@/components/ui/related-pages"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { Truck, RotateCcw, ShoppingCart } from "lucide-react"
 
-const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
+const steps: HowItWorksStep[] = [
     {
         title: "Photograph Your Truck Bed",
         description:

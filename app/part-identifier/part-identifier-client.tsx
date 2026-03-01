@@ -6,7 +6,7 @@ import type { UseCaseCard } from "@/components/home/use-cases"
 import { RelatedPages } from "@/components/ui/related-pages"
 import { Wrench, Warehouse, Package } from "lucide-react"
 
-const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
+const steps: HowItWorksStep[] = [
     {
         title: "Upload Part Photo",
         description:

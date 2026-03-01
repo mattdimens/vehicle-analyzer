@@ -14,25 +14,19 @@ const howToJsonLd = {
   "@type": "HowTo",
   name: "How to Identify Vehicle Fitment and Parts From a Photo",
   description:
-    "Use Visual Fitment to upload a vehicle image, choose an analysis type, and get instant fitment and product results powered by AI.",
+    "Use Visual Fitment to upload a vehicle or part photo and get instant fitment and product results powered by AI.",
   step: [
     {
       "@type": "HowToStep",
-      name: "Upload Vehicle Image",
-      text: "Upload the vehicle image you'd like to analyze. Drag and drop or select from your device.",
+      name: "Upload a Photo",
+      text: "Upload a photo of a full vehicle or a close-up of a specific part. Drag and drop or select from your device.",
       position: 1,
     },
     {
       "@type": "HowToStep",
-      name: "Choose Analysis",
-      text: "Choose from three separate analyses: Analyze Fitment to identify your vehicle's make, model, trim, and year; Detect Products to identify aftermarket parts and accessories; or Fitment & Products for a complete analysis.",
-      position: 2,
-    },
-    {
-      "@type": "HowToStep",
       name: "Get Instant Results",
-      text: "Analysis results are organized into a comprehensive table detailing your vehicle's fitment specifications, detected parts, and compatibility data in seconds.",
-      position: 3,
+      text: "In seconds, get a detailed breakdown — vehicle specs, identified parts, and direct links to buy compatible accessories.",
+      position: 2,
     },
   ],
 }

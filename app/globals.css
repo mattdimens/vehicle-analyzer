@@ -145,32 +145,4 @@
   .container {
     @apply w-full max-w-6xl mx-auto px-4;
   }
-
-  /* Hand-drawn highlighter effect */
-  .hand-highlight {
-    background: linear-gradient(
-      to bottom,
-      transparent 30%,
-      #fff176 30%,
-      #fff176 90%,
-      transparent 90%
-    );
-    padding: 0 4px;
-    margin: 0 -4px;
-    display: inline;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
-  }
-
-  .hand-highlight--a {
-    background: linear-gradient(104deg, transparent 28%, #fff176 30%, #fff176 92%, transparent 94%);
-  }
-
-  .hand-highlight--b {
-    background: linear-gradient(97deg, transparent 32%, #ffe082 34%, #ffe082 88%, transparent 90%);
-  }
-
-  .hand-highlight--c {
-    background: linear-gradient(101deg, transparent 26%, #fff9c4 28%, #fff9c4 91%, transparent 93%);
-  }
 }

@@ -9,7 +9,7 @@ import { RelatedPages } from "@/components/ui/related-pages"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { ArrowUpCircle, Eye, ShieldCheck } from "lucide-react"
 
-const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
+const steps: HowItWorksStep[] = [
     {
         title: "Snap a Wheel Photo",
         description:

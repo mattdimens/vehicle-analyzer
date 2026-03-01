@@ -9,7 +9,7 @@ import { RelatedPages } from "@/components/ui/related-pages"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { Footprints, Mountain, Users } from "lucide-react"
 
-const steps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
+const steps: HowItWorksStep[] = [
     {
         title: "Upload a Side-Profile Shot",
         description:

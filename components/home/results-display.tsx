@@ -118,7 +118,7 @@ export function ResultsDisplay({
                                 </span>
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <CardTitle className="text-2xl"><span className="hand-highlight hand-highlight--a">{partIdentification.partName}</span></CardTitle>
+                                <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
                                 {!hideSaveActions && (
                                     <SaveToPartsButton
                                         partImageUrl={imageUrls[0]}
@@ -145,13 +145,7 @@ export function ResultsDisplay({
                                     />
                                 </div>
                                 <span className={cn("text-sm font-bold tabular-nums w-12 text-right", confidenceColor)}>
-                                    {partIdentification.confidence >= 85 ? (
-                                        <span className="hand-highlight hand-highlight--b">{partIdentification.confidence}%</span>
-                                    ) : partIdentification.confidence >= 60 ? (
-                                        <span className="hand-highlight hand-highlight--c">{partIdentification.confidence}%</span>
-                                    ) : (
-                                        <>{partIdentification.confidence}%</>
-                                    )}
+                                    {partIdentification.confidence}%
                                 </span>
                             </div>
 

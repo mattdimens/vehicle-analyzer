@@ -50,7 +50,7 @@ interface VehicleAnalyzerProps {
     showCategories?: boolean
     detectedProductsTitle?: string
     analysisMode?: AnalysisMode
-    howItWorksSteps?: [HowItWorksStep, HowItWorksStep, HowItWorksStep]
+    howItWorksSteps?: HowItWorksStep[]
     howItWorksHeading?: React.ReactNode
     useCaseCards?: UseCaseCard[]
     useCaseHeading?: string

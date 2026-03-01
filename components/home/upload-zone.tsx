@@ -158,7 +158,8 @@ export function UploadZone({
                             )}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 10.8 5H5.6c-.8 0-1.5.5-1.8 1.2L2 11c-.5 1.1-.2 2.3.7 3" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
-                            Identify My Vehicle
+                            <span className="hidden sm:inline">Full Vehicle Analysis</span>
+                            <span className="sm:hidden">Vehicle Analysis</span>
                         </button>
                         <button
                             type="button"
@@ -173,7 +174,8 @@ export function UploadZone({
                             )}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
-                            Identify a Part
+                            <span className="hidden sm:inline">Identify a Specific Part</span>
+                            <span className="sm:hidden">Part Identifier</span>
                         </button>
                     </div>
                 )}
@@ -199,6 +201,11 @@ export function UploadZone({
                             {/* Desktop: Drag & Drop UI */}
                             <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
                                 <Upload className="h-10 w-10 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
+                                    {activeMode === "part"
+                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is — engine components, suspension, interior parts, and more."
+                                        : "Upload a photo of any vehicle — we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
+                                </p>
                                 <p className="text-lg font-medium text-muted-foreground">
                                     {isDragActive
                                         ? "Drop the images here ..."
@@ -216,6 +223,11 @@ export function UploadZone({
 
                             {/* Mobile: Buttons UI */}
                             <div className="flex md:hidden flex-col w-full gap-4 py-4">
+                                <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
+                                    {activeMode === "part"
+                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is — engine components, suspension, interior parts, and more."
+                                        : "Upload a photo of any vehicle — we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
+                                </p>
                                 <Button
                                     size="lg"
                                     className="w-full h-14 text-lg font-semibold shadow-lg rounded-xl"
@@ -433,19 +445,19 @@ export function UploadZone({
                     <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Camera className="w-3.5 h-3.5 flex-shrink-0" />
-                            Clear, <span className="hand-highlight hand-highlight--a">well-lit</span> photos work best
+                            Clear, well-lit photos work best
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Maximize className="w-3.5 h-3.5 flex-shrink-0" />
-                            Include the <span className="hand-highlight hand-highlight--b">full vehicle</span> or the full part
+                            Include the full vehicle or the full part
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <RotateCw className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="hand-highlight hand-highlight--c">Multiple angles</span> improve accuracy
+                            Multiple angles improve accuracy
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                            Avoid <span className="hand-highlight hand-highlight--a">heavily filtered</span> or edited images
+                            Avoid heavily filtered or edited images
                         </span>
                         <button
                             type="button"

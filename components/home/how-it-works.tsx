@@ -1,4 +1,4 @@
-import { Upload, Zap, Table, type LucideIcon } from "lucide-react"
+import { Upload, Table, type LucideIcon } from "lucide-react"
 import React from "react"
 
 export interface HowItWorksStep {
@@ -8,43 +8,32 @@ export interface HowItWorksStep {
 
 interface HowItWorksProps {
     heading?: React.ReactNode
-    steps?: [HowItWorksStep, HowItWorksStep, HowItWorksStep]
+    steps?: HowItWorksStep[]
 }
 
-const defaultSteps: [HowItWorksStep, HowItWorksStep, HowItWorksStep] = [
+const defaultSteps: HowItWorksStep[] = [
     {
-        title: "Upload Vehicle Image",
-        description: "Easily upload the vehicle image you'd like to analyze. Drag and drop or select from your device.",
-    },
-    {
-        title: "Choose Analysis",
-        description: (
-            <div>
-                <p className="mb-3">Choose from three separate analyses:</p>
-                <ul className="space-y-2 text-base">
-                    <li><strong>Analyze Fitment</strong> - Identifies your vehicle's make, model, trim, year, etc.</li>
-                    <li><strong>Detect Products</strong> - Identifies aftermarket parts and accessories</li>
-                    <li><strong>Fitment &amp; Products</strong> - Get a complete analysis with all of the above</li>
-                </ul>
-            </div>
-        ),
+        title: "Upload a Photo",
+        description: "Upload a photo of a full vehicle or a close-up of a specific part.",
     },
     {
         title: "Get Instant Results",
         description:
-            "Analysis results are organized into a comprehensive table detailing your vehicle's fitment specifications, detected parts, and compatibility data in seconds.",
+            "In seconds, get a detailed breakdown — vehicle specs, identified parts, and direct links to buy compatible accessories.",
     },
 ]
 
 // Icons per position — kept consistent across all pages
-const stepIcons: LucideIcon[] = [Upload, Zap, Table]
-const stepStyles = [
+const defaultIcons: LucideIcon[] = [Upload, Table]
+const defaultStyles = [
     "border-2 border-black bg-white",
     "border-2 border-black bg-[#0F172A] text-white",
     "border-2 border-black bg-white",
 ]
 
 export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
+    const gridCols = steps.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
+
     return (
         <section id="how-it-works" className="w-full bg-white py-16 md:py-20">
             <div className="container max-w-6xl">
@@ -56,9 +45,9 @@ export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+                <div className={`grid grid-cols-1 gap-12 ${gridCols} ${steps.length === 2 ? "max-w-4xl mx-auto" : ""}`}>
                     {steps.map((step, i) => {
-                        const Icon = stepIcons[i]
+                        const Icon = defaultIcons[i] ?? defaultIcons[0]
                         const isFirst = i === 0
                         const isLast = i === steps.length - 1
 
@@ -70,7 +59,7 @@ export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
                                         <div className="absolute left-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-black md:block" />
                                     )}
 
-                                    <div className={`relative z-10 flex h-20 w-20 items-center justify-center rounded-full ${stepStyles[i]}`}>
+                                    <div className={`relative z-10 flex h-20 w-20 items-center justify-center rounded-full ${defaultStyles[i] ?? defaultStyles[0]}`}>
                                         <Icon className="h-8 w-8" />
                                     </div>
 

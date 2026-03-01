@@ -433,19 +433,19 @@ export function UploadZone({
                     <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Camera className="w-3.5 h-3.5 flex-shrink-0" />
-                            Clear, well-lit photos work best
+                            Clear, <span className="hand-highlight hand-highlight--a">well-lit</span> photos work best
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Maximize className="w-3.5 h-3.5 flex-shrink-0" />
-                            Include the full vehicle or the full part
+                            Include the <span className="hand-highlight hand-highlight--b">full vehicle</span> or the full part
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <RotateCw className="w-3.5 h-3.5 flex-shrink-0" />
-                            Multiple angles improve accuracy
+                            <span className="hand-highlight hand-highlight--c">Multiple angles</span> improve accuracy
                         </span>
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                            Avoid heavily filtered or edited images
+                            Avoid <span className="hand-highlight hand-highlight--a">heavily filtered</span> or edited images
                         </span>
                         <button
                             type="button"

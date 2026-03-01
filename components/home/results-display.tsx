@@ -118,7 +118,7 @@ export function ResultsDisplay({
                                 </span>
                             </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
+                                <CardTitle className="text-2xl"><span className="hand-highlight hand-highlight--a">{partIdentification.partName}</span></CardTitle>
                                 {!hideSaveActions && (
                                     <SaveToPartsButton
                                         partImageUrl={imageUrls[0]}
@@ -145,7 +145,13 @@ export function ResultsDisplay({
                                     />
                                 </div>
                                 <span className={cn("text-sm font-bold tabular-nums w-12 text-right", confidenceColor)}>
-                                    {partIdentification.confidence}%
+                                    {partIdentification.confidence >= 85 ? (
+                                        <span className="hand-highlight hand-highlight--b">{partIdentification.confidence}%</span>
+                                    ) : partIdentification.confidence >= 60 ? (
+                                        <span className="hand-highlight hand-highlight--c">{partIdentification.confidence}%</span>
+                                    ) : (
+                                        <>{partIdentification.confidence}%</>
+                                    )}
                                 </span>
                             </div>
 
@@ -280,7 +286,13 @@ export function ResultsDisplay({
                                             <h3 className="text-lg font-semibold flex items-center gap-2">
                                                 Primary Identification
                                                 <div className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                                    {results.primary.confidence}% Confidence
+                                                    {results.primary.confidence >= 85 ? (
+                                                        <span className="hand-highlight hand-highlight--b">{results.primary.confidence}%</span>
+                                                    ) : results.primary.confidence >= 60 ? (
+                                                        <span className="hand-highlight hand-highlight--c">{results.primary.confidence}%</span>
+                                                    ) : (
+                                                        <>{results.primary.confidence}%</>
+                                                    )} Confidence
                                                 </div>
                                             </h3>
                                             {!hideSaveActions && (
@@ -295,19 +307,19 @@ export function ResultsDisplay({
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
-                                                <div className="text-lg font-semibold text-foreground">{results.primary.year}</div>
+                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--a">{results.primary.year}</span></div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
-                                                <div className="text-lg font-semibold text-foreground">{results.primary.make}</div>
+                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--b">{results.primary.make}</span></div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
-                                                <div className="text-lg font-semibold text-foreground">{results.primary.model}</div>
+                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--c">{results.primary.model}</span></div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
-                                                <div className="text-lg font-semibold text-foreground">{results.primary.trim}</div>
+                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--a">{results.primary.trim}</span></div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cab Style</div>

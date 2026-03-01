@@ -286,13 +286,7 @@ export function ResultsDisplay({
                                             <h3 className="text-lg font-semibold flex items-center gap-2">
                                                 Primary Identification
                                                 <div className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                                    {results.primary.confidence >= 85 ? (
-                                                        <span className="hand-highlight hand-highlight--b">{results.primary.confidence}%</span>
-                                                    ) : results.primary.confidence >= 60 ? (
-                                                        <span className="hand-highlight hand-highlight--c">{results.primary.confidence}%</span>
-                                                    ) : (
-                                                        <>{results.primary.confidence}%</>
-                                                    )} Confidence
+                                                    {results.primary.confidence}% Confidence
                                                 </div>
                                             </h3>
                                             {!hideSaveActions && (
@@ -307,19 +301,19 @@ export function ResultsDisplay({
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
-                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--a">{results.primary.year}</span></div>
+                                                <div className="text-lg font-semibold text-foreground">{results.primary.year}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
-                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--b">{results.primary.make}</span></div>
+                                                <div className="text-lg font-semibold text-foreground">{results.primary.make}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
-                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--c">{results.primary.model}</span></div>
+                                                <div className="text-lg font-semibold text-foreground">{results.primary.model}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
-                                                <div className="text-lg font-semibold text-foreground"><span className="hand-highlight hand-highlight--a">{results.primary.trim}</span></div>
+                                                <div className="text-lg font-semibold text-foreground">{results.primary.trim}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cab Style</div>

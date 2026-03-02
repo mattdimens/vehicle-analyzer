@@ -160,7 +160,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                             </div>
                             <div className="space-y-1">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Trim</p>
-                                <p className="font-semibold text-foreground truncate pr-2" title={vehicle.trim || "—"}>{vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : "—"}</p>
+                                <p className="font-semibold text-foreground truncate pr-2" title={vehicle.trim || "-"}>{vehicle.trim && vehicle.trim !== "Base" ? vehicle.trim : "-"}</p>
                             </div>
                         </div>
                     )}

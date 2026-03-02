@@ -1,4 +1,4 @@
-// Analytics helper — wraps gtag() for custom event tracking (AN-01)
+// Analytics helper: wraps gtag() for custom event tracking (AN-01)
 
 declare global {
     interface Window {

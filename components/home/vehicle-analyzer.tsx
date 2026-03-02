@@ -28,7 +28,7 @@ import { BatchResults } from "@/components/home/batch-results"
 import { trackEvent } from "@/lib/analytics"
 import type { BatchItem } from "@/lib/types"
 
-// Dynamic imports for dialogs — only loaded when opened (P-02)
+// Dynamic imports for dialogs, only loaded when opened (P-02)
 const QualityWarningDialog = dynamic(
     () => import("@/components/home/quality-warning-dialog").then(mod => ({ default: mod.QualityWarningDialog })),
     { ssr: false }
@@ -97,7 +97,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     // Quality Check State (Global for the dialog)
     const [currentQualityItem, setCurrentQualityItem] = useState<{ id: string, issues: string[] } | null>(null)
 
-    // Track created object URLs for cleanup (P-05 — avoid stale closure)
+    // Track created object URLs for cleanup (P-05, avoid stale closure)
     const createdUrlsRef = useRef<string[]>([])
 
     // Cleanup preview URLs
@@ -342,7 +342,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         updateItem({ status: "uploading", progress: 5 })
 
-        // Issue #12 — parallel image uploads
+        // Issue #12: parallel image uploads
         const uploadResults = await Promise.allSettled(
             item.images.map(async (img) => {
                 if (img.publicUrl) return img // Already uploaded
@@ -437,7 +437,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         const types = detectRes.data
                         updateItem({ loadingMessage: `Analyzing ${types.length} detected product${types.length === 1 ? '' : 's'}...`, progress: 65 })
 
-                        // Issue #12 — parallel product refinement
+                        // Issue #12: parallel product refinement
                         const refinementResults = await Promise.allSettled(
                             types.map(type => refineProductDetails(publicUrls, type, vehicleDetailsString, promptContext))
                         )
@@ -569,7 +569,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
 
-                {/* Homepage CTA Module — after How It Works, before Categories */}
+                {/* Homepage CTA Module: after How It Works, before Categories */}
                 {showCategories && (
                     <div className="w-full">
                         <SaveToGarageCTA placement="homepage" />

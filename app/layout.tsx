@@ -90,7 +90,7 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
-          {/* GA4 — conditionally rendered, placed in body with afterInteractive strategy */}
+          {/* GA4: conditionally rendered, placed in body with afterInteractive strategy */}
           {GA_ID && (
             <>
               <Script
@@ -111,7 +111,7 @@ export default function RootLayout({
           {/* Site Header */}
           <SiteHeader />
 
-          {/* Main content — offset for the fixed header (Issue #9 — error boundary) */}
+          {/* Main content: offset for the fixed header (Issue #9: error boundary) */}
           <main className="flex-1 pt-14">
             <ErrorBoundary>{children}</ErrorBoundary>
           </main>

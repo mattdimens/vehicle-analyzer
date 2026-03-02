@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
             '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
             '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. ALWAYS format each string as "Product Name (e.g. Example 1, Example 2)". IF tiered recommendations are requested, keep this as a fallback summary list). ' +
             specificLogicInstruction +
-            '* `confidence_score` (integer 0-100, your overall confidence in the ENTIRE analysis — vehicle identification + any aftermarket part detection) ' +
+            '* `confidence_score` (integer 0-100, your overall confidence in the ENTIRE analysis, covering vehicle identification + any aftermarket part detection) ' +
             '* `seo_optimized_alt_text` (string, a descriptive, SEO-friendly alt text for this vehicle image, e.g., "2022 Ford F-150 Lariat SuperCrew with aftermarket wheels and tonneau cover") ' +
             'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
             '{' +
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             '"seo_optimized_alt_text": string' +
             '}'
 
-        // 4. Scout pass (Gemini 3 Flash) — with Code Execution ----------------
+        // 4. Scout pass (Gemini 3 Flash) with Code Execution ----------------
         const scoutResponse = await getAI().models.generateContent({
             model: SCOUT_MODEL,
             contents: [
@@ -157,10 +157,10 @@ export async function POST(request: NextRequest) {
 
         if (confidenceScore <= CASCADE_CONFIDENCE_THRESHOLD) {
             console.log(
-                `Scout confidence_score ${confidenceScore} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`
+                `Scout confidence_score ${confidenceScore} ≤ ${CASCADE_CONFIDENCE_THRESHOLD}: escalating to Sniper (Pro)`
             )
 
-            // 6. Sniper pass (Gemini 3 Pro) — fallback ---------------------------
+            // 6. Sniper pass (Gemini 3 Pro) fallback ---------------------------
             const sniperResponse = await getAI().models.generateContent({
                 model: SNIPER_MODEL,
                 contents: [
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
 
         if (dbError) {
             console.error('Supabase insert error:', dbError.message)
-            // Don't fail the response — the analysis still succeeded
+            // Don't fail the response; the analysis still succeeded
         }
 
         // 8. Return result to client -------------------------------------------

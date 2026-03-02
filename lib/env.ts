@@ -13,7 +13,7 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_GA_ID: z.string().optional(),
 })
 
-/** Validated public env — safe to use on client and server. */
+/** Validated public env, safe to use on client and server. */
 export const publicEnv = publicEnvSchema.parse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -21,7 +21,7 @@ export const publicEnv = publicEnvSchema.parse({
 })
 
 /**
- * Validated server env — only call from server-side code ('use server', API routes, etc.).
+ * Validated server env. Only call from server-side code ('use server', API routes, etc.).
  * Lazily validated to avoid crashing client bundles.
  */
 export function getServerEnv() {

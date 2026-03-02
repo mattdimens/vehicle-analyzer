@@ -43,7 +43,7 @@ export default function PrivacyPage() {
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Affiliate links disclosure</h2>
                             <p>
-                                Product links on this site (e.g., &quot;Find on Amazon&quot; buttons) are <strong>Amazon Associates affiliate links</strong>. This means we earn a small commission if you purchase something after clicking — at no extra cost to you. This is how we keep the site free. Clicking these links is entirely optional and does not affect your analysis results.
+                                Product links on this site (e.g., &quot;Find on Amazon&quot; buttons) are <strong>Amazon Associates affiliate links</strong>. This means we earn a small commission if you purchase something after clicking, at no extra cost to you. This is how we keep the site free. Clicking these links is entirely optional and does not affect your analysis results.
                             </p>
                         </section>
 

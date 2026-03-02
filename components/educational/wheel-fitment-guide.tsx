@@ -14,7 +14,7 @@ export function WheelFitmentGuide() {
                             What Is Bolt Pattern?
                         </h3>
                         <p className="text-base leading-relaxed text-muted-foreground">
-                            Bolt pattern describes the number of lug holes and the diameter of the circle they form — written as something like 5×114.3 or 6×139.7. The first number is the count of lugs, and the second is the circle diameter in millimeters. If your bolt pattern doesn't match the wheel, it physically won't bolt on, making this the single most important fitment spec. If your truck also needs accessories like a{" "}
+                            Bolt pattern describes the number of lug holes and the diameter of the circle they form, written as something like 5×114.3 or 6×139.7. The first number is the count of lugs, and the second is the circle diameter in millimeters. If your bolt pattern doesn't match the wheel, it physically won't bolt on, making this the single most important fitment spec. If your truck also needs accessories like a{" "}
                             <Link href="/truck-bed-covers" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">tonneau cover matched to your bed length</Link>{" "}
                             or{" "}
                             <Link href="/nerf-bars-running-boards" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">running boards sized to your cab configuration</Link>, those have their own fitment specs worth checking.
@@ -54,7 +54,7 @@ export function WheelFitmentGuide() {
                         </h3>
                         <p className="text-base leading-relaxed text-muted-foreground">
                             Instead of crawling under your vehicle with a tape measure,{" "}
-                            <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">upload a photo to identify your vehicle's wheel bolt pattern, offset, and rim size instantly</Link>. You get confirmed specs in seconds — plus links to compatible wheels and tires. Have a loose part you can't identify? The{" "}
+                            <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">upload a photo to identify your vehicle's wheel bolt pattern, offset, and rim size instantly</Link>. You get confirmed specs in seconds, plus links to compatible wheels and tires. Have a loose part you can't identify? The{" "}
                             <Link href="/part-identifier" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">Visual Part Identifier</Link>{" "}
                             can name it from a photo.
                         </p>

@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe()
     }, [])
 
-    // Issue #15 — use current path as redirect instead of hardcoding /my-garage
+    // Issue #15: use current path as redirect instead of hardcoding /my-garage
     const signInWithGoogle = useCallback(async () => {
         const redirectPath = typeof window !== 'undefined' ? window.location.pathname : '/my-garage'
         await supabase.auth.signInWithOAuth({
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut()
     }, [])
 
-    // Issue #11 — memoize context value to prevent unnecessary re-renders
+    // Issue #11: memoize context value to prevent unnecessary re-renders
     const value = useMemo(
         () => ({ session, user, isLoading, signInWithGoogle, signOut }),
         [session, user, isLoading, signInWithGoogle, signOut]

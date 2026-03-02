@@ -34,7 +34,7 @@ export function GarageDashboard() {
     const [sortOrder, setSortOrder] = useState("date-desc")
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
 
-    // Selection State — derive from ID to avoid stale state (Issue #30)
+    // Selection State: derive from ID to avoid stale state (Issue #30)
     const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
     const [selectedPartId, setSelectedPartId] = useState<string | null>(null)
 
@@ -47,7 +47,7 @@ export function GarageDashboard() {
         [parts, selectedPartId]
     )
 
-    // Issue #14 — use auth isLoading instead of arbitrary 500ms timeout
+    // Issue #14: use auth isLoading instead of arbitrary 500ms timeout
     useEffect(() => {
         if (isAuthLoading) return // Wait for auth to resolve
         if (!session) {
@@ -56,7 +56,7 @@ export function GarageDashboard() {
         }
     }, [isAuthLoading, session, router, signInWithGoogle])
 
-    // Data fetching with user_id filter (Issue #4 — defense-in-depth)
+    // Data fetching with user_id filter (Issue #4: defense-in-depth)
     const fetchData = useCallback(async () => {
         if (!session?.user) return
 
@@ -121,7 +121,7 @@ export function GarageDashboard() {
         setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
     }
 
-    // Issue #28 — memoize filtered/sorted lists
+    // Issue #28: memoize filtered/sorted lists
     const filteredAndSortedVehicles = useMemo(() => {
         return [...vehicles]
             .filter(v => {
@@ -193,7 +193,7 @@ export function GarageDashboard() {
         )
     }
 
-    // Issue #17 — show error state with retry
+    // Issue #17: show error state with retry
     if (fetchError) {
         return (
             <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
@@ -245,7 +245,7 @@ export function GarageDashboard() {
 
                         {showFilters && (
                             <div className="space-y-3">
-                                {/* Issue #27 — add aria-label for accessibility */}
+                                {/* Issue #27: add aria-label for accessibility */}
                                 <Input
                                     type="search"
                                     placeholder={activeTab === "vehicles" ? "Search vehicles..." : "Search parts..."}

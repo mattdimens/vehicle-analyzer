@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Issue #23 — allow next/image to load Supabase-hosted images
+  // Issue #23: allow next/image to load Supabase-hosted images
   images: {
     remotePatterns: [
       {

@@ -158,8 +158,7 @@ export function UploadZone({
                             )}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 10.8 5H5.6c-.8 0-1.5.5-1.8 1.2L2 11c-.5 1.1-.2 2.3.7 3" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>
-                            <span className="hidden sm:inline">Vehicle Fitment & Accessories</span>
-                            <span className="sm:hidden">Fitment & Accessories</span>
+                            Vehicle Fitment & Accessories
                         </button>
                         <button
                             type="button"
@@ -174,8 +173,7 @@ export function UploadZone({
                             )}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" /><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
-                            <span className="hidden sm:inline">Identify a Specific Part</span>
-                            <span className="sm:hidden">Part Identifier</span>
+                            Identify a Specific Part
                         </button>
                     </div>
                 )}
@@ -203,8 +201,8 @@ export function UploadZone({
                                 <Upload className="h-10 w-10 text-muted-foreground" />
                                 <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
                                     {activeMode === "part"
-                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is — engine components, suspension, interior parts, and more."
-                                        : "Upload a photo of any vehicle — we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
+                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is, including engine components, suspension, interior parts, and more."
+                                        : "Upload a photo of any vehicle and we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
                                 </p>
                                 <p className="text-lg font-medium text-muted-foreground">
                                     {isDragActive
@@ -225,8 +223,8 @@ export function UploadZone({
                             <div className="flex md:hidden flex-col w-full gap-4 py-4">
                                 <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
                                     {activeMode === "part"
-                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is — engine components, suspension, interior parts, and more."
-                                        : "Upload a photo of any vehicle — we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
+                                        ? "Got a close-up of an individual part? Upload it and we'll tell you exactly what it is, including engine components, suspension, interior parts, and more."
+                                        : "Upload a photo of any vehicle and we'll identify make, model, trim, and every visible part and accessory, with links to buy."}
                                 </p>
                                 <Button
                                     size="lg"

@@ -19,11 +19,11 @@ const defaultSteps: HowItWorksStep[] = [
     {
         title: "Get Instant Results",
         description:
-            "In seconds, get a detailed breakdown — vehicle specs, identified parts, and direct links to buy compatible accessories.",
+            "In seconds, get a detailed breakdown: vehicle specs, identified parts, and direct links to buy compatible accessories.",
     },
 ]
 
-// Icons per position — kept consistent across all pages
+// Icons per position, kept consistent across all pages
 const defaultIcons: LucideIcon[] = [Upload, Table]
 const defaultStyles = [
     "border-2 border-black bg-white",

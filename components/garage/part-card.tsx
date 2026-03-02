@@ -39,7 +39,7 @@ export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted
         setIsDeleteDialogOpen(false)
         setIsDeleting(true)
         try {
-            // Issue #4 — defense-in-depth: include user_id in delete filter
+            // Issue #4: defense-in-depth: include user_id in delete filter
             const query = supabaseClient
                 .from("identified_parts")
                 .delete()

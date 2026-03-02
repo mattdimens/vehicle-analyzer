@@ -38,7 +38,7 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
         setIsDeleteDialogOpen(true)
     }
 
-    // Issue #4 — defense-in-depth: include user_id in delete filter
+    // Issue #4: defense-in-depth: include user_id in delete filter
     const confirmDelete = async (e?: React.MouseEvent) => {
         if (e) e.stopPropagation()
         setIsDeleteDialogOpen(false)
@@ -76,7 +76,7 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
 
     return (
         <>
-            {/* Issue #27 — add role="button", tabIndex, keyboard handler for a11y */}
+            {/* Issue #27: add role="button", tabIndex, keyboard handler for a11y */}
             <div
                 role="button"
                 tabIndex={0}

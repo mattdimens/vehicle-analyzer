@@ -8,7 +8,7 @@ export const SNIPER_MODEL = 'gemini-3-pro-preview'
 export const CASCADE_CONFIDENCE_THRESHOLD = 85
 
 // ---------------------------------------------------------------------------
-// Client singleton (lazy — avoids crashing client bundles)
+// Client singleton (lazy, avoids crashing client bundles)
 // ---------------------------------------------------------------------------
 let _ai: GoogleGenAI | null = null
 
@@ -43,7 +43,7 @@ export async function fetchImageForGemini(url: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Prompt context validation (Issue #16 — allowlist for known categories)
+// Prompt context validation (Issue #16: allowlist for known categories)
 // ---------------------------------------------------------------------------
 const ALLOWED_PROMPT_CONTEXTS = [
   'truck bed cover',

@@ -48,7 +48,7 @@ const useCaseCards: UseCaseCard[] = [
 const runningBoardFaqs: FaqItem[] = [
     {
         question: "What's the difference between running boards and nerf bars?",
-        answer: "Running boards are wide, flat platforms that run the full length of the cab for easy step-in access. Nerf bars are round tubes (usually 3–4 inches in diameter) with small step pads welded on — they look sportier but offer less foot surface area. Choose running boards for family vehicles and nerf bars for a more athletic aesthetic."
+        answer: "Running boards are wide, flat platforms that run the full length of the cab for easy step-in access. Nerf bars are round tubes (usually 3–4 inches in diameter) with small step pads welded on. They look sportier but offer less foot surface area. Choose running boards for family vehicles and nerf bars for a more athletic aesthetic."
     },
     {
         question: "Do I need a specific mounting bracket for my truck?",
@@ -56,7 +56,7 @@ const runningBoardFaqs: FaqItem[] = [
     },
     {
         question: "Can I install running boards myself?",
-        answer: "Most bolt-on running boards can be installed in 1–2 hours with basic hand tools — no drilling required if you use a vehicle-specific kit. You'll typically need a socket set, a torque wrench, and a friend to help hold the board in position while you tighten the bolts."
+        answer: "Most bolt-on running boards can be installed in 1–2 hours with basic hand tools, with no drilling required if you use a vehicle-specific kit. You'll typically need a socket set, a torque wrench, and a friend to help hold the board in position while you tighten the bolts."
     },
     {
         question: "What material is best for running boards?",

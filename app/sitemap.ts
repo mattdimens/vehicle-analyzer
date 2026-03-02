@@ -6,7 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const now = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
     /**
-     * Central route registry — add new pages here and they
+     * Central route registry: add new pages here and they
      * automatically appear in the generated /sitemap.xml.
      */
     const routes: {

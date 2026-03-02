@@ -251,7 +251,7 @@ export async function refineProductDetails(
 
     // --- Gatekeeper: check Scout confidence ---
     if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
-      console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType} — escalating to Sniper`)
+      console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType}: escalating to Sniper`)
       const sniperText = await callGemini(SNIPER_MODEL, prompt, imageParts)
 
       const sniperRaw = JSON.parse(sniperText)
@@ -271,7 +271,7 @@ export async function refineProductDetails(
       brand: "Unknown Brand",
       model: "Unknown Model",
       confidence: 0,
-      reasoning: "Error during product refinement — could not analyze."
+      reasoning: "Error during product refinement. Could not analyze."
     }
   }
 }
@@ -283,7 +283,7 @@ export interface ImageQualityResult {
 }
 
 // ---------------------------------------------------------------------------
-// Function 4: Check Image Quality (with Zod validation — Issue #20)
+// Function 4: Check Image Quality (with Zod validation, Issue #20)
 // ---------------------------------------------------------------------------
 export async function checkImageQuality(
   publicImageUrls: string[]
@@ -362,13 +362,13 @@ export async function identifyPart(
     const prompt =
       'You are an expert automotive parts specialist. Analyze this image and identify the car part shown. ' +
       'Provide the following information: ' +
-      '1. `partName` (string) — The specific name of the part (e.g., "Brake Caliper", "Mass Air Flow Sensor", "CV Axle") ' +
-      '2. `category` (string) — The category (e.g., "Braking System", "Engine", "Suspension", "Exhaust", "Electrical", "Interior", "Exterior", "Drivetrain") ' +
-      '3. `function` (string) — A concise 1-2 sentence description of what this part does ' +
-      '4. `estimatedVehicle` (string | null) — If you can identify the make/model/year from the part\'s design, OEM number, or branding, include it. Otherwise null. ' +
-      '5. `confidence` (number, 0-100) — How certain you are about this identification ' +
-      '6. `amazonSearchTerm` (string) — A good Amazon search query to find this part (e.g., "2019 Ford F-150 brake caliper front") ' +
-      '7. `reasoning` (string) — Brief explanation of how you identified this part (visual cues, logos, shape, etc.) ' +
+      '1. `partName` (string): The specific name of the part (e.g., "Brake Caliper", "Mass Air Flow Sensor", "CV Axle") ' +
+      '2. `category` (string): The category (e.g., "Braking System", "Engine", "Suspension", "Exhaust", "Electrical", "Interior", "Exterior", "Drivetrain") ' +
+      '3. `function` (string): A concise 1-2 sentence description of what this part does ' +
+      '4. `estimatedVehicle` (string | null): If you can identify the make/model/year from the part\'s design, OEM number, or branding, include it. Otherwise null. ' +
+      '5. `confidence` (number, 0-100): How certain you are about this identification ' +
+      '6. `amazonSearchTerm` (string): A good Amazon search query to find this part (e.g., "2019 Ford F-150 brake caliper front") ' +
+      '7. `reasoning` (string): Brief explanation of how you identified this part (visual cues, logos, shape, etc.) ' +
       'If the image does NOT appear to be a car/vehicle part, still respond with your best guess but set confidence below 30 and explain in reasoning why it may not be a car part. ' +
       'Respond ONLY with a valid, minified JSON object: ' +
       '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string}'
@@ -387,7 +387,7 @@ export async function identifyPart(
 
     // --- Gatekeeper: check Scout confidence ---
     if (identification.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
-      console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} — escalating to Sniper (Pro)`)
+      console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD}: escalating to Sniper (Pro)`)
       const sniperText = await callGemini(SNIPER_MODEL, prompt, imageParts)
 
       const sniperRaw = JSON.parse(sniperText)
@@ -400,7 +400,7 @@ export async function identifyPart(
       }
     }
 
-    // Save to Supabase (Issue #29 — include model_used)
+    // Save to Supabase (Issue #29: include model_used)
     const { error: dbError } = await supabase
       .from('analysis_results')
       .insert({
@@ -412,7 +412,7 @@ export async function identifyPart(
 
     if (dbError) {
       console.error('Supabase DB error:', dbError.message)
-      // Don't throw — part identification still succeeded
+      // Don't throw; part identification still succeeded
     }
 
     return { success: true, data: identification }

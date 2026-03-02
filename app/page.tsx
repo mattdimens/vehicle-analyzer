@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Instantly identify vehicle fitment, parts, and accessories just from a photo. Upload an image of any car or truck to get a detailed analysis.",
 }
 
-// HowTo JSON-LD — describes the 3-step process shown on the homepage
+// HowTo JSON-LD: describes the 2-step process shown on the homepage
 const howToJsonLd = {
   "@context": "https://schema.org",
   "@type": "HowTo",
@@ -25,7 +25,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       name: "Get Instant Results",
-      text: "In seconds, get a detailed breakdown — vehicle specs, identified parts, and direct links to buy compatible accessories.",
+      text: "In seconds, get a detailed breakdown: vehicle specs, identified parts, and direct links to buy compatible accessories.",
       position: 2,
     },
   ],

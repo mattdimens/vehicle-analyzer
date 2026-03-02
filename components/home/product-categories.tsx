@@ -11,10 +11,10 @@ export function ProductCategories() {
             <div className="container max-w-6xl">
                 <div className="mb-16 text-center">
                     <h2 className="font-heading text-4xl font-bold text-black md:text-5xl">
-                        Analysis by <span className="text-primary italic">Product Category</span>
+                        Specialized <span className="text-primary italic">Category Analysis</span>
                     </h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Select a specific category for specialized AI analysis and tailored recommendations.
+                    <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Our category analyzers use AI prompts tailored to specific accessory types, so you get deeper fitment details, more accurate matches, and better product recommendations than a general analysis.
                     </p>
                 </div>
 
@@ -26,7 +26,7 @@ export function ProductCategories() {
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Wheels & Rims</h3>
                         <p className="mb-3 flex-1 text-muted-foreground">
-                            Identify fitment, bolt patterns, and offsets. Find the perfect wheel and tire package for your vehicle.
+                            Our wheel-specific AI identifies exact fitment specs, including bolt pattern, offset, diameter, and tire size, so every match is compatible. Find the perfect wheel and tire package for your vehicle.
                         </p>
                         <p className="mb-6 text-xs text-muted-foreground/70">
                             Read our <span className="text-primary underline underline-offset-2">wheel fitment guide covering bolt pattern, offset, and rim sizing</span>
@@ -43,7 +43,7 @@ export function ProductCategories() {
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Truck Bed Covers</h3>
                         <p className="mb-3 flex-1 text-muted-foreground">
-                            Determine bed length and cabin style to match with the correct tonneau cover or bed liner.
+                            Tailored AI analysis determines your exact bed length and cab configuration to match you with the right tonneau cover or bed liner, with no guessing on fitment.
                         </p>
                         <p className="mb-6 text-xs text-muted-foreground/70">
                             Read our <span className="text-primary underline underline-offset-2">bed cover guide comparing tri-fold, roll-up, and retractable styles</span>
@@ -60,7 +60,7 @@ export function ProductCategories() {
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Running Boards</h3>
                         <p className="mb-3 flex-1 text-muted-foreground">
-                            Verify cab size and mounting compatibility for nerf bars, side steps, and rock sliders.
+                            Purpose-built analysis verifies cab size, door count, and mounting points to ensure exact compatibility for nerf bars, side steps, and rock sliders.
                         </p>
                         <p className="mb-6 text-xs text-muted-foreground/70">
                             Read our <span className="text-primary underline underline-offset-2">running board guide on cab fit, mounting types, and materials</span>

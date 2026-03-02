@@ -588,7 +588,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             <p className="text-muted-foreground">
                                 Need to identify an individual part instead?{" "}
                                 <Link href="/part-identifier" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">
-                                    Identify any car part from a photo with our Visual Part Identifier
+                                    Use our Specific Part Identifier to find out exactly what it is from a close-up photo
                                 </Link>
                             </p>
                         </div>

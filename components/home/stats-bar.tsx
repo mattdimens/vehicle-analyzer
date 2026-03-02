@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Car, Cog, Target, Database } from "lucide-react"
+import { Car, Cog, Target, Database, ShoppingBag, Flag, Wrench, Sparkles } from "lucide-react"
 
 interface StatItem {
     icon: React.ComponentType<{ className?: string }>
@@ -94,6 +94,23 @@ export function StatsBar() {
                             animate={hasAnimated}
                         />
                     ))}
+                </div>
+
+                {/* Persona trust strip */}
+                <div className="mt-10 pt-8 border-t border-white/10">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+                        {[
+                            { icon: ShoppingBag, label: "Accessory Shoppers" },
+                            { icon: Flag, label: "Enthusiasts" },
+                            { icon: Wrench, label: "Shops & Detailers" },
+                            { icon: Sparkles, label: "Build Inspiration" },
+                        ].map(({ icon: Icon, label }) => (
+                            <div key={label} className="flex items-center justify-center gap-2.5">
+                                <Icon className="w-5 h-5 text-white/60 shrink-0" />
+                                <span className="text-sm font-medium text-white/80">{label}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

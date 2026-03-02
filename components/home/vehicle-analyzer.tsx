@@ -609,7 +609,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     </div>
                 )}
 
-                <UseCases cards={useCaseCards} heading={useCaseHeading} subtitle={useCaseSubtitle} />
+                {!showCategories && <UseCases cards={useCaseCards} heading={useCaseHeading} subtitle={useCaseSubtitle} />}
                 {faqContent}
                 {relatedContent}
             </main>

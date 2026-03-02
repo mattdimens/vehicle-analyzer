@@ -13,12 +13,12 @@ const steps: HowItWorksStep[] = [
     {
         title: "Photograph Your Truck Bed",
         description:
-            "Capture a photo showing your truck's bed, ideally from a rear or side angle so the AI can gauge bed length, tailgate style, and cab configuration. Works with any pickup truck brand.",
+            "Capture a photo showing your truck's bed, ideally from a rear or side angle so we can gauge bed length, tailgate style, and cab configuration. Works with any pickup truck brand.",
     },
     {
-        title: "AI Measures Bed & Cab Style",
+        title: "Bed & Cab Style Measured",
         description:
-            "The AI identifies your truck's exact bed length (short, standard, or long bed), cab type (regular, extended, crew), and any existing accessories to determine precise fitment requirements.",
+            "Your truck's exact bed length (short, standard, or long bed), cab type (regular, extended, crew), and any existing accessories are identified to determine precise fitment requirements.",
     },
     {
         title: "Find Your Perfect Cover",
@@ -30,17 +30,17 @@ const steps: HowItWorksStep[] = [
 const useCaseCards: UseCaseCard[] = [
     {
         title: "First-Time Truck Owner",
-        desc: "You just picked up a Ram 1500 and want a tonneau cover but have no idea if you have a 5'7\" or 6'4\" bed. Upload a photo from the side and the AI figures out your exact bed length and cab configuration, then shows you covers guaranteed to fit. No tape measure required.",
+        desc: "You just picked up a Ram 1500 and want a tonneau cover but have no idea if you have a 5'7\" or 6'4\" bed. Upload a photo from the side and we figure out your exact bed length and cab configuration, then show you covers guaranteed to fit. No tape measure required.",
         icon: Truck,
     },
     {
         title: "Replacing a Worn-Out Cover",
-        desc: "Your OEM soft cover is faded and the Velcro is shot after five Michigan winters. Upload a photo so the AI identifies your current cover type and truck specs, then recommends upgraded alternatives. Maybe it's time to move from a soft roll-up to a hard tri-fold.",
+        desc: "Your OEM soft cover is faded and the Velcro is shot after five Michigan winters. Upload a photo so we can identify your current cover type and truck specs, then recommend upgraded alternatives. Maybe it's time to move from a soft roll-up to a hard tri-fold.",
         icon: RotateCcw,
     },
     {
         title: "Comparing Options Before Buying",
-        desc: "You've been eyeing a retractable cover but aren't sure it'll work with your toolbox setup. Upload a photo of your bed as-is, and the AI flags compatibility considerations, like whether your bed rail system supports a low-profile retractable or if you need a different mounting style.",
+        desc: "You've been eyeing a retractable cover but aren't sure it'll work with your toolbox setup. Upload a photo of your bed as-is, and our analysis flags compatibility considerations, like whether your bed rail system supports a low-profile retractable or if you need a different mounting style.",
         icon: ShoppingCart,
     },
 ]
@@ -48,7 +48,7 @@ const useCaseCards: UseCaseCard[] = [
 const bedCoverFaqs: FaqItem[] = [
     {
         question: "How do I measure my truck bed length?",
-        answer: "Measure from the inside of the bulkhead (the wall behind the cab) to the inside of the tailgate, at the floor, with the tailgate closed. Common lengths are 5'7\" (short), 6'4\"–6'6\" (standard), and 8' (long). Or skip the tape measure and upload a photo; the AI figures it out from the image."
+        answer: "Measure from the inside of the bulkhead (the wall behind the cab) to the inside of the tailgate, at the floor, with the tailgate closed. Common lengths are 5'7\" (short), 6'4\"–6'6\" (standard), and 8' (long). Or skip the tape measure and upload a photo; our analysis figures it out from the image."
     },
     {
         question: "What's the difference between a tonneau cover and a bed cap?",
@@ -63,8 +63,8 @@ const bedCoverFaqs: FaqItem[] = [
         answer: "Absolutely. Most tonneau covers are designed to work alongside both spray-in and drop-in bed liners. The key is to make sure the liner doesn't raise the bed rail height enough to interfere with the cover's clamps or seals. Drop-in liners with raised edges sometimes need trimming around the mounting points."
     },
     {
-        question: "How does the AI identify my truck bed size?",
-        answer: "The AI analyzes your photo to determine the cab style (crew, extended, regular), which narrows down the possible bed lengths for that model. It cross-references visible proportions and known manufacturer configurations to confirm the exact bed size, giving you a match in seconds."
+        question: "How does the analyzer identify my truck bed size?",
+        answer: "Our analysis examines your photo to determine the cab style (crew, extended, regular), which narrows down the possible bed lengths for that model. It cross-references visible proportions and known manufacturer configurations to confirm the exact bed size, giving you a match in seconds."
     },
 ]
 

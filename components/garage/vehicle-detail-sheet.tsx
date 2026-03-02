@@ -165,12 +165,12 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                         </div>
                     )}
 
-                    {/* AI Detected Products Section */}
+                    {/* Detected Products Section */}
                     {detectedProducts.length > 0 && (
                         <div className="pt-2 pb-6">
                             <h3 className="text-xl font-bold font-heading mb-5 flex items-center gap-2">
                                 <Sparkles className="h-5 w-5 text-amber-500" />
-                                AI Detected Products
+                                Detected Products
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {detectedProducts.map((product, index) => {

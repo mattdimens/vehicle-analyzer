@@ -52,7 +52,7 @@ export function BedCoverGuide() {
                         </h3>
                         <p className="text-base leading-relaxed text-muted-foreground">
                             <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">Upload a photo to identify your truck's bed length and cab configuration instantly</Link>.
-                            No tape measure or VIN lookup needed. The AI matches you with compatible tonneau covers sized to your exact bed dimensions. While you're at it, check whether your{" "}
+                            No tape measure or VIN lookup needed. Our analysis matches you with compatible tonneau covers sized to your exact bed dimensions. While you're at it, check whether your{" "}
                             <Link href="/wheels-rims" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">wheels and rims match the correct bolt pattern for your truck</Link>.
                         </p>
                     </div>

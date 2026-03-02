@@ -53,7 +53,7 @@ export function RunningBoardGuide() {
                         </h3>
                         <p className="text-base leading-relaxed text-muted-foreground">
                             <Link href="/#upload-zone" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">Upload a side-profile photo to identify your cab type and running board fitment instantly</Link>{" "}
-                            . The AI detects your door count and rocker panel height, the three specs that determine compatibility. You'll get matched recommendations you can buy with confidence. Also outfitting your bed? Check which{" "}
+                            . Our analysis detects your door count and rocker panel height, the three specs that determine compatibility. You'll get matched recommendations you can buy with confidence. Also outfitting your bed? Check which{" "}
                             <Link href="/truck-bed-covers" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">tonneau covers and bed liners fit your truck's bed length</Link>.
                         </p>
                     </div>

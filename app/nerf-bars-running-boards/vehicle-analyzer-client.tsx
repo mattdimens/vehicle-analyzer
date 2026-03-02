@@ -13,12 +13,12 @@ const steps: HowItWorksStep[] = [
     {
         title: "Upload a Side-Profile Shot",
         description:
-            "Snap a photo of your truck or SUV from the side. The AI uses this angle to assess cab size, door count, rocker panel height, and overall body style for mounting compatibility.",
+            "Snap a photo of your truck or SUV from the side. This angle lets us assess cab size, door count, rocker panel height, and overall body style for mounting compatibility.",
     },
     {
-        title: "AI Determines Mounting Fit",
+        title: "Mounting Fit Determined",
         description:
-            "Your vehicle's cab configuration (regular, extended, or crew) is detected along with body dimensions. The AI checks these against manufacturer mounting specs to ensure a correct, no-drill fit.",
+            "Your vehicle's cab configuration (regular, extended, or crew) is detected along with body dimensions. These are checked against manufacturer mounting specs to ensure a correct, no-drill fit.",
     },
     {
         title: "Shop Matched Running Boards",
@@ -30,17 +30,17 @@ const steps: HowItWorksStep[] = [
 const useCaseCards: UseCaseCard[] = [
     {
         title: "Making Entry Easier",
-        desc: "Your family struggles to climb into your lifted F-250. Upload a side shot and the AI identifies your cab type and rocker panel height, then recommends running boards with the right drop, from low-profile power steps for grandma to heavy-duty nerf bars for everyday use.",
+        desc: "Your family struggles to climb into your lifted F-250. Upload a side shot and our analysis identifies your cab type and rocker panel height, then recommends running boards with the right drop, from low-profile power steps for grandma to heavy-duty nerf bars for everyday use.",
         icon: Footprints,
     },
     {
         title: "Off-Road Protection",
-        desc: "You're building out a trail rig and need rock sliders that actually protect the rocker panels, not just look good. Upload a photo of your 4Runner so the AI can match your exact wheelbase and body mount points, then browse heavy-gauge steel sliders rated for real off-road use.",
+        desc: "You're building out a trail rig and need rock sliders that actually protect the rocker panels, not just look good. Upload a photo of your 4Runner so our analysis can match your exact wheelbase and body mount points, then browse heavy-gauge steel sliders rated for real off-road use.",
         icon: Mountain,
     },
     {
         title: "Fleet & Commercial Vehicles",
-        desc: "You manage a fleet of work trucks and need to outfit twenty Silverados with the same side steps. Upload a photo of one truck, confirm the AI's fitment match, and order with confidence, knowing every truck in the fleet gets the correct bolt-on kit without individual measurements.",
+        desc: "You manage a fleet of work trucks and need to outfit twenty Silverados with the same side steps. Upload a photo of one truck, confirm the fitment match, and order with confidence, knowing every truck in the fleet gets the correct bolt-on kit without individual measurements.",
         icon: Users,
     },
 ]

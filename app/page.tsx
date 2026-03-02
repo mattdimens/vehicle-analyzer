@@ -14,7 +14,7 @@ const howToJsonLd = {
   "@type": "HowTo",
   name: "How to Identify Vehicle Fitment and Parts From a Photo",
   description:
-    "Use Visual Fitment to upload a vehicle or part photo and get instant fitment and product results powered by AI.",
+    "Use Visual Fitment to upload a vehicle or part photo and get instant fitment and product results.",
   step: [
     {
       "@type": "HowToStep",

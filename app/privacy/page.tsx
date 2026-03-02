@@ -67,7 +67,7 @@ export default function PrivacyPage() {
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Data deletion &amp; contact</h2>
                             <p>
-                                To request deletion of your data, including uploaded images and analysis results, please email us at <strong>privacy@visualfitment.com</strong>. A dedicated contact form is coming soon.
+                                A contact form for data deletion requests is coming soon.
                             </p>
                         </section>
 

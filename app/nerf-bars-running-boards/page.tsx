@@ -4,7 +4,7 @@ import RunningBoardsClient from "./vehicle-analyzer-client"
 export const metadata: Metadata = {
     title: "Running Board & Nerf Bar Analyzer | Visual Fitment",
     description:
-        "Upload photos of your truck or SUV to find compatible running boards, nerf bars, and side steps. AI detection ensures correct cab size and mounting compatibility.",
+        "Upload photos of your truck or SUV to find compatible running boards, nerf bars, and side steps. Advanced analysis ensures correct cab size and mounting compatibility.",
     openGraph: {
         title: "Running Board & Nerf Bar Analyzer | Visual Fitment",
         description:

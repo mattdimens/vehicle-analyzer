@@ -168,18 +168,18 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                             <div className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-red-50 border border-red-200 shadow-sm">
                                 <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                                 <p className="text-sm text-red-800 font-medium">
-                                    Low confidence AI match. The image may be unclear, verify the part details manually.
+                                    Low confidence match. The image may be unclear, verify the part details manually.
                                 </p>
                             </div>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
-                            {/* AI Details section */}
+                            {/* Identification Details section */}
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="text-lg font-bold font-heading mb-4 border-b border-border/60 pb-2 flex items-center gap-2">
                                         <Sparkles className="h-5 w-5 text-primary" />
-                                        AI Identification
+                                        Identification Details
                                     </h3>
                                     <div className="bg-muted/30 rounded-2xl p-5 border border-border/50">
                                         <div className="grid grid-cols-1 gap-4 text-sm">

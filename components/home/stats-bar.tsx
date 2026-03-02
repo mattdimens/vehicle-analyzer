@@ -86,6 +86,9 @@ export function StatsBar() {
     return (
         <section ref={ref} className="w-full bg-[#003223] py-16">
             <div className="container max-w-5xl">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-white/30 font-medium text-center mb-3">
+                    By the Numbers
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
                     {stats.map((stat) => (
                         <AnimatedStat
@@ -98,6 +101,9 @@ export function StatsBar() {
 
                 {/* Persona trust strip */}
                 <div className="mt-10 pt-8 border-t border-white/10">
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-white/30 font-medium text-center mb-4">
+                        Built For
+                    </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
                         {[
                             { icon: ShoppingBag, label: "Accessory Shoppers" },

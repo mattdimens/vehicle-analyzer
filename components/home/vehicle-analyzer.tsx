@@ -391,7 +391,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         try {
             if (analysisMode === "part") {
                 // --- Part Identification Mode ---
-                updateItem({ loadingMessage: "AI is identifying your part...", progress: 50 })
+                updateItem({ loadingMessage: "Identifying your part...", progress: 50 })
                 const partRes = await identifyPart(publicUrls[0])
                 if (!partRes.success) throw new Error(partRes.error)
 

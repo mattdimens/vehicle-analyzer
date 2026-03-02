@@ -14,7 +14,7 @@ export function ProductCategories() {
                         Specialized <span className="text-primary italic">Category Analysis</span>
                     </h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Our category analyzers use AI prompts tailored to specific accessory types, so you get deeper fitment details, more accurate matches, and better product recommendations than a general analysis.
+                        Our category analyzers use analysis tailored to specific accessory types, so you get deeper fitment details, more accurate matches, and better product recommendations than a general analysis.
                     </p>
                 </div>
 
@@ -26,7 +26,7 @@ export function ProductCategories() {
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Wheels & Rims</h3>
                         <p className="mb-3 flex-1 text-muted-foreground">
-                            Our wheel-specific AI identifies exact fitment specs, including bolt pattern, offset, diameter, and tire size, so every match is compatible. Find the perfect wheel and tire package for your vehicle.
+                            Our wheel-specific analysis identifies exact fitment specs, including bolt pattern, offset, diameter, and tire size, so every match is compatible. Find the perfect wheel and tire package for your vehicle.
                         </p>
                         <p className="mb-6 text-xs text-muted-foreground/70">
                             Read our <span className="text-primary underline underline-offset-2">wheel fitment guide covering bolt pattern, offset, and rim sizing</span>
@@ -43,7 +43,7 @@ export function ProductCategories() {
                         </div>
                         <h3 className="mb-2 font-heading text-xl font-semibold">Truck Bed Covers</h3>
                         <p className="mb-3 flex-1 text-muted-foreground">
-                            Tailored AI analysis determines your exact bed length and cab configuration to match you with the right tonneau cover or bed liner, with no guessing on fitment.
+                            Tailored analysis determines your exact bed length and cab configuration to match you with the right tonneau cover or bed liner, with no guessing on fitment.
                         </p>
                         <p className="mb-6 text-xs text-muted-foreground/70">
                             Read our <span className="text-primary underline underline-offset-2">bed cover guide comparing tri-fold, roll-up, and retractable styles</span>

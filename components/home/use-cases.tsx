@@ -30,7 +30,7 @@ const defaultCards: UseCaseCard[] = [
     },
     {
         title: "Build Inspiration",
-        desc: "You've been saving Instagram photos of your dream overlanding setup. Upload those inspiration shots and the AI will identify every part, from the bumper guard to the rooftop tent, and tell you exactly which pieces are compatible with your own vehicle.",
+        desc: "You've been saving Instagram photos of your dream overlanding setup. Upload those inspiration shots and our analysis will identify every part, from the bumper guard to the rooftop tent, and tell you exactly which pieces are compatible with your own vehicle.",
         icon: Sparkles,
     },
 ]

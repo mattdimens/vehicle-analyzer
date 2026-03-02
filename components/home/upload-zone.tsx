@@ -536,7 +536,7 @@ export function UploadZone({
                                 </div>
                             </div>
                             <div className="bg-muted/50 p-4 text-center">
-                                <p className="text-xs text-muted-foreground">The AI can still process imperfect photos, but better input = better results.</p>
+                                <p className="text-xs text-muted-foreground">Our analysis can still process imperfect photos, but better input = better results.</p>
                             </div>
                         </div>
                     </div>
@@ -669,7 +669,7 @@ export function UploadZone({
                         </div>
                         <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
                             <Tag className="h-4 w-4" />
-                            AI Confidence Score
+                            Confidence Score
                         </div>
                         <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
                             <Zap className="h-4 w-4" />

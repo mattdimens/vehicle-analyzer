@@ -50,7 +50,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
             <div className="mx-2 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-900 leading-relaxed">
-                    <span className="font-semibold">Disclaimer:</span> AI-generated results may vary in accuracy. We recommend verifying all vehicle details and product compatibility before making a purchase.
+                    <span className="font-semibold">Disclaimer:</span> Automated results may vary in accuracy. We recommend verifying all vehicle details and product compatibility before making a purchase.
                 </p>
             </div>
 

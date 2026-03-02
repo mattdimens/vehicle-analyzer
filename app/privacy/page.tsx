@@ -11,7 +11,7 @@ export default function PrivacyPage() {
             <main className="flex-1 bg-white">
                 <div className="container max-w-3xl mx-auto px-4 py-16 md:py-24">
                     <h1 className="text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-                    <p className="text-sm text-muted-foreground mb-12">Last updated: February 19, 2026</p>
+                    <p className="text-sm text-muted-foreground mb-12">Last updated: March 1, 2026</p>
 
                     <div className="space-y-10 text-[15px] leading-relaxed text-foreground/80">
 
@@ -22,16 +22,24 @@ export default function PrivacyPage() {
                                 When you upload a photo, here&apos;s exactly what happens:
                             </p>
                             <ol className="list-decimal pl-6 space-y-2">
-                                <li>Your image is uploaded to our secure cloud storage so our AI can analyze it.</li>
-                                <li>We use third-party AI services to process your images for vehicle and part identification. These services process your images solely to generate results and do not use your images for model training.</li>
-                                <li>The AI&apos;s analysis results (vehicle details, part identification, etc.) are saved to our database.</li>
+                                <li>Your image is uploaded to our secure cloud storage for analysis.</li>
+                                <li>We use third-party image analysis services to process your images for vehicle and part identification. These services process your images solely to generate results and do not use your images for model training.</li>
+                                <li>Analysis results (vehicle details, part identification, etc.) are saved to our database.</li>
                             </ol>
                             <p className="mt-3">
                                 <strong>We do not sell, share, or use your images for advertising.</strong> Images are stored indefinitely in our cloud storage unless you request deletion (see below).
                             </p>
                         </section>
 
-                        {/* 2. Analytics & Cookies */}
+                        {/* 2. Your Account */}
+                        <section>
+                            <h2 className="text-lg font-semibold text-foreground mb-3">Your account</h2>
+                            <p>
+                                If you sign in with Google to use My Garage, we store your name and email address for authentication purposes. We do not store your Google password. Your saved vehicles and analysis results in My Garage are associated with your account so you can access them across sessions.
+                            </p>
+                        </section>
+
+                        {/* 3. Analytics & Cookies */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Analytics &amp; cookies</h2>
                             <p>
@@ -39,7 +47,7 @@ export default function PrivacyPage() {
                             </p>
                         </section>
 
-                        {/* 3. Affiliate Links */}
+                        {/* 4. Affiliate Links */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Affiliate links disclosure</h2>
                             <p>
@@ -47,19 +55,19 @@ export default function PrivacyPage() {
                             </p>
                         </section>
 
-                        {/* 4. Data Retention */}
+                        {/* 5. Data Retention */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">How long we keep your data</h2>
                             <p>
-                                Analysis results are stored indefinitely to help us improve the service. Uploaded images remain in cloud storage unless you request deletion. We do not have user accounts, so we don&apos;t store passwords, emails, or personal profiles.
+                                Analysis results are stored indefinitely to help us improve the service. Uploaded images remain in cloud storage unless you request deletion. If you have a My Garage account, your saved vehicles and analysis results are retained until you delete them or request account deletion.
                             </p>
                         </section>
 
-                        {/* 5. Contact & Deletion */}
+                        {/* 6. Contact & Deletion */}
                         <section>
                             <h2 className="text-lg font-semibold text-foreground mb-3">Data deletion &amp; contact</h2>
                             <p>
-                                A contact form for data deletion requests is coming soon.
+                                To request deletion of your data, including uploaded images and analysis results, please email us at <strong>privacy@visualfitment.com</strong>. A dedicated contact form is coming soon.
                             </p>
                         </section>
 

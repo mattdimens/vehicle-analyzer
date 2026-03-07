@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { VehicleAnalyzer } from "@/components/home/vehicle-analyzer"
 import { RelatedPages } from "@/components/ui/related-pages"
+import { FromTheBlog } from "@/components/home/from-the-blog"
 
 export const metadata: Metadata = {
   title: "Find Vehicle Fitment, Parts, & Accessories From an Image | Visual Fitment",
@@ -40,6 +41,7 @@ export default function Home() {
       />
       <VehicleAnalyzer
         showCategories={true}
+        blogSection={<FromTheBlog />}
         relatedContent={
           <RelatedPages
             items={[

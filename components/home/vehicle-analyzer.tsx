@@ -61,9 +61,10 @@ interface VehicleAnalyzerProps {
     breadcrumbs?: BreadcrumbItem[]
     relatedContent?: React.ReactNode
     ctaModule?: React.ReactNode
+    blogSection?: React.ReactNode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
@@ -608,6 +609,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         </div>
                     </div>
                 )}
+
+                {blogSection}
 
                 {!showCategories && <UseCases cards={useCaseCards} heading={useCaseHeading} subtitle={useCaseSubtitle} />}
                 {faqContent}

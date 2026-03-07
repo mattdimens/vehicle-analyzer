@@ -18,10 +18,11 @@ export interface BlogFrontmatter {
     tags: string[]
     author: string
     authorSlug: string
+    authorImage?: string
     publishedAt: string
     modifiedAt: string
-    heroImage: string
-    heroAlt: string
+    heroImage?: string
+    heroAlt?: string
     keywords: string
     readTime: number
     isPublished: boolean

@@ -266,12 +266,11 @@ export default async function BlogArticlePage({ params }: PageProps) {
                     <div className="article-meta">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                            src={`/authors/${fm.authorSlug}.jpg`}
+                            src={fm.authorImage || '/logo.png'}
                             alt={fm.author || 'VisualFitment Team'}
                             className="author-avatar"
                             width={36}
                             height={36}
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png' }}
                         />
                         <div>
                             <span className="author-name">{fm.author || 'VisualFitment Team'}</span>
@@ -355,11 +354,10 @@ export default async function BlogArticlePage({ params }: PageProps) {
                     <aside className="author-bio">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                            src={`/authors/${fm.authorSlug}.jpg`}
+                            src={fm.authorImage || '/logo.png'}
                             alt={fm.author || 'VisualFitment Team'}
                             width={56}
                             height={56}
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png' }}
                         />
                         <div>
                             <div className="bio-name">{fm.author || 'VisualFitment Team'}</div>

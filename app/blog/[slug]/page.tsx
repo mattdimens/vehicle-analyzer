@@ -254,8 +254,6 @@ export default async function BlogArticlePage({ params }: PageProps) {
                 <span className="separator">›</span>
                 <Link href="/blog">Blog</Link>
                 <span className="separator">›</span>
-                <Link href={`/blog/category/${fm.categorySlug}`}>{fm.category}</Link>
-                <span className="separator">›</span>
                 <span aria-current="page">{fm.title}</span>
             </nav>
 
@@ -269,13 +267,14 @@ export default async function BlogArticlePage({ params }: PageProps) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={`/authors/${fm.authorSlug}.jpg`}
-                            alt={fm.author}
+                            alt={fm.author || 'VisualFitment Team'}
                             className="author-avatar"
                             width={36}
                             height={36}
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png' }}
                         />
                         <div>
-                            <span className="author-name">{fm.author}</span>
+                            <span className="author-name">{fm.author || 'VisualFitment Team'}</span>
                             <span className="meta-dot"> · </span>
                             <time dateTime={fm.publishedAt}>{formatDate(fm.publishedAt)}</time>
                             <span className="meta-dot"> · </span>
@@ -285,16 +284,18 @@ export default async function BlogArticlePage({ params }: PageProps) {
                 </header>
 
                 {/* Hero Image */}
-                <figure className="article-hero">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                        src={`/blog/images/${fm.heroImage}.webp`}
-                        alt={fm.heroAlt}
-                        width={960}
-                        height={540}
-                        loading="eager"
-                    />
-                </figure>
+                {fm.heroImage && (
+                    <figure className="article-hero">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={`/blog/images/${fm.heroImage}.webp`}
+                            alt={fm.heroAlt}
+                            width={960}
+                            height={540}
+                            loading="eager"
+                        />
+                    </figure>
+                )}
 
                 {/* Table of Contents */}
                 {showToc && (
@@ -355,12 +356,13 @@ export default async function BlogArticlePage({ params }: PageProps) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={`/authors/${fm.authorSlug}.jpg`}
-                            alt={fm.author}
+                            alt={fm.author || 'VisualFitment Team'}
                             width={56}
                             height={56}
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png' }}
                         />
                         <div>
-                            <div className="bio-name">{fm.author}</div>
+                            <div className="bio-name">{fm.author || 'VisualFitment Team'}</div>
                             <p className="bio-text">
                                 Founder of Visual Fitment. Builds tools that help people identify vehicles and find compatible parts from photos.
                             </p>

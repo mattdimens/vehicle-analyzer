@@ -81,6 +81,12 @@ export function SiteHeader() {
           >
             Part Identifier
           </Link>
+          <Link
+            href="/blog"
+            className="text-muted-foreground transition-colors hover:text-primary"
+          >
+            Blog
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
               Categories <ChevronDown className="h-4 w-4" />
@@ -204,6 +210,13 @@ export function SiteHeader() {
                   onClick={() => setIsOpen(false)}
                 >
                   Part Identifier
+                </Link>
+                <Link
+                  href="/blog"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Blog
                 </Link>
 
                 <div className="py-2">

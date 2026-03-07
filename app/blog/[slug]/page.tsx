@@ -362,7 +362,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
                         <div>
                             <div className="bio-name">{fm.author || 'VisualFitment Team'}</div>
                             <p className="bio-text">
-                                Founder of Visual Fitment. Builds tools that help people identify vehicles and find compatible parts from photos.
+                                The Visual Fitment team builds tools that help people identify vehicles and find compatible aftermarket parts from photos.
                             </p>
                         </div>
                     </aside>

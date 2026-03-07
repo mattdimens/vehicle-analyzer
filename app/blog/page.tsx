@@ -52,14 +52,21 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
                         href={`/blog/${post.slug}`}
                         className="blog-index-card"
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src={`/blog/images/${post.frontmatter.heroImage}.webp`}
-                            alt={post.frontmatter.heroAlt}
-                            width={400}
-                            height={225}
-                            loading="lazy"
-                        />
+                        {post.frontmatter.heroImage ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                                src={`/blog/images/${post.frontmatter.heroImage}.webp`}
+                                alt={post.frontmatter.heroAlt || ''}
+                                width={400}
+                                height={225}
+                                loading="lazy"
+                            />
+                        ) : (
+                            <div className="card-image-placeholder">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src="/logo.png" alt="Visual Fitment" width={48} height={48} />
+                            </div>
+                        )}
                         <div className="card-content">
                             <span className="card-category">{post.frontmatter.category}</span>
                             <div className="card-title">{post.frontmatter.title}</div>

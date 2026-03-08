@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { VehicleAnalyzer } from "@/components/home/vehicle-analyzer"
 import { RelatedPages } from "@/components/ui/related-pages"
 import { FromTheBlog } from "@/components/home/from-the-blog"
+import type { BlogCardData } from "@/components/home/from-the-blog"
+import { getAllPosts } from "@/lib/blog"
 
 export const metadata: Metadata = {
   title: "Find Vehicle Fitment, Parts, & Accessories From an Image | Visual Fitment",
@@ -33,6 +35,16 @@ const howToJsonLd = {
 }
 
 export default function Home() {
+  const blogPosts: BlogCardData[] = getAllPosts().slice(0, 6).map((post) => ({
+    slug: post.slug,
+    title: post.frontmatter.title,
+    subtitle: post.frontmatter.subtitle,
+    category: post.frontmatter.category,
+    heroImage: post.frontmatter.heroImage,
+    heroAlt: post.frontmatter.heroAlt,
+    readTime: post.frontmatter.readTime,
+  }))
+
   return (
     <>
       <script
@@ -41,7 +53,7 @@ export default function Home() {
       />
       <VehicleAnalyzer
         showCategories={true}
-        blogSection={<FromTheBlog />}
+        blogSection={<FromTheBlog posts={blogPosts} />}
         relatedContent={
           <RelatedPages
             items={[

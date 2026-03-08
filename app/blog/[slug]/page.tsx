@@ -380,14 +380,21 @@ export default async function BlogArticlePage({ params }: PageProps) {
                                 href={`/blog/${related.slug}`}
                                 className="related-card"
                             >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={`/blog/images/${related.frontmatter.heroImage}.webp`}
-                                    alt={related.frontmatter.heroAlt}
-                                    width={400}
-                                    height={225}
-                                    loading="lazy"
-                                />
+                                {related.frontmatter.heroImage ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                        src={`/blog/images/${related.frontmatter.heroImage}.webp`}
+                                        alt={related.frontmatter.heroAlt || ''}
+                                        width={400}
+                                        height={225}
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div className="card-image-placeholder">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src="/logo.png" alt="Visual Fitment" width={48} height={48} />
+                                    </div>
+                                )}
                                 <div className="card-body">
                                     <span className="card-category">
                                         {related.frontmatter.category}

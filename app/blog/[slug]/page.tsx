@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const { frontmatter: fm } = post
     const url = `https://visualfitment.com/blog/${slug}`
-    const heroUrl = `https://visualfitment.com/blog/images/${fm.heroImage}.webp`
+    const heroUrl = fm.heroImage ? `https://visualfitment.com/blog/images/${fm.heroImage}` : 'https://visualfitment.com/logo.png'
 
     return {
         title: `${fm.title} | Visual Fitment`,
@@ -134,11 +134,9 @@ function buildBlogPostingSchema(post: BlogPost, slug: string) {
         },
         headline: fm.title,
         description: fm.metaDescription,
-        image: [
-            `https://visualfitment.com/blog/images/${fm.heroImage}.webp`,
-            `https://visualfitment.com/blog/images/${fm.heroImage}-4x3.webp`,
-            `https://visualfitment.com/blog/images/${fm.heroImage}-1x1.webp`,
-        ],
+        image: fm.heroImage
+            ? [`https://visualfitment.com/blog/images/${fm.heroImage}`]
+            : [],
         datePublished: fm.publishedAt,
         dateModified: fm.modifiedAt,
         author: {
@@ -287,7 +285,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
                     <figure className="article-hero">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                            src={`/blog/images/${fm.heroImage}.webp`}
+                            src={`/blog/images/${fm.heroImage}`}
                             alt={fm.heroAlt}
                             width={960}
                             height={540}
@@ -383,7 +381,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
                                 {related.frontmatter.heroImage ? (
                                     /* eslint-disable-next-line @next/next/no-img-element */
                                     <img
-                                        src={`/blog/images/${related.frontmatter.heroImage}.webp`}
+                                        src={`/blog/images/${related.frontmatter.heroImage}`}
                                         alt={related.frontmatter.heroAlt || ''}
                                         width={400}
                                         height={225}

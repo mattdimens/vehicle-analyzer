@@ -55,7 +55,7 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
                         {post.frontmatter.heroImage ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                                src={`/blog/images/${post.frontmatter.heroImage}.webp`}
+                                src={`/blog/images/${post.frontmatter.heroImage}`}
                                 alt={post.frontmatter.heroAlt || ''}
                                 width={400}
                                 height={225}

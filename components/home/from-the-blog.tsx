@@ -26,7 +26,7 @@ export function FromTheBlog() {
                             {post.frontmatter.heroImage ? (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
-                                    src={`/blog/images/${post.frontmatter.heroImage}.webp`}
+                                    src={`/blog/images/${post.frontmatter.heroImage}`}
                                     alt={post.frontmatter.heroAlt || post.frontmatter.title}
                                     width={600}
                                     height={338}

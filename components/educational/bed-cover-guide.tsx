@@ -33,7 +33,7 @@ export function BedCoverGuide() {
                             Tri-Fold vs. Roll-Up vs. Retractable
                         </h3>
                         <p className="text-base leading-relaxed text-muted-foreground">
-                            Tri-fold covers fold in three sections toward the cab, giving you partial bed access without removing anything. Roll-up covers retract into a compact cylinder at the cab end, offering full bed access quickly. Retractable covers slide into a canister behind the cab for a flush, low-profile look. They're the most expensive but the most weather-tight.
+                            Tri-fold covers fold in three sections toward the cab, giving you partial bed access without removing anything. Roll-up covers retract into a compact cylinder at the cab end, offering full bed access quickly. Retractable covers slide into a canister behind the cab for a flush, low-profile look. They're the most expensive option but offer excellent weather protection and the most convenient one-handed operation.
                         </p>
                     </div>
 

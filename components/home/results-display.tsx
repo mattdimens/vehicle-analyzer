@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
-import { addAmazonAffiliateTag } from "@/lib/amazon"
 import { trackEvent } from "@/lib/analytics"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -183,11 +182,9 @@ export function ResultsDisplay({
 
                             {/* Amazon CTA */}
                             <a
-                                href={addAmazonAffiliateTag(
-                                    `https://www.amazon.com/s?k=${encodeURIComponent(partIdentification.amazonSearchTerm)}`
-                                )}
+                                href={`/go?cat=${encodeURIComponent(partIdentification.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}&vehicle=${encodeURIComponent(partIdentification.estimatedVehicle || "")}&product=${encodeURIComponent(partIdentification.partName)}&source=part-identification`}
                                 target="_blank"
-                                rel="noopener noreferrer"
+                                rel="nofollow sponsored"
                                 onClick={() => trackEvent("amazon_click", { product: partIdentification.partName })}
                             >
                                 <Button size="lg" className="w-full sm:w-auto gap-2">
@@ -525,7 +522,14 @@ export function ResultsDisplay({
                                                 const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
                                                 const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
 
-                                                // Build Amazon search query
+                                                // Build structured parameters for the /go redirect
+                                                const vehicleString = results ? `${results.primary.year} ${results.primary.make} ${results.primary.model}` : ""
+                                                const categorySlug = item.type.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                                                const brandString = isUnknownBrand ? "" : item.brand
+                                                const modelString = isUnknownModel ? "" : item.model
+                                                const redirectUrl = `/go?cat=${encodeURIComponent(categorySlug)}&vehicle=${encodeURIComponent(vehicleString)}&brand=${encodeURIComponent(brandString)}&product=${encodeURIComponent(modelString)}&source=detected-products`
+
+                                                // Build Amazon search query (kept for client-side analytics)
                                                 let searchQuery = ""
                                                 if (results) {
                                                     const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model}`
@@ -583,9 +587,9 @@ export function ResultsDisplay({
                                                                 className="w-full md:w-auto h-8 px-4 rounded-full hover:bg-[#D1E7F0] border-primary/20"
                                                             >
                                                                 <a
-                                                                    href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
+                                                                    href={redirectUrl}
                                                                     target="_blank"
-                                                                    rel="noopener noreferrer"
+                                                                    rel="nofollow sponsored"
                                                                     className="flex items-center justify-center"
                                                                     onClick={() => trackEvent('amazon_click', { product: item.type, query: searchQuery })}
                                                                 >
@@ -630,9 +634,8 @@ export function ResultsDisplay({
                                                         {tier.items.map((accessory, index) => {
                                                             const { name, description } = parseRecommendation(accessory)
                                                             const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-                                                            const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
-                                                                vehicleDetails
-                                                            )}+${encodeURIComponent(name)}`
+                                                            const categorySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                                            const redirectUrl = `/go?cat=${encodeURIComponent(categorySlug)}&vehicle=${encodeURIComponent(vehicleDetails)}&product=${encodeURIComponent(name)}&source=recommended-accessories`;
 
                                                             return (
                                                                 <Card key={index} className="transition-all hover:shadow-md flex flex-col h-full">
@@ -652,9 +655,9 @@ export function ResultsDisplay({
                                                                             className="w-full hover:bg-[#D1E7F0]"
                                                                         >
                                                                             <a
-                                                                                href={addAmazonAffiliateTag(amazonSearchUrl)}
+                                                                                href={redirectUrl}
                                                                                 target="_blank"
-                                                                                rel="noopener noreferrer"
+                                                                                rel="nofollow sponsored"
                                                                                 className="flex items-center justify-center gap-2"
                                                                                 onClick={() => trackEvent('amazon_click', { product: name })}
                                                                             >
@@ -681,9 +684,8 @@ export function ResultsDisplay({
                                             {results.recommendedAccessories.map((accessory, index) => {
                                                 const { name, description } = parseRecommendation(accessory)
                                                 const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model} ${results.primary.trim}`
-                                                const amazonSearchUrl = `https://www.amazon.com/s?k=${encodeURIComponent(
-                                                    vehicleDetails
-                                                )}+${encodeURIComponent(name)}`
+                                                const categorySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                                const redirectUrl = `/go?cat=${encodeURIComponent(categorySlug)}&vehicle=${encodeURIComponent(vehicleDetails)}&product=${encodeURIComponent(name)}&source=recommended-accessories`;
 
                                                 return (
                                                     <Card key={index} className="transition-all hover:shadow-md flex flex-col h-full">
@@ -703,9 +705,9 @@ export function ResultsDisplay({
                                                                 className="w-full hover:bg-[#D1E7F0]"
                                                             >
                                                                 <a
-                                                                    href={addAmazonAffiliateTag(amazonSearchUrl)}
+                                                                    href={redirectUrl}
                                                                     target="_blank"
-                                                                    rel="noopener noreferrer"
+                                                                    rel="nofollow sponsored"
                                                                     className="flex items-center justify-center gap-2"
                                                                     onClick={() => trackEvent('amazon_click', { product: name })}
                                                                 >

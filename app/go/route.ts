@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         composed_query: composedQuery,
         destination_url: destinationUrl,
         source
-      });
+      } as any);
     } catch (e) {
       console.error("Failed to log affiliate click", e);
     }

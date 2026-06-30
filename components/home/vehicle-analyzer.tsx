@@ -16,6 +16,7 @@ import {
     type PartIdentification
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
+import { SampleResultPreview } from "@/components/home/sample-result-preview"
 import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
@@ -545,6 +546,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             />
                         </div>
                     </div>
+
+                    {/* Sample Result Preview – visible on homepage when no images uploaded */}
+                    {showCategories && batchItems.length === 0 && analysisState === "idle" && (
+                        <SampleResultPreview />
+                    )}
                 </div>
 
 

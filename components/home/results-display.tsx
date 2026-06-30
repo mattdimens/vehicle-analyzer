@@ -31,6 +31,7 @@ interface ResultsDisplayProps {
     isSavedToGarage?: boolean
     isSavedToParts?: boolean
     hideSaveActions?: boolean
+    variant?: "full" | "preview"
 }
 
 export function ResultsDisplay({
@@ -47,7 +48,9 @@ export function ResultsDisplay({
     isSavedToGarage,
     isSavedToParts,
     hideSaveActions,
+    variant = "full",
 }: ResultsDisplayProps) {
+    const isPreview = variant === "preview"
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
     // --- Part Identification Mode ---
@@ -231,6 +234,154 @@ export function ResultsDisplay({
             }
         }
         return { name: text, description: null }
+    }
+
+    // --- Preview mode: skip the outer section wrapper and loading/error states ---
+    if (isPreview) {
+        // Prepare capped products for preview
+        const sortedProducts = [...(detectedProducts || [])].sort((a, b) => b.confidence - a.confidence)
+        const previewProducts = sortedProducts.slice(0, 3)
+        const remainingProductCount = sortedProducts.length - 3
+
+        // Build secondary spec line from cabStyle, bedLength, engineDetails
+        const specParts: string[] = []
+        if (results?.primary.cabStyle) specParts.push(results.primary.cabStyle)
+        if (results?.primary.bedLength) specParts.push(`${results.primary.bedLength} bed`)
+        if (results?.engineDetails) specParts.push(results.engineDetails)
+        const secondarySpecLine = specParts.join(" · ")
+
+        // Prepare capped recommendations for preview
+        const allRecs = results?.tieredRecommendations?.flatMap(t => t.items) ?? results?.recommendedAccessories ?? []
+        const previewRecs = allRecs.slice(0, 3)
+        const remainingRecCount = allRecs.length - 3
+
+        return (
+            <div className="grid grid-cols-1 gap-4">
+                {/* Primary Identification */}
+                {results && (
+                    <div className="flex flex-col text-left">
+                        <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden p-3 md:p-4">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+                                <p className="text-base font-semibold flex items-center gap-2">
+                                    Primary Identification
+                                    <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                        {results.primary.confidence}% Confidence
+                                    </span>
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
+                                <div className="space-y-1">
+                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
+                                    <div className="text-sm font-semibold text-foreground">{results.primary.year}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
+                                    <div className="text-sm font-semibold text-foreground">{results.primary.make}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
+                                    <div className="text-sm font-semibold text-foreground">{results.primary.model}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
+                                    <div className="text-sm font-semibold text-foreground">{results.primary.trim}</div>
+                                </div>
+                            </div>
+
+                            {secondarySpecLine && (
+                                <p className="mt-2 text-xs text-muted-foreground">{secondarySpecLine}</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Detected Products (capped to 3) */}
+                {previewProducts.length > 0 && (
+                    <div className="flex flex-col text-left space-y-1.5">
+                        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">{detectedProductsTitle}</p>
+                        <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden">
+                            {/* Table Header */}
+                            <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 bg-muted/30 text-[11px] font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/40">
+                                <div className="col-span-3">Product Type</div>
+                                <div className="col-span-2">Brand</div>
+                                <div className="col-span-4">Model</div>
+                                <div className="col-span-3">Confidence</div>
+                            </div>
+
+                            <div className="divide-y divide-border/40">
+                                {previewProducts.map((item, index) => {
+                                    const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
+                                    const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
+
+                                    return (
+                                        <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-2 items-center hover:bg-muted/10 transition-colors">
+                                            <div className="col-span-1 md:col-span-3 text-sm font-medium text-foreground">
+                                                {item.type}
+                                            </div>
+                                            <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
+                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
+                                                {!isUnknownBrand ? item.brand : <span className="text-muted-foreground italic">Unknown</span>}
+                                            </div>
+                                            <div className="col-span-1 md:col-span-4 text-sm text-foreground/80">
+                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
+                                                {!isUnknownModel ? item.model : <span className="text-muted-foreground italic">Unknown</span>}
+                                            </div>
+                                            <div className="col-span-1 md:col-span-3 flex items-center gap-2">
+                                                <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>
+                                                <div
+                                                    className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"
+                                                    role="progressbar"
+                                                    aria-valuenow={item.confidence}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                    aria-label={`${item.type} confidence`}
+                                                >
+                                                    <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
+                                                </div>
+                                                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{item.confidence}%</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {remainingProductCount > 0 && (
+                                <div className="px-4 py-2 border-t border-border/40">
+                                    <p className="text-xs text-muted-foreground">+{remainingProductCount} more parts identified</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Recommended Accessories (compact chip row) */}
+                {results && previewRecs.length > 0 && (
+                    <div className="flex flex-col text-left space-y-1">
+                        <p className="text-sm font-semibold text-foreground">
+                            Recommended for Your {results.primary.year} {results.primary.make} {results.primary.model}
+                        </p>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            {previewRecs.map((rec, i) => {
+                                // Strip parenthetical descriptions for chip display
+                                const chipLabel = rec.replace(/\s*\([^)]+\)$/, '')
+                                return (
+                                    <span
+                                        key={i}
+                                        className="border border-border text-foreground/70 text-sm px-2.5 py-1 rounded-lg"
+                                    >
+                                        {chipLabel}
+                                    </span>
+                                )
+                            })}
+                            {remainingRecCount > 0 && (
+                                <span className="text-sm text-muted-foreground">+{remainingRecCount} more</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
     }
 
     return (

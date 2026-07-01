@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getAllPosts } from '@/lib/blog'
+import { getAllVehicleRoutes } from '@/data/vehicles/index'
 
 const BASE_URL = 'https://visualfitment.com'
 
@@ -39,5 +40,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.7,
     }))
 
-    return [...staticPages, ...blogPosts]
+    // Vehicle page URLs (dynamically from data registry)
+    const vehiclePages = getAllVehicleRoutes().map((route) => {
+        let path = `/vehicles/${route.make}`
+        let priority = 0.7 // make hub
+
+        if (route.model) {
+            path += `/${route.model}`
+            priority = 0.8 // model hub (primary SEO target)
+        }
+        if (route.generation) {
+            path += `/${route.generation}`
+            priority = 0.7 // generation page
+        }
+
+        return {
+            url: `${BASE_URL}${path}`,
+            lastModified: now,
+            changeFrequency: 'weekly' as const,
+            priority,
+        }
+    })
+
+    return [...staticPages, ...blogPosts, ...vehiclePages]
 }

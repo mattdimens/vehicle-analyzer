@@ -87,6 +87,13 @@ export function SiteHeader() {
           >
             Blog
           </Link>
+          {/* Vehicles hub: plain link today, can become dropdown/mega-menu later */}
+          <Link
+            href="/vehicles"
+            className="text-muted-foreground transition-colors hover:text-primary"
+          >
+            Vehicles
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
               Categories <ChevronDown className="h-4 w-4" />
@@ -217,6 +224,13 @@ export function SiteHeader() {
                   onClick={() => setIsOpen(false)}
                 >
                   Blog
+                </Link>
+                <Link
+                  href="/vehicles"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Vehicles
                 </Link>
 
                 <div className="py-2">

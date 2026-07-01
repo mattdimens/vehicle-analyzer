@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             { path: '/nerf-bars-running-boards', priority: 0.8, changeFrequency: 'weekly' },
             { path: '/part-identifier', priority: 0.9, changeFrequency: 'weekly' },
             { path: '/blog', priority: 0.8, changeFrequency: 'daily' },
+            { path: '/vehicles', priority: 0.7, changeFrequency: 'weekly' },
             { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
         ]
 

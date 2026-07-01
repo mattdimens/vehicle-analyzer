@@ -20,6 +20,12 @@ export function SiteFooter() {
             Use Cases
           </Link>
           <Link
+            href="/vehicles"
+            className="text-sm text-muted-foreground transition-colors hover:text-primary"
+          >
+            Vehicles
+          </Link>
+          <Link
             href="/privacy"
             className="text-sm text-muted-foreground transition-colors hover:text-primary"
           >

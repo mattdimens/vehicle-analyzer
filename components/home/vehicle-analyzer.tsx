@@ -21,6 +21,7 @@ import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
+import { BrowseByVehicle } from "@/components/home/browse-by-vehicle"
 import { UseCases, type UseCaseCard } from "@/components/home/use-cases"
 import { StatsBar } from "@/components/home/stats-bar"
 import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-nav"
@@ -585,6 +586,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
+
+                {showCategories && <BrowseByVehicle />}
 
                 {showCategories && <ProductCategories />}
 

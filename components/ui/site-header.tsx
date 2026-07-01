@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown, LogOut, User as UserIcon, LayoutDashboard } from "lucide-react"
+import { getAllMakes } from "@/data/vehicles/index"
 
 import { useState } from 'react'
 import { useAuth } from '@/components/auth-provider'
@@ -25,6 +26,15 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton'
 
 export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false)
+
+  // Vehicle nav data from registry (flat model list for dropdown,
+  // grouped by make for future mega-menu upgrade)
+  const vehicleNavItems = getAllMakes().flatMap((make) =>
+    make.models.map((model) => ({
+      label: `${make.name} ${model.name}`,
+      href: `/vehicles/${make.slug}/${model.slug}`,
+    }))
+  )
   const pathname = usePathname()
   const isHomepage = pathname === '/'
   const { session, user, signInWithGoogle, signOut } = useAuth()
@@ -87,13 +97,21 @@ export function SiteHeader() {
           >
             Blog
           </Link>
-          {/* Vehicles hub: plain link today, can become dropdown/mega-menu later */}
-          <Link
-            href="/vehicles"
-            className="text-muted-foreground transition-colors hover:text-primary"
-          >
-            Vehicles
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
+              Vehicles <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/vehicles">Browse all vehicles</Link>
+              </DropdownMenuItem>
+              {vehicleNavItems.map((item) => (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link href={item.href}>{item.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary focus:outline-none">
               Categories <ChevronDown className="h-4 w-4" />
@@ -225,13 +243,28 @@ export function SiteHeader() {
                 >
                   Blog
                 </Link>
-                <Link
-                  href="/vehicles"
-                  className="text-lg font-medium hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Vehicles
-                </Link>
+                <div className="py-2">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Vehicles</p>
+                  <div className="flex flex-col gap-3 pl-4 border-l">
+                    <Link
+                      href="/vehicles"
+                      className="text-base font-medium hover:text-primary transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Browse all vehicles
+                    </Link>
+                    {vehicleNavItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="text-base font-medium hover:text-primary transition-colors"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="py-2">
                   <p className="text-sm font-medium text-muted-foreground mb-2">Categories</p>

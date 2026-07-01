@@ -64,7 +64,8 @@ export function PopularPicks({
 
                 <a
                   href={goUrl}
-                  rel="nofollow sponsored"
+                  target="_blank"
+                  rel="nofollow sponsored noopener"
                   className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E8712B] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#d4652a]"
                 >
                   Shop

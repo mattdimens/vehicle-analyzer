@@ -3,8 +3,8 @@ import { GoogleGenAI } from '@google/genai'
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-export const SCOUT_MODEL = 'gemini-3-flash-preview'
-export const SNIPER_MODEL = 'gemini-3-pro-preview'
+export const SCOUT_MODEL = 'gemini-3.6-flash'
+export const SNIPER_MODEL = 'gemini-3.1-pro-preview'
 export const CASCADE_CONFIDENCE_THRESHOLD = 85
 
 // ---------------------------------------------------------------------------

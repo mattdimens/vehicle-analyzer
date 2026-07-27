@@ -118,3 +118,48 @@ export function buildGoUrl({
   params.set("source", "vehicle-page")
   return `/go?${params.toString()}`
 }
+
+// ── Catalog stats ──────────────────────────────────────────────────────
+
+export { supportedVehicles, getSupportedGenerationCards } from "./supported-vehicles"
+export type { SupportedVehicle, SupportedGeneration } from "./supported-vehicles"
+
+/**
+ * Compute verifiable catalog stats from actual registered vehicle data.
+ *
+ * Counts every product rendered on live generation pages and the set of
+ * unique category slugs across all generations.  These numbers appear in
+ * the homepage stats bar and must match a manual count.
+ *
+ * Derivation (current):
+ *   4 Tacoma generations x 8 categories x 3 products = 96 products
+ *   8 unique category slugs
+ *   4 generations
+ */
+export function getCatalogStats(): {
+  totalProducts: number
+  totalCategories: number
+  totalGenerations: number
+} {
+  let totalProducts = 0
+  let totalGenerations = 0
+  const categorySet = new Set<string>()
+
+  for (const make of makes) {
+    for (const model of make.models) {
+      for (const gen of model.generations) {
+        totalGenerations++
+        for (const cat of gen.categories) {
+          categorySet.add(cat.slug)
+          totalProducts += cat.products.length
+        }
+      }
+    }
+  }
+
+  return {
+    totalProducts,
+    totalCategories: categorySet.size,
+    totalGenerations,
+  }
+}

@@ -184,6 +184,9 @@ export default async function GenerationPage({ params }: PageProps) {
         ctaHref="/#upload-zone"
       />
 
+      {/* Affiliate disclosure - adjacent to product recommendations */}
+      <AffiliateDisclosure />
+
       {/* Category sections scoped to this generation */}
       <section className="w-full bg-white py-14 md:py-16">
         <div className="container max-w-5xl space-y-14">
@@ -214,9 +217,6 @@ export default async function GenerationPage({ params }: PageProps) {
 
       {/* Related guides */}
       <RelatedGuides guides={truckGuides} />
-
-      {/* Affiliate disclosure */}
-      <AffiliateDisclosure />
     </>
   )
 }

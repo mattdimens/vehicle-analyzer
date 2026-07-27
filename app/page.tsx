@@ -4,6 +4,7 @@ import { RelatedPages } from "@/components/ui/related-pages"
 import { FromTheBlog } from "@/components/home/from-the-blog"
 import type { BlogCardData } from "@/components/home/from-the-blog"
 import { getAllPosts } from "@/lib/blog"
+import { getCatalogStats } from "@/data/vehicles/index"
 
 export const metadata: Metadata = {
   title: "Find Vehicle Fitment, Parts, & Accessories From an Image | Visual Fitment",
@@ -45,6 +46,8 @@ export default function Home() {
     readTime: post.frontmatter.readTime,
   }))
 
+  const catalogStats = getCatalogStats()
+
   return (
     <>
       <script
@@ -53,6 +56,7 @@ export default function Home() {
       />
       <VehicleAnalyzer
         showCategories={true}
+        catalogStats={catalogStats}
         blogSection={<FromTheBlog posts={blogPosts} />}
         relatedContent={
           <RelatedPages

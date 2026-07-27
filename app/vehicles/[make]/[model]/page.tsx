@@ -193,6 +193,9 @@ export default async function ModelHubPage({ params }: PageProps) {
         basePath={basePath}
       />
 
+      {/* Affiliate disclosure - adjacent to product recommendations */}
+      <AffiliateDisclosure />
+
       {/* Category sections */}
       <section className="w-full bg-white py-14 md:py-16">
         <div className="container max-w-5xl space-y-14">
@@ -215,9 +218,6 @@ export default async function ModelHubPage({ params }: PageProps) {
 
       {/* Related guides */}
       <RelatedGuides guides={tacomaGuides} />
-
-      {/* Affiliate disclosure */}
-      <AffiliateDisclosure />
     </>
   )
 }

@@ -16,14 +16,17 @@ import {
     type PartIdentification
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
+import { HeroDualEntry } from "@/components/home/hero-dual-entry"
 import { SampleResultPreview } from "@/components/home/sample-result-preview"
 import { UploadZone } from "@/components/home/upload-zone"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
 import { BrowseByVehicle } from "@/components/home/browse-by-vehicle"
+import { TrustStrip } from "@/components/home/trust-strip"
+import { CatalogStatsBar } from "@/components/home/catalog-stats-bar"
+import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
 import { UseCases, type UseCaseCard } from "@/components/home/use-cases"
-import { StatsBar } from "@/components/home/stats-bar"
 import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-nav"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { BatchResults } from "@/components/home/batch-results"
@@ -64,9 +67,11 @@ interface VehicleAnalyzerProps {
     relatedContent?: React.ReactNode
     ctaModule?: React.ReactNode
     blogSection?: React.ReactNode
+    /** Catalog stats for the homepage stats bar (only when showCategories=true) */
+    catalogStats?: { totalProducts: number; totalCategories: number; totalGenerations: number }
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
@@ -519,34 +524,53 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         <div className="flex min-h-screen flex-col">
             <main className="flex-1">
                 <div className="bg-[#003223]">
-                    <HeroSection title={title} description={description} />
-                    {breadcrumbs && <BreadcrumbNav items={breadcrumbs} />}
+                    {/* Homepage: dual-entry hero (photo tool + vehicle selector) */}
+                    {showCategories ? (
+                        <>
+                            <HeroDualEntry onFilesSelect={handleFilesSelect} />
+                            <TrustStrip />
+                        </>
+                    ) : (
+                        <>
+                            <HeroSection title={title} description={description} />
+                            {breadcrumbs && <BreadcrumbNav items={breadcrumbs} />}
+                        </>
+                    )}
 
-                    <div id="upload-zone" className="scroll-mt-20">
-                        <div id="upload-target" className="scroll-mt-24">
-                            <UploadZone
-                                onFilesSelect={handleFilesSelect}
-                                batchItems={batchItems}
-                                onRemove={handleRemoveItem}
-                                onRemoveImage={handleRemoveImageFromItem}
-                                onCrop={handleCropClick}
-                                onAddImages={handleAddImageToItem}
-                                onSplit={handleSplitItem}
-                                onMerge={handleMergeItems}
-                                onClearAll={handleClearAll}
-                                analysisState={analysisState}
-                                selectedAnalysis={selectedAnalysis}
-                                onAnalysisChange={setSelectedAnalysis}
-                                onStart={handleStartBatch}
-                                onReset={handleReset}
-                                analysisMode={analysisMode}
-                                isHomepage={showCategories}
-                                categoryLabel={categoryLabel}
-                                activeMode={analysisMode}
-                                onModeSwitch={handleModeSwitch}
-                            />
+                    {/* Upload zone: on homepage, shown only after files are selected.
+                        On sub-pages, always shown. */}
+                    {(!showCategories || batchItems.length > 0) && (
+                        <div id="upload-zone" className="scroll-mt-20">
+                            <div id="upload-target" className="scroll-mt-24">
+                                <UploadZone
+                                    onFilesSelect={handleFilesSelect}
+                                    batchItems={batchItems}
+                                    onRemove={handleRemoveItem}
+                                    onRemoveImage={handleRemoveImageFromItem}
+                                    onCrop={handleCropClick}
+                                    onAddImages={handleAddImageToItem}
+                                    onSplit={handleSplitItem}
+                                    onMerge={handleMergeItems}
+                                    onClearAll={handleClearAll}
+                                    analysisState={analysisState}
+                                    selectedAnalysis={selectedAnalysis}
+                                    onAnalysisChange={setSelectedAnalysis}
+                                    onStart={handleStartBatch}
+                                    onReset={handleReset}
+                                    analysisMode={analysisMode}
+                                    isHomepage={showCategories}
+                                    categoryLabel={categoryLabel}
+                                    activeMode={analysisMode}
+                                    onModeSwitch={handleModeSwitch}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Scroll target for the upload zone when it's hidden on homepage */}
+                    {showCategories && batchItems.length === 0 && (
+                        <div id="upload-zone" className="scroll-mt-20" />
+                    )}
 
                     {/* Sample Result Preview – visible on homepage when no images uploaded */}
                     {showCategories && batchItems.length === 0 && analysisState === "idle" && (
@@ -566,14 +590,9 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {educationalContent}
 
-                <StatsBar />
-
-                {/* Inject optional CTA Module mid-page for Category flows */}
-                {ctaModule && (
-                    <div className="w-full">
-                        {ctaModule}
-                    </div>
-                )}
+                {/* Homepage: Browse by Vehicle + affiliate disclosure directly below hero */}
+                {showCategories && <AffiliateDisclosure />}
+                {showCategories && <BrowseByVehicle />}
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
 
@@ -587,21 +606,30 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
 
-                {showCategories && <BrowseByVehicle />}
-
                 {showCategories && <ProductCategories />}
 
-                {/* Cross-link: Homepage → Part Identifier */}
-                {showCategories && (
-                    <div className="w-full bg-white pb-8">
-                        <div className="container max-w-6xl text-center">
-                            <p className="text-muted-foreground">
-                                Need to identify an individual part instead?{" "}
-                                <Link href="/part-identifier" className="text-primary hover:text-primary/80 font-medium underline underline-offset-2">
-                                    Use our Specific Part Identifier to find out exactly what it is from a close-up photo
-                                </Link>
-                            </p>
-                        </div>
+                {/* Catalog stats bar (replaces old StatsBar on homepage) */}
+                {showCategories && catalogStats ? (
+                    <CatalogStatsBar
+                        totalProducts={catalogStats.totalProducts}
+                        totalCategories={catalogStats.totalCategories}
+                        totalGenerations={catalogStats.totalGenerations}
+                    />
+                ) : (
+                    /* Sub-pages still get the catalog stats if provided, otherwise nothing */
+                    !showCategories && catalogStats && (
+                        <CatalogStatsBar
+                            totalProducts={catalogStats.totalProducts}
+                            totalCategories={catalogStats.totalCategories}
+                            totalGenerations={catalogStats.totalGenerations}
+                        />
+                    )
+                )}
+
+                {/* Inject optional CTA Module mid-page for Category flows */}
+                {ctaModule && (
+                    <div className="w-full">
+                        {ctaModule}
                     </div>
                 )}
 

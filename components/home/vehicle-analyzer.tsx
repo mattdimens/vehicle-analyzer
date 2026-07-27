@@ -596,17 +596,18 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
 
-                {/* Homepage CTA Module: after How It Works, before Categories */}
-                {showCategories && (
-                    <div className="w-full">
-                        <SaveToGarageCTA placement="homepage" />
-                    </div>
-                )}
 
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
 
                 {showCategories && <ProductCategories />}
+
+                {/* Homepage CTA Module: after Categories, before StatsBar */}
+                {showCategories && (
+                    <div className="w-full">
+                        <SaveToGarageCTA placement="homepage" />
+                    </div>
+                )}
 
                 {/* Catalog stats bar (replaces old StatsBar on homepage) */}
                 {showCategories && catalogStats ? (

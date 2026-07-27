@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { supportedVehicles } from "@/data/vehicles/supported-vehicles"
 
 export interface BlogCardData {
     slug: string
@@ -19,6 +20,8 @@ interface FromTheBlogProps {
 }
 
 export function FromTheBlog({ posts }: FromTheBlogProps) {
+    const flagship = supportedVehicles[0]
+    const shopBaseUrl = flagship.routeBase
     const scrollRef = useRef<HTMLDivElement>(null)
     const [activeIndex, setActiveIndex] = useState(0)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -178,11 +181,18 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
                     ))}
                 </div>
 
-                {/* "Read more" link */}
-                <div className="mt-8 text-center">
+                {/* Bottom Links */}
+                <div className="mt-10 text-center flex flex-col gap-3">
+                    <p className="text-sm text-muted-foreground">
+                        Shopping for a specific truck? Start with our{" "}
+                        <Link href={shopBaseUrl} className="text-primary font-medium hover:text-primary/80 transition-colors">
+                            {flagship.make} {flagship.model} accessories guides
+                        </Link>{" "}
+                        by generation.
+                    </p>
                     <Link
                         href="/blog"
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-block"
                     >
                         Read more on the blog →
                     </Link>

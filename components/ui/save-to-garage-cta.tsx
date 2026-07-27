@@ -45,8 +45,8 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
         switch (placement) {
             case "homepage":
                 return {
-                    headline: "Your Garage. Your Vehicles. Always Saved.",
-                    subtext: "Sign in to save every vehicle and part you identify. Build your personal garage, revisit past lookups, and get recommendations tailored to your rides.",
+                    headline: "Save Your Truck. Skip the Search.",
+                    subtext: "Sign in to save your vehicles, revisit past lookups, and jump straight to parts that fit. Free with your Google account.",
                     showLearnMore: true,
                 }
             case "category":

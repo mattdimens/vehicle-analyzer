@@ -1,5 +1,7 @@
 import { Upload, Table, type LucideIcon } from "lucide-react"
 import React from "react"
+import Link from "next/link"
+import { supportedVehicles } from "@/data/vehicles/supported-vehicles"
 
 export interface HowItWorksStep {
     title: string
@@ -11,17 +13,7 @@ interface HowItWorksProps {
     steps?: HowItWorksStep[]
 }
 
-const defaultSteps: HowItWorksStep[] = [
-    {
-        title: "Upload a Photo",
-        description: "Upload a photo of a full vehicle or a close-up of a specific part.",
-    },
-    {
-        title: "Get Instant Results",
-        description:
-            "In seconds, get a detailed breakdown: vehicle specs, identified parts, and direct links to buy compatible accessories.",
-    },
-]
+// Removed static defaultSteps in favor of dynamic fallback inside component
 
 // Icons per position, kept consistent across all pages
 const defaultIcons: LucideIcon[] = [Upload, Table]
@@ -31,8 +23,31 @@ const defaultStyles = [
     "border-2 border-black bg-white",
 ]
 
-export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
-    const gridCols = steps.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
+export function HowItWorks({ heading, steps }: HowItWorksProps) {
+    const flagship = supportedVehicles[0]
+    const flagshipGen = flagship.generations[0]
+    const shopBaseUrl = `${flagship.routeBase}/${flagshipGen.slug}`
+
+    const fallbackSteps: HowItWorksStep[] = [
+        {
+            title: "Upload a Photo",
+            description: "Upload a photo of a full vehicle or a close-up of a specific part.",
+        },
+        {
+            title: "Get Instant Results",
+            description: (
+                <>
+                    In seconds, get a detailed breakdown: vehicle specs, identified parts, and direct links to buy compatible accessories. Already know your truck?{" "}
+                    <Link href={shopBaseUrl} className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                        Browse {flagshipGen.label} {flagship.make} {flagship.model} accessories directly.
+                    </Link>
+                </>
+            ),
+        },
+    ]
+
+    const activeSteps = steps ?? fallbackSteps
+    const gridCols = activeSteps.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
 
     return (
         <section id="how-it-works" className="w-full bg-white py-16 md:py-20">
@@ -45,11 +60,11 @@ export function HowItWorks({ heading, steps = defaultSteps }: HowItWorksProps) {
                     </h2>
                 </div>
 
-                <div className={`grid grid-cols-1 gap-12 ${gridCols} ${steps.length === 2 ? "max-w-4xl mx-auto" : ""}`}>
-                    {steps.map((step, i) => {
+                <div className={`grid grid-cols-1 gap-12 ${gridCols} ${activeSteps.length === 2 ? "max-w-4xl mx-auto" : ""}`}>
+                    {activeSteps.map((step, i) => {
                         const Icon = defaultIcons[i] ?? defaultIcons[0]
                         const isFirst = i === 0
-                        const isLast = i === steps.length - 1
+                        const isLast = i === activeSteps.length - 1
 
                         return (
                             <div key={i} className="flex flex-col">

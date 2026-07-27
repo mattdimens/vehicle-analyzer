@@ -7,36 +7,33 @@ import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 /* ------------------------------------------------------------------ */
 const SAMPLE_RESULT: AnalysisResults = {
     primary: {
-        make: "Ford",
-        model: "F-150 SVT Raptor",
-        year: "2011-2014",
-        trim: "SVT Raptor",
-        cabStyle: "SuperCrew",
-        bedLength: '67"',
+        make: "Toyota",
+        model: "Tacoma",
+        year: "2024+",
+        trim: "TRD Off-Road",
+        cabStyle: "Double Cab",
+        bedLength: '5 ft',
         vehicleType: "Truck",
-        color: "Black",
-        condition: "Good",
-        confidence: 98,
+        color: "Bronze Oxide",
+        condition: "Excellent",
+        confidence: 95,
     },
-    engineDetails: "6.2L V8",
+    engineDetails: "i-FORCE MAX 2.4L Hybrid",
     otherPossibilities: [],
     recommendedAccessories: [
-        "Tonneau cover",
-        "Bed liner",
-        "Off-road fog lights",
-        "Roof rack",
-        "Skid plate",
+        "Bed rack (bed)",
+        "Rock sliders (exterior)",
+        "Ditch lights (lighting)",
+        "All-weather floor mats (interior)",
+        "Recovery boards (off-road)",
     ],
 }
 
 const SAMPLE_PRODUCTS: DetectedProduct[] = [
-    { type: "Wheels", brand: "Ford", model: '17" forged bead-lock', confidence: 95, reasoning: "Distinctive multi-spoke bead-lock design exclusive to SVT Raptor" },
-    { type: "Tires", brand: "BFGoodrich", model: "All-Terrain T/A KO", confidence: 95, reasoning: "Tread pattern and sidewall lettering match BFG AT KO series" },
-    { type: "Running boards", brand: "SVT", model: "Cast aluminum", confidence: 95, reasoning: "Factory SVT cast aluminum side steps with textured grip" },
-    { type: "Grille", brand: "SVT", model: "Raptor grille", confidence: 100, reasoning: "FORD block-letter grille unique to SVT Raptor trim" },
-    { type: "Fender flares", brand: "Ford", model: "SVT Raptor OEM", confidence: 90, reasoning: "Extended fender flares with black textured finish" },
-    { type: "Skid plate", brand: "Ford", model: "SVT Raptor OEM", confidence: 85, reasoning: "Visible front skid plate typical of Raptor package" },
-    { type: "Tow hooks", brand: "Ford", model: "SVT Raptor front tow hooks", confidence: 80, reasoning: "Red-painted front tow hooks standard on SVT Raptor" },
+    { type: "Wheels", brand: "Method Race Wheels", model: '701 Trail Series', confidence: 95, reasoning: "Matte black finish with distinctive Method lip and spoke design" },
+    { type: "Tires", brand: "Falken", model: "Wildpeak A/T3W", confidence: 95, reasoning: "Aggressive all-terrain tread blocks and sidewall lugs" },
+    { type: "Light bar", brand: "Baja Designs", model: "S8 Series 20\"", confidence: 90, reasoning: "Amber backlight and distinct bezel design integrated into the lower bumper" },
+    { type: "Recovery point", brand: "Unknown", model: "D-Ring Shackle", confidence: 85, reasoning: "Steel bow shackle mounted to the front recovery point" },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -46,26 +43,25 @@ export function SampleResultPreview() {
     return (
         <div
             id="sample-result-preview"
-            className="w-full max-w-4xl mx-auto px-4 pb-4"
+            className="w-full max-w-5xl mx-auto px-4 pb-4"
         >
-            <div className="bg-[#0D2818] rounded-xl p-4">
-                {/* Eyebrow label */}
-                <p className="text-white/60 text-xs font-medium tracking-wide mb-2 uppercase">
-                    Sample result
-                </p>
+            {/* Eyebrow label directly on hero background */}
+            <p className="text-white/60 text-xs font-medium tracking-wide mb-2 uppercase text-center md:text-left">
+                Sample result
+            </p>
 
-                {/* Light inner card */}
-                <div className="bg-[#FCFBF7] rounded-xl p-3">
-                    <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-3">
-                        {/* Left column: sample image */}
-                        <div>
-                            <Image
-                                src="/blog/images/truck-trim-levels-explained-hero.png"
-                                alt="Black 2011-2014 Ford F-150 SVT Raptor SuperCrew pickup driving through a forest trail"
-                                width={460}
-                                height={300}
-                                className="rounded-lg object-cover w-full h-[120px]"
-                            />
+            {/* Light inner card replacing outer wrapper */}
+            <div className="bg-[#FCFBF7] rounded-xl p-3 shadow-lg border border-white/20">
+                <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-3">
+                    {/* Left column: sample image */}
+                    <div>
+                        <Image
+                            src="/images/sample-result-tacoma.jpg"
+                            alt="2024 Toyota Tacoma TRD Off-Road"
+                            width={460}
+                            height={300}
+                            className="rounded-lg object-cover w-full h-[120px]"
+                        />
                             <p className="text-[11px] text-gray-500 mt-1.5">
                                 Example analysis from a single uploaded photo
                             </p>
@@ -83,7 +79,6 @@ export function SampleResultPreview() {
                             />
                         </div>
                     </div>
-                </div>
             </div>
         </div>
     )

@@ -11,6 +11,7 @@ import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 import { trackEvent } from "@/lib/analytics"
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
 import { SaveToPartsButton } from "@/components/save-to-parts-button"
@@ -237,8 +238,8 @@ export function ResultsDisplay({
     if (isPreview) {
         // Prepare capped products for preview
         const sortedProducts = [...(detectedProducts || [])].sort((a, b) => b.confidence - a.confidence)
-        const previewProducts = sortedProducts.slice(0, 3)
-        const remainingProductCount = sortedProducts.length - 3
+        const previewProducts = sortedProducts.slice(0, 4)
+        const remainingProductCount = sortedProducts.length - 4
 
         // Build secondary spec line from cabStyle, bedLength, engineDetails
         const specParts: string[] = []
@@ -262,7 +263,7 @@ export function ResultsDisplay({
                                 <p className="text-base font-semibold flex items-center gap-2">
                                     Primary Identification
                                     <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                        {results.primary.confidence}% Confidence
+                                        {results.primary.confidence >= 90 ? "High Confidence" : "Medium Confidence"}
                                     </span>
                                 </p>
                             </div>
@@ -310,10 +311,20 @@ export function ResultsDisplay({
                                 {previewProducts.map((item, index) => {
                                     const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
                                     const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
+                                    
+                                    // Map product types to category slugs for the sample preview
+                                    let slug = "exterior"
+                                    if (item.type.toLowerCase().includes("wheel") || item.type.toLowerCase().includes("tire")) slug = "wheels-tires"
+                                    else if (item.type.toLowerCase().includes("light")) slug = "lighting"
+                                    else if (item.type.toLowerCase().includes("recovery") || item.type.toLowerCase().includes("skid")) slug = "off-road"
 
                                     return (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-2 items-center hover:bg-muted/10 transition-colors">
-                                            <div className="col-span-1 md:col-span-3 text-sm font-medium text-foreground">
+                                        <Link 
+                                            key={index} 
+                                            href={`/vehicles/toyota/tacoma/4th-gen/#cat-${slug}`}
+                                            className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-2 items-center hover:bg-muted/10 transition-colors cursor-pointer group"
+                                        >
+                                            <div className="col-span-1 md:col-span-3 text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                                                 {item.type}
                                             </div>
                                             <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
@@ -336,9 +347,11 @@ export function ResultsDisplay({
                                                 >
                                                     <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
                                                 </div>
-                                                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{item.confidence}%</span>
+                                                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                                                    {item.confidence >= 90 ? "High" : "Medium"}
+                                                </span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     )
                                 })}
                             </div>
@@ -360,15 +373,18 @@ export function ResultsDisplay({
                         </p>
                         <div className="flex flex-wrap gap-2 items-center">
                             {previewRecs.map((rec, i) => {
-                                // Strip parenthetical descriptions for chip display
-                                const chipLabel = rec.replace(/\s*\([^)]+\)$/, '')
+                                // Extract name and category slug (passed in description field for the preview mock)
+                                const parsed = parseRecommendation(rec)
+                                const slug = parsed.description || "exterior"
+                                
                                 return (
-                                    <span
+                                    <Link
                                         key={i}
-                                        className="border border-border text-foreground/70 text-sm px-2.5 py-1 rounded-lg"
+                                        href={`/vehicles/toyota/tacoma/4th-gen/#cat-${slug}`}
+                                        className="border border-border text-foreground/70 text-sm px-2.5 py-1 rounded-lg hover:bg-muted/50 hover:text-primary transition-colors cursor-pointer"
                                     >
-                                        {chipLabel}
-                                    </span>
+                                        {parsed.name}
+                                    </Link>
                                 )
                             })}
                             {remainingRecCount > 0 && (

@@ -12,7 +12,7 @@ import { VehicleSelector } from "@/components/home/vehicle-selector"
  * Dual-entry hero for the homepage.
  *
  * Desktop: photo tool (left) and vehicle selector (right) side by side.
- * Mobile: vehicle selector first, photo tool second.
+ * Mobile: photo tool first, vehicle selector second.
  *
  * The photo tool side is a simplified single drop zone with one "Analyze
  * My Photo" button. The full UploadZone component is NOT used here; it
@@ -86,15 +86,15 @@ export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
           </p>
         </div>
 
-        {/* Two-panel grid: mobile selector-first, desktop photo-left */}
+        {/* Two-panel grid: mobile photo-first, desktop photo-left */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Vehicle Selector Panel (mobile: first, desktop: second via order) */}
-          <div className="order-1 md:order-2 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm p-6">
+          {/* Vehicle Selector Panel (mobile: second, desktop: second) */}
+          <div className="order-2 md:order-2 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm p-6">
             <VehicleSelector />
           </div>
 
-          {/* Photo Tool Panel (mobile: second, desktop: first via order) */}
-          <div className="order-2 md:order-1 rounded-2xl border bg-card shadow-lg overflow-hidden">
+          {/* Photo Tool Panel (mobile: first, desktop: first) */}
+          <div className="order-1 md:order-1 rounded-2xl border bg-card shadow-lg overflow-hidden">
             <div
               {...getRootProps()}
               role="button"

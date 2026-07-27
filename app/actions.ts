@@ -22,6 +22,84 @@ const supabase = createClient(
 // --- File upload validation constants ---
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 
+export async function analyzeVehicleFitment(
+  imageUrls: string[],
+  promptContext?: string
+): Promise<{ success: true, data: Record<string, unknown>, modelUsed: string } | { success: false, error: string }> {
+  try {
+    const { getAI, SCOUT_MODEL, SNIPER_MODEL, CASCADE_CONFIDENCE_THRESHOLD, cleanJsonResponse, fetchImageForGemini, buildSpecificLogicInstruction } = await import('@/lib/gemini')
+    const imageParts = await Promise.all(imageUrls.map(url => fetchImageForGemini(url)))
+    const contextInstruction = promptContext ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.` : ''
+    const specificLogicInstruction = buildSpecificLogicInstruction(promptContext)
+    
+    const prompt =
+            'You are an expert vehicle mechanic and fitment specialist. Analyze the vehicle shown in these images (they are different views of the same vehicle). ' +
+            contextInstruction +
+            'Identify the following for the **primary, most likely vehicle**: ' +
+            '1. `make` (string) ' +
+            '2. `model` (string) ' +
+            '3. `year` (string, use a range like "2021-2024" if exact year is uncertain) ' +
+            '4. `trim` (string, e.g., "XLT", "Lariat", "Base") ' +
+            '5. `cabStyle` (string, e.g., "SuperCrew", "Quad Cab", or null if not applicable/visible) ' +
+            '6. `bedLength` (string, e.g., "67.1\\" (Short)", or null if not applicable/visible) ' +
+            '7. `vehicleType` (string, e.g., "SUV", "Sedan", "Pickup Truck") ' +
+            '8. `color` (string) ' +
+            '9. `condition` (string, e.g., "new", "used", "damaged") ' +
+            '10. `confidence` (number, 0-100, representing your confidence in this primary identification) ' +
+            'Also identify: ' +
+            '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
+            '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
+            '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. ALWAYS format each string as "Product Name (e.g. Example 1, Example 2)". IF tiered recommendations are requested, keep this as a fallback summary list). ' +
+            specificLogicInstruction +
+            '* `confidence_score` (integer 0-100, your overall confidence in the ENTIRE analysis, covering vehicle identification + any aftermarket part detection) ' +
+            '* `seo_optimized_alt_text` (string, a descriptive, SEO-friendly alt text for this vehicle image, e.g., "2022 Ford F-150 Lariat SuperCrew with aftermarket wheels and tonneau cover") ' +
+            'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
+            '{' +
+            '"primary": {' +
+            '"make": string, "model": string, "year": string, "trim": string, "cabStyle": string | null, "bedLength": string | null, ' +
+            '"vehicleType": string, "color": string, "condition": string, "confidence": number' +
+            '}, ' +
+            '"engineDetails": string | null, ' +
+            '"otherPossibilities": [' +
+            '{ "vehicle": string, "yearRange": string, "trim": string, "confidence": number }' +
+            '], ' +
+            '"recommendedAccessories": [string], ' +
+            '"tieredRecommendations": [{ "title": string, "items": [string] }] (OPTIONAL, include only if instructed), ' +
+            '"confidence_score": number, ' +
+            '"seo_optimized_alt_text": string' +
+            '}'
+    
+    const scoutResponse = await getAI().models.generateContent({
+        model: SCOUT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }, ...imageParts] }],
+        config: { tools: [{ codeExecution: {} }] },
+    })
+    const scoutText = cleanJsonResponse(scoutResponse.text ?? '')
+    let finalResult: Record<string, unknown>
+    let modelUsed: string = SCOUT_MODEL
+    try {
+        finalResult = JSON.parse(scoutText)
+    } catch {
+        return { success: false, error: 'Scout model returned invalid JSON' }
+    }
+    const confidenceScore = typeof finalResult.confidence_score === 'number' ? finalResult.confidence_score : 0
+    if (confidenceScore <= CASCADE_CONFIDENCE_THRESHOLD) {
+        const sniperResponse = await getAI().models.generateContent({
+            model: SNIPER_MODEL,
+            contents: [{ role: 'user', parts: [{ text: prompt }, ...imageParts] }],
+        })
+        const sniperText = cleanJsonResponse(sniperResponse.text ?? '')
+        try {
+            finalResult = JSON.parse(sniperText)
+            modelUsed = SNIPER_MODEL
+        } catch { }
+    }
+    return { success: true, data: finalResult, modelUsed }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 // Function 1: Get Signed URL (with file validation)
 export async function createSignedUploadUrl(
   fileName: string,
@@ -35,9 +113,13 @@ export async function createSignedUploadUrl(
     return { success: false, error: `Invalid file type: ${fileType}. Only JPEG, PNG, GIF, and WebP images are allowed.` }
   }
 
+  // Generate an opaque UUID filename to prevent enumeration
+  const extension = fileName.split('.').pop()
+  const opaqueFilename = `${crypto.randomUUID()}.${extension}`
+
   const { data, error } = await supabase.storage
     .from('vehicle_images')
-    .createSignedUploadUrl(fileName, {
+    .createSignedUploadUrl(opaqueFilename, {
       upsert: true,
     })
 

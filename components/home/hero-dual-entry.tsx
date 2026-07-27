@@ -1,9 +1,11 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useRef, useState, useEffect } from "react"
 import { useDropzone } from "react-dropzone"
 import Link from "next/link"
-import { Upload, Camera, Send } from "lucide-react"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { Upload, Camera, Send, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
@@ -23,13 +25,27 @@ interface HeroDualEntryProps {
   onFilesSelect: (files: File[]) => void
 }
 
-export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
+export function HeroDualEntry() {
+  const router = useRouter()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [dropError, setDropError] = useState<string | null>(null)
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Cleanup object URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   const handleCameraSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFilesSelect(Array.from(e.target.files))
+      const file = e.target.files[0]
+      setAttachedFile(file)
+      setPreviewUrl(URL.createObjectURL(file))
+      setDropError(null)
     }
     e.target.value = ""
   }
@@ -38,7 +54,9 @@ export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
     onDrop: (acceptedFiles) => {
       setDropError(null)
       if (acceptedFiles.length > 0) {
-        onFilesSelect(acceptedFiles)
+        const file = acceptedFiles[0]
+        setAttachedFile(file)
+        setPreviewUrl(URL.createObjectURL(file))
       }
     },
     onDropRejected: (rejections) => {
@@ -60,14 +78,49 @@ export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
     multiple: true,
   })
 
-  const scrollToUploadZone = useCallback(() => {
-    // After files are selected, the main VehicleAnalyzer component handles
-    // rendering the full upload zone with the files. We just need to scroll.
-    const uploadTarget = document.getElementById("upload-zone")
-    if (uploadTarget) {
-      uploadTarget.scrollIntoView({ behavior: "smooth", block: "start" })
+  const handleSubmit = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!attachedFile || isSubmitting) {
+      if (!attachedFile) open()
+      return
     }
-  }, [])
+    
+    setIsSubmitting(true)
+    setDropError(null)
+    
+    try {
+      // 1. Get signed url and upload
+      const { createSignedUploadUrl } = await import("@/app/actions")
+      const uploadRes = await createSignedUploadUrl(attachedFile.name, attachedFile.type)
+      if (!uploadRes.success) throw new Error(uploadRes.error)
+      
+      const uploadResponse = await fetch(uploadRes.data.signedUrl, {
+          method: "PUT",
+          body: attachedFile,
+          headers: { "Content-Type": attachedFile.type },
+      })
+      if (!uploadResponse.ok) throw new Error("Upload failed")
+      
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/vehicle_images/${uploadRes.data.path}`
+
+      // 2. Create analysis record
+      const res = await fetch("/api/analyses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: publicUrl })
+      })
+      const data = await res.json()
+      if (data.success && data.id) {
+        router.push(`/r/${data.id}`)
+      } else {
+        throw new Error(data.error || "Failed to start analysis")
+      }
+    } catch (err) {
+      setDropError(err instanceof Error ? err.message : String(err))
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <section
@@ -96,81 +149,99 @@ export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
           {/* Photo Tool Panel (mobile: first, desktop: first) */}
           <div className="order-1 md:order-1 rounded-2xl border bg-card shadow-lg overflow-hidden">
             <div
-              {...getRootProps()}
+              {...(!attachedFile ? getRootProps() : {})}
               role="button"
-              aria-label="Upload vehicle images: drag and drop or click to select"
+              aria-label={attachedFile ? "Image attached" : "Upload vehicle images: drag and drop or click to select"}
               className={cn(
-                "min-h-[280px] w-full p-6 flex flex-col justify-center items-center transition-colors",
+                "min-h-[280px] w-full p-6 flex flex-col justify-center items-center transition-colors relative",
                 "rounded-t-2xl",
                 isDragActive
                   ? "bg-primary/5 cursor-pointer"
-                  : "hover:bg-muted/50 cursor-pointer"
+                  : (!attachedFile ? "hover:bg-muted/50 cursor-pointer" : "bg-white")
               )}
             >
-              <input {...getInputProps()} />
+              {!attachedFile && <input {...getInputProps()} />}
 
-              {/* Desktop: drag and drop */}
-              <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <Upload className="h-8 w-8 text-primary" />
+              {attachedFile && previewUrl ? (
+                <div className="flex flex-col items-center justify-center w-full h-full relative">
+                  <div className="relative w-full max-w-[280px] aspect-video rounded-xl overflow-hidden shadow-md border border-border">
+                    <Image src={previewUrl} alt="Attached vehicle" fill className="object-cover" />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setAttachedFile(null); setPreviewUrl(null); }}
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+                      aria-label="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="mt-4 text-sm font-medium text-foreground">Ready to analyze</p>
                 </div>
-                <p className="text-lg font-medium text-muted-foreground">
-                  {isDragActive
-                    ? "Drop the images here ..."
-                    : "Drag and drop images, or click to select"}
-                </p>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Upload a photo of any vehicle and we will identify make,
-                  model, trim, and every visible part and accessory.
-                </p>
-                {dropError && (
-                  <p
-                    className="text-sm text-destructive font-medium"
-                    role="alert"
-                  >
-                    {dropError}
-                  </p>
-                )}
-              </div>
+              ) : (
+                <>
+                  {/* Desktop: drag and drop */}
+                  <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                      <Upload className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-lg font-medium text-muted-foreground">
+                      {isDragActive
+                        ? "Drop the images here ..."
+                        : "Drag and drop images, or click to select"}
+                    </p>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                      Upload a photo of any vehicle and we will identify make,
+                      model, trim, and every visible part and accessory.
+                    </p>
+                    {dropError && (
+                      <p
+                        className="text-sm text-destructive font-medium"
+                        role="alert"
+                      >
+                        {dropError}
+                      </p>
+                    )}
+                  </div>
 
-              {/* Mobile: buttons */}
-              <div className="flex md:hidden flex-col w-full gap-4 py-4">
-                <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
-                  Upload a photo of any vehicle and we will identify make,
-                  model, trim, and every visible part and accessory.
-                </p>
-                <Button
-                  size="lg"
-                  className="w-full h-14 text-lg font-semibold shadow-lg rounded-xl"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    cameraInputRef.current?.click()
-                  }}
-                >
-                  <Camera className="mr-2 h-6 w-6" />
-                  Take a Photo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full h-12 text-base font-medium border-2 border-dashed border-primary/20 hover:bg-primary/5 rounded-xl text-primary"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    open()
-                  }}
-                >
-                  <Upload className="mr-2 h-5 w-5" />
-                  Upload from Gallery
-                </Button>
-                {dropError && (
-                  <p
-                    className="text-sm text-center text-destructive font-medium"
-                    role="alert"
-                  >
-                    {dropError}
-                  </p>
-                )}
-              </div>
+                  {/* Mobile: buttons */}
+                  <div className="flex md:hidden flex-col w-full gap-4 py-4">
+                    <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
+                      Upload a photo of any vehicle and we will identify make,
+                      model, trim, and every visible part and accessory.
+                    </p>
+                    <Button
+                      size="lg"
+                      className="w-full h-14 text-lg font-semibold shadow-lg rounded-xl"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        cameraInputRef.current?.click()
+                      }}
+                    >
+                      <Camera className="mr-2 h-6 w-6" />
+                      Take a Photo
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full h-12 text-base font-medium border-2 border-dashed border-primary/20 hover:bg-primary/5 rounded-xl text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        open()
+                      }}
+                    >
+                      <Upload className="mr-2 h-5 w-5" />
+                      Upload from Gallery
+                    </Button>
+                    {dropError && (
+                      <p
+                        className="text-sm text-center text-destructive font-medium"
+                        role="alert"
+                      >
+                        {dropError}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Hidden camera input */}
               <input
@@ -186,15 +257,22 @@ export function HeroDualEntry({ onFilesSelect }: HeroDualEntryProps) {
             {/* Bottom bar with CTA button and part identifier link */}
             <div className="flex flex-col items-center gap-3 p-4 border-t bg-muted/50 rounded-b-2xl">
               <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  open()
-                }}
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 className="w-full sm:w-auto"
                 size="default"
               >
-                Analyze My Photo
-                <Send className="w-4 h-4 ml-2" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Starting Analysis...
+                  </>
+                ) : (
+                  <>
+                    Analyze My Photo
+                    <Send className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
 
               <p className="text-xs text-muted-foreground text-center">

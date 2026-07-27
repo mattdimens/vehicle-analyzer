@@ -527,7 +527,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     {/* Homepage: dual-entry hero (photo tool + vehicle selector) */}
                     {showCategories ? (
                         <>
-                            <HeroDualEntry onFilesSelect={handleFilesSelect} />
+                            <HeroDualEntry />
                             <TrustStrip />
                         </>
                     ) : (
@@ -537,9 +537,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         </>
                     )}
 
-                    {/* Upload zone: on homepage, shown only after files are selected.
-                        On sub-pages, always shown. */}
-                    {(!showCategories || batchItems.length > 0) && (
+                    {/* Upload zone: on sub-pages, always shown. */}
+                    {!showCategories && (
                         <div id="upload-zone" className="scroll-mt-20">
                             <div id="upload-target" className="scroll-mt-24">
                                 <UploadZone
@@ -558,7 +557,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                                     onStart={handleStartBatch}
                                     onReset={handleReset}
                                     analysisMode={analysisMode}
-                                    isHomepage={showCategories}
+                                    isHomepage={false}
                                     categoryLabel={categoryLabel}
                                     activeMode={analysisMode}
                                     onModeSwitch={handleModeSwitch}
@@ -567,20 +566,15 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         </div>
                     )}
 
-                    {/* Scroll target for the upload zone when it's hidden on homepage */}
-                    {showCategories && batchItems.length === 0 && (
-                        <div id="upload-zone" className="scroll-mt-20" />
-                    )}
-
-                    {/* Sample Result Preview – visible on homepage when no images uploaded */}
-                    {showCategories && batchItems.length === 0 && analysisState === "idle" && (
+                    {/* Sample Result Preview – visible on homepage */}
+                    {showCategories && (
                         <SampleResultPreview />
                     )}
                 </div>
 
 
                 {/* Batch Results Display */}
-                {batchItems.length > 0 && (
+                {!showCategories && batchItems.length > 0 && (
                     <section id="analysis-results" className="bg-white w-full py-12">
                         <div className="container mx-auto px-4">
                             <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} analysisMode={analysisMode} />

@@ -9,6 +9,72 @@ export type Json =
 export type Database = {
     public: {
         Tables: {
+            analyses: {
+                Row: {
+                    id: string
+                    created_at: string
+                    updated_at: string
+                    image_url: string
+                    status: string
+                    result_data: Json | null
+                    detected_products: Json | null
+                    confidence: number | null
+                    error_details: string | null
+                    user_id: string | null
+                }
+                Insert: {
+                    id: string
+                    created_at?: string
+                    updated_at?: string
+                    image_url: string
+                    status: string
+                    result_data?: Json | null
+                    detected_products?: Json | null
+                    confidence?: number | null
+                    error_details?: string | null
+                    user_id?: string | null
+                }
+                Update: {
+                    id?: string
+                    created_at?: string
+                    updated_at?: string
+                    image_url?: string
+                    status?: string
+                    result_data?: Json | null
+                    detected_products?: Json | null
+                    confidence?: number | null
+                    error_details?: string | null
+                    user_id?: string | null
+                }
+                Relationships: []
+            }
+            vehicle_selector_events: {
+                Row: {
+                    id: string
+                    created_at: string
+                    make: string
+                    model: string
+                    generation: string | null
+                    source: string | null
+                }
+                Insert: {
+                    id?: string
+                    created_at?: string
+                    make: string
+                    model: string
+                    generation?: string | null
+                    source?: string | null
+                }
+                Update: {
+                    id?: string
+                    created_at?: string
+                    make?: string
+                    model?: string
+                    generation?: string | null
+                    source?: string | null
+                }
+                Relationships: []
+            }
             analysis_results: {
                 Row: {
                     id: number

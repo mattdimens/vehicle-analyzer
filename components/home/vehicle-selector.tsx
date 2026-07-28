@@ -16,7 +16,11 @@ import { Button } from "@/components/ui/button"
  *
  * All vehicle data flows from config files. No hardcoded vehicle names.
  */
-export function VehicleSelector() {
+interface VehicleSelectorProps {
+  location?: 'hero' | 'results_correction' | 'degraded_state'
+}
+
+export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
   const router = useRouter()
 
   const [selectedMake, setSelectedMake] = useState("")
@@ -72,6 +76,13 @@ export function VehicleSelector() {
 
     const year = parseInt(selectedYear, 10)
     const supported = isVehicleSupported(selectedMake, selectedModel)
+
+    import('@/lib/analytics').then(({ trackEvent, setEntryDoor }) => {
+        trackEvent('ymm_selector_submitted', { supported, location })
+        if (location === 'hero') {
+            setEntryDoor('ymm_selector')
+        }
+    })
 
     // Fire-and-forget logging
     fetch("/api/log-vehicle-selector", {

@@ -7,12 +7,12 @@
  *
  * Authoritative confidence source
  * --------------------------------
- * `result_data.primary.confidence` is the single authoritative confidence
- * value used for band-label logic and all state triggers (unusable, low,
- * medium, high). The top-level `confidence` column and
- * `result_data.confidence_score` are copies written for convenience but
- * must never be read by UI code. All band logic imports `analysisConfig`
- * and compares against `result_data.primary.confidence`.
+ * Confidence is stored in three mutually exclusive places depending on analysis type.
+ * All UI code must use the `getConfidence(record)` resolver to determine the 
+ * authoritative value, which checks in this priority order:
+ * 1. `record.confidence_score`
+ * 2. `record.confidence`
+ * 3. `record.result_data?.primary?.confidence`
  */
 
 // ── result_data.primary ────────────────────────────────────────────────
@@ -68,12 +68,19 @@ export interface AnalysisRecord {
     status: 'identifying' | 'detecting_products' | 'complete' | 'error'
     result_data: AnalysisResultData | null
     detected_products: AnalysisDetectedProduct[] | null
-    /** Convenience copy; UI must use result_data.primary.confidence. */
+    confidence_score?: number | null
     confidence: number | null
     error_details: string | null
     user_id: string | null
     created_at: string
     updated_at: string
+}
+
+export function getConfidence(record: AnalysisRecord): number {
+    if (record.confidence_score != null) return record.confidence_score;
+    if (record.confidence != null) return record.confidence;
+    if (record.result_data?.primary?.confidence != null) return record.result_data.primary.confidence;
+    return 0; // Sentinel value that routes to Low confidence
 }
 
 // ── Band label helper ──────────────────────────────────────────────────

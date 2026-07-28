@@ -1,6 +1,6 @@
 export const analysisConfig = {
     confidenceThresholds: {
-        high: 85,
-        medium: 50,
+        high: 80,
+        medium: 55,
     }
 }

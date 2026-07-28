@@ -9,6 +9,7 @@ import { analysisConfig } from "@/config/analysis"
 import { resolveVehicleUrl } from "@/data/vehicles/supported-vehicles"
 import Link from "next/link"
 import type { AnalysisRecord } from "@/types/analysis"
+import { getConfidence } from "@/types/analysis"
 import { ResultsShellHeader } from "@/components/analysis/results-shell-header"
 
 // ── Error Boundary ─────────────────────────────────────────────────────
@@ -83,8 +84,8 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     // Guard: if no primary data, show nothing useful
     if (!primary) return null
 
-    // Authoritative confidence from primary
-    const confidence = primary.confidence
+    // Authoritative confidence from resolver
+    const confidence = getConfidence(localRecord)
 
     const isMediumConfidence = confidence >= analysisConfig.confidenceThresholds.medium && confidence < analysisConfig.confidenceThresholds.high
     const isLowConfidence = confidence < analysisConfig.confidenceThresholds.medium
@@ -132,7 +133,7 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
             <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border">
                 <h2 className="text-2xl font-bold mb-4">Let's find the right vehicle</h2>
                 <p className="text-muted-foreground mb-8">Please select your vehicle manually below:</p>
-                <VehicleSelector />
+                <VehicleSelector location="results_correction" />
             </div>
         )
     }
@@ -163,7 +164,7 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
 
                     <div className="w-full max-w-md border-t pt-8 text-left">
                         <p className="text-sm font-medium mb-4">Not quite? Pick your vehicle</p>
-                        <VehicleSelector />
+                        <VehicleSelector location="results_correction" />
                     </div>
                 </div>
             </div>

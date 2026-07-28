@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { ChevronRight, Truck } from "lucide-react"
 import { getSupportedGenerationCards } from "@/data/vehicles/supported-vehicles"
@@ -15,6 +17,13 @@ import { getSupportedGenerationCards } from "@/data/vehicles/supported-vehicles"
  */
 export function BrowseByVehicle() {
   const cards = getSupportedGenerationCards()
+
+  const handleCardClick = (generation: string) => {
+    import('@/lib/analytics').then(({ trackEvent, setEntryDoor }) => {
+      setEntryDoor('browse_by_vehicle')
+      trackEvent('browse_by_vehicle_click', { generation })
+    })
+  }
 
   return (
     <section id="browse-by-vehicle" className="w-full bg-white py-16 md:py-20">
@@ -37,6 +46,7 @@ export function BrowseByVehicle() {
             <Link
               key={`${card.make}-${card.model}-${card.slug}`}
               href={card.href}
+              onClick={() => handleCardClick(card.label)}
               className="group flex flex-col rounded-2xl border border-border bg-card overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-[#E8712B]/40 hover:-translate-y-1"
             >
               {/* Visual header band */}

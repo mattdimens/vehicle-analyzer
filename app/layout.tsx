@@ -7,6 +7,7 @@ import { SiteHeader } from '../components/ui/site-header'
 import { SiteFooter } from '../components/ui/site-footer'
 import { AuthProvider } from '../components/auth-provider'
 import { ErrorBoundary } from '../components/error-boundary'
+import { AnalyticsTracker } from '../components/analytics-tracker'
 
 // Setup your new fonts
 const fontSans = Inter({
@@ -107,6 +108,7 @@ export default function RootLayout({
               </Script>
             </>
           )}
+          <AnalyticsTracker />
 
           {/* Site Header */}
           <SiteHeader />

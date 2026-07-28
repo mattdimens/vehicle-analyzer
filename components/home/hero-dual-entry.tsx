@@ -87,6 +87,10 @@ export function HeroDualEntry() {
     
     setIsSubmitting(true)
     setDropError(null)
+
+    const { trackEvent, setEntryDoor, getPlatform } = await import("@/lib/analytics")
+    setEntryDoor('photo_tool')
+    trackEvent('photo_analysis_started', { platform: getPlatform(), entry_point: 'homepage' })
     
     try {
       // 1. Get signed url and upload

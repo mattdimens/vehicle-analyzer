@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Image from "next/image"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,47 @@ export function AnalysisView({ id }: { id: string }) {
         return () => clearInterval(interval)
     }, [isPolling, fetchRecord])
 
+    const hasTrackedCompletion = useRef(false)
+
+    useEffect(() => {
+        if (!record || record.status === 'identifying' || record.status === 'detecting_products') return
+        if (hasTrackedCompletion.current) return
+        hasTrackedCompletion.current = true
+
+        import('@/lib/analytics').then(({ trackEvent, getPlatform }) => {
+            let outcome = 'unknown'
+            let catalog_match = false
+
+            if (record.status === 'error') {
+                outcome = 'error'
+            } else if (record.result_data?.vehicle_present === false) {
+                outcome = 'unusable'
+            } else {
+                Promise.all([
+                    import('@/types/analysis'),
+                    import('@/data/vehicles/supported-vehicles')
+                ]).then(([ { getConfidence, getConfidenceBand }, { resolveVehicleUrl } ]) => {
+                    const confidence = getConfidence(record)
+                    const band = getConfidenceBand(confidence).toLowerCase()
+                    const primary = record.result_data?.primary
+                    const hasYearRange = primary?.year?.includes('-')
+                    
+                    outcome = hasYearRange ? 'partial' : band
+                    
+                    if (primary && !hasYearRange && primary.year) {
+                        const exactYear = parseInt(primary.year, 10)
+                        if (!isNaN(exactYear) && resolveVehicleUrl(primary.make, primary.model, exactYear)) {
+                            catalog_match = true
+                        }
+                    }
+                    trackEvent('analysis_completed', { outcome, catalog_match, platform: getPlatform() })
+                })
+                return
+            }
+            trackEvent('analysis_completed', { outcome, catalog_match, platform: getPlatform() })
+        })
+    }, [record])
+
     const handleRetry = async () => {
         setIsPolling(true)
         setError(null)
@@ -62,7 +103,7 @@ export function AnalysisView({ id }: { id: string }) {
                 <p className="text-muted-foreground mt-2">{error}</p>
                 <div className="mt-6 w-full max-w-sm">
                     <p className="text-sm text-muted-foreground mb-4">Or pick your vehicle manually:</p>
-                    <VehicleSelector />
+                    <VehicleSelector location="degraded_state" />
                 </div>
             </div>
         )
@@ -113,7 +154,7 @@ export function AnalysisView({ id }: { id: string }) {
                     </Button>
                     <div className="w-full max-w-md border-t pt-8 text-left">
                         <p className="text-sm font-medium mb-4">Or pick your vehicle</p>
-                        <VehicleSelector />
+                        <VehicleSelector location="degraded_state" />
                     </div>
                 </div>
             </div>

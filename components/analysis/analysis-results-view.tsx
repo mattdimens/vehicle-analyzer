@@ -11,7 +11,7 @@ import type {
     AnalysisResultData,
     AnalysisDetectedProduct,
 } from "@/types/analysis"
-import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor } from "@/types/analysis"
+import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor, getConfidence } from "@/types/analysis"
 import { ResultsShellHeader } from "@/components/analysis/results-shell-header"
 
 /**
@@ -34,8 +34,8 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
     const { primary, engineDetails, otherPossibilities, recommendedAccessories, tieredRecommendations } = resultData
     const detectedProducts = record.detected_products ?? []
 
-    // Authoritative confidence from primary
-    const confidence = primary.confidence
+    // Authoritative confidence from resolver
+    const confidence = getConfidence(record)
     const band = getConfidenceBand(confidence)
     const bandColor = getConfidenceBandColor(band)
 

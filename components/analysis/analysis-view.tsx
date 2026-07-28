@@ -7,16 +7,7 @@ import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { analysisConfig } from "@/config/analysis"
 import { ResultLayout } from "./result-layout"
-
-interface AnalysisRecord {
-    id: string
-    image_url: string
-    status: 'identifying' | 'detecting_products' | 'complete' | 'error'
-    result_data: any
-    detected_products: any
-    confidence: number
-    error_details: string | null
-}
+import type { AnalysisRecord } from "@/types/analysis"
 
 export function AnalysisView({ id }: { id: string }) {
     const [record, setRecord] = useState<AnalysisRecord | null>(null)
@@ -84,7 +75,7 @@ export function AnalysisView({ id }: { id: string }) {
         )
     }
 
-    const { status, image_url, confidence } = record
+    const { status, image_url } = record
 
     if (status === 'identifying' || status === 'detecting_products') {
         return (
@@ -99,7 +90,7 @@ export function AnalysisView({ id }: { id: string }) {
                     {status === 'identifying' ? 'Identifying Vehicle...' : 'Detecting Products...'}
                 </h2>
                 <p className="text-muted-foreground text-center max-w-md">
-                    Our AI is scanning your photo. This usually takes about 15-30 seconds.
+                    Our AI is scanning your photo. This usually takes about 15 to 30 seconds.
                 </p>
             </div>
         )
@@ -123,14 +114,16 @@ export function AnalysisView({ id }: { id: string }) {
         )
     }
 
-    // Complete State
-    if (confidence < analysisConfig.confidenceThresholds.unusable) {
+    // Complete state: read authoritative confidence from result_data.primary
+    const primaryConfidence = record.result_data?.primary?.confidence ?? 0
+
+    if (primaryConfidence < analysisConfig.confidenceThresholds.unusable) {
         return (
             <div className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
                 <div className="relative w-48 aspect-video rounded-xl overflow-hidden mb-6 opacity-50">
                     <Image src={image_url} alt="Unusable" fill className="object-cover" />
                 </div>
-                <h2 className="text-xl font-semibold mb-2">We couldn't find a vehicle in this photo</h2>
+                <h2 className="text-xl font-semibold mb-2">We could not find a vehicle in this photo</h2>
                 <p className="text-muted-foreground max-w-md mb-6">
                     Please make sure the vehicle is clearly visible, well-lit, and occupies most of the frame.
                 </p>
@@ -145,6 +138,6 @@ export function AnalysisView({ id }: { id: string }) {
         )
     }
 
-    // Hand off to Result Layout for Low/Medium/High confidence display
+    // Hand off to ResultLayout for Low/Medium/High/Partial display
     return <ResultLayout record={record} />
 }

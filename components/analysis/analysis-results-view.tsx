@@ -172,7 +172,6 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                     target="_blank"
                                                     rel="nofollow sponsored"
                                                     className="flex items-center justify-center"
-                                                    onClick={() => trackEvent('amazon_click', { product: item.type })}
                                                 >
                                                     <span className="sr-only">Search on Amazon</span>
                                                     <Image
@@ -238,7 +237,6 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                                     target="_blank"
                                                                     rel="nofollow sponsored"
                                                                     className="flex items-center justify-center gap-2"
-                                                                    onClick={() => trackEvent('amazon_click', { product: name })}
                                                                 >
                                                                     <span className="text-xs font-medium text-muted-foreground">Buy on</span>
                                                                     <Image src="/amazon-logo.png" alt="Amazon" width={80} height={24} className="h-5 w-auto object-contain mt-1" />
@@ -276,7 +274,6 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                         target="_blank"
                                                         rel="nofollow sponsored"
                                                         className="flex items-center justify-center gap-2"
-                                                        onClick={() => trackEvent('amazon_click', { product: name })}
                                                     >
                                                         <span className="text-xs font-medium text-muted-foreground">Buy on</span>
                                                         <Image src="/amazon-logo.png" alt="Amazon" width={80} height={24} className="h-5 w-auto object-contain mt-1" />

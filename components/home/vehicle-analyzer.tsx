@@ -134,8 +134,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             qualityIssues: [],
             loadingMessage: null
         }
-
-        trackEvent('upload_image', { file_count: files.length })
         setBatchItems(prev => [...prev, newItem])
         setAnalysisState("idle")
     }
@@ -476,7 +474,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err)
-            trackEvent('analysis_error', { error_message: errorMsg })
             updateItem({
                 status: "error",
                 error: errorMsg,
@@ -497,7 +494,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     const handleStartBatch = async () => {
         setAnalysisState("processing")
-        trackEvent('start_analysis', { analysis_type: selectedAnalysis, item_count: batchItems.length })
 
         // Scroll to results
         setTimeout(() => {
@@ -516,7 +512,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             await processItem(item, selectedAnalysis)
         }
 
-        trackEvent('analysis_complete', { item_count: pendingItems.length })
         setAnalysisState("complete")
     }
 

@@ -186,7 +186,6 @@ export function ResultsDisplay({
                                 href={`/go?cat=${encodeURIComponent(partIdentification.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}&vehicle=${encodeURIComponent(partIdentification.estimatedVehicle || "")}&product=${encodeURIComponent(partIdentification.partName)}&source=part-identification`}
                                 target="_blank"
                                 rel="nofollow sponsored"
-                                onClick={() => trackEvent("amazon_click", { product: partIdentification.partName })}
                             >
                                 <Button size="lg" className="w-full sm:w-auto gap-2">
                                     <Image
@@ -607,7 +606,6 @@ export function ResultsDisplay({
                                                                     target="_blank"
                                                                     rel="nofollow sponsored"
                                                                     className="flex items-center justify-center"
-                                                                    onClick={() => trackEvent('amazon_click', { product: item.type, query: searchQuery })}
                                                                 >
                                                                     <span className="sr-only">Search on Amazon</span>
                                                                     <Image
@@ -675,7 +673,6 @@ export function ResultsDisplay({
                                                                                 target="_blank"
                                                                                 rel="nofollow sponsored"
                                                                                 className="flex items-center justify-center gap-2"
-                                                                                onClick={() => trackEvent('amazon_click', { product: name })}
                                                                             >
                                                                                 <span className="text-xs font-medium text-muted-foreground">Buy on</span>
                                                                                 <Image
@@ -725,7 +722,6 @@ export function ResultsDisplay({
                                                                     target="_blank"
                                                                     rel="nofollow sponsored"
                                                                     className="flex items-center justify-center gap-2"
-                                                                    onClick={() => trackEvent('amazon_click', { product: name })}
                                                                 >
                                                                     <span className="text-xs font-medium text-muted-foreground">Buy on</span>
                                                                     <Image

@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
             '9. `condition` (string, e.g., "new", "used", "damaged") ' +
             '10. `confidence` (number, 0-100, representing your confidence in this primary identification) ' +
             'Also identify: ' +
+            '* `vehicle_present` (boolean): Set to true when ANY identifiable road vehicle (car, truck, SUV, van, motorcycle, trailer, or similar) is visible in the image, even if blurry, partial, or hard-to-identify. Set to false ONLY when the image contains no vehicle at all (e.g. a person, animal, landscape, document, or unrelated object). This is independent of your identification confidence. ' +
             '* `engineDetails` (string, e.g., "5.0L V8", "2.7L EcoBoost V6", or "No details available" if not visible/determinable) ' +
             '* `otherPossibilities` (an array of 2-3 other likely possibilities, each with its own vehicle name, year range, trim, and confidence) ' +
             '* `recommendedAccessories` (an array of 3-5 recommended aftermarket accessories as strings. ALWAYS format each string as "Product Name (e.g. Example 1, Example 2)". IF tiered recommendations are requested, keep this as a fallback summary list). ' +
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
             '* `seo_optimized_alt_text` (string, a descriptive, SEO-friendly alt text for this vehicle image, e.g., "2022 Ford F-150 Lariat SuperCrew with aftermarket wheels and tonneau cover") ' +
             'Respond ONLY with a valid, minified JSON object with this exact structure: ' +
             '{' +
+            '"vehicle_present": boolean, ' +
             '"primary": {' +
             '"make": string, "model": string, "year": string, "trim": string, "cabStyle": string | null, "bedLength": string | null, ' +
             '"vehicleType": string, "color": string, "condition": string, "confidence": number' +

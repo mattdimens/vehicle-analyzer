@@ -42,6 +42,7 @@ export interface AnalysisOtherPossibility {
 
 // ── result_data (the full jsonb blob) ──────────────────────────────────
 export interface AnalysisResultData {
+    vehicle_present?: boolean
     primary: AnalysisPrimary
     engineDetails?: string | null
     otherPossibilities?: AnalysisOtherPossibility[]

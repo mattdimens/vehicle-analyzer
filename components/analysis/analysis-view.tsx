@@ -114,10 +114,11 @@ export function AnalysisView({ id }: { id: string }) {
         )
     }
 
-    // Complete state: read authoritative confidence from result_data.primary
-    const primaryConfidence = record.result_data?.primary?.confidence ?? 0
+    // Complete state: check for unusable photo
+    // Default to true for backward compatibility with old records
+    const vehiclePresent = record.result_data?.vehicle_present !== false
 
-    if (primaryConfidence < analysisConfig.confidenceThresholds.unusable) {
+    if (!vehiclePresent) {
         return (
             <div className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
                 <div className="relative w-48 aspect-video rounded-xl overflow-hidden mb-6 opacity-50">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { analysisConfig } from "@/config/analysis"
 import { ResultLayout } from "./result-layout"
+import { ResultsShellHeader } from "./results-shell-header"
 import type { AnalysisRecord } from "@/types/analysis"
 
 export function AnalysisView({ id }: { id: string }) {
@@ -98,17 +99,22 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (status === 'error') {
         return (
-            <div className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
-                <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-                <h2 className="text-xl font-semibold text-destructive">Analysis Failed</h2>
-                <p className="text-muted-foreground mt-2 mb-6">{record.error_details || 'Something went wrong.'}</p>
-                <Button onClick={handleRetry} className="mb-8">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Retry Analysis
-                </Button>
-                <div className="w-full max-w-md border-t pt-8">
-                    <p className="text-sm font-medium mb-4">Or continue manually:</p>
-                    <VehicleSelector />
+            <div className="w-full max-w-6xl mx-auto space-y-8">
+                <ResultsShellHeader />
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
+                    <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">Something went wrong on our end.</h2>
+                    <p className="text-muted-foreground mt-2 mb-6 max-w-md">
+                        That analysis didn&apos;t finish. Give it another try, or pick your vehicle to keep going.
+                    </p>
+                    <Button onClick={handleRetry} className="mb-8" size="lg">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Try again
+                    </Button>
+                    <div className="w-full max-w-md border-t pt-8 text-left">
+                        <p className="text-sm font-medium mb-4">Or pick your vehicle</p>
+                        <VehicleSelector />
+                    </div>
                 </div>
             </div>
         )
@@ -120,20 +126,22 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (!vehiclePresent) {
         return (
-            <div className="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
-                <div className="relative w-48 aspect-video rounded-xl overflow-hidden mb-6 opacity-50">
-                    <Image src={image_url} alt="Unusable" fill className="object-cover" />
-                </div>
-                <h2 className="text-xl font-semibold mb-2">We could not find a vehicle in this photo</h2>
-                <p className="text-muted-foreground max-w-md mb-6">
-                    Please make sure the vehicle is clearly visible, well-lit, and occupies most of the frame.
-                </p>
-                <Button asChild variant="outline" className="mb-8">
-                    <a href="/">Try Another Photo</a>
-                </Button>
-                <div className="w-full max-w-md border-t pt-8">
-                    <p className="text-sm font-medium mb-4">Or pick your vehicle manually:</p>
-                    <VehicleSelector />
+            <div className="w-full max-w-6xl mx-auto space-y-8">
+                <ResultsShellHeader />
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
+                    <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden mb-6 opacity-75">
+                        <Image src={image_url} alt="Uploaded photo" fill className="object-cover" />
+                    </div>
+                    <h2 className="text-xl font-semibold mb-2">That&apos;s a great photo, but we don&apos;t see a vehicle in it.</h2>
+                    <p className="text-muted-foreground max-w-md mb-8">
+                        Upload a clear shot of a car or truck and we&apos;ll break down what&apos;s on it.
+                    </p>
+                    <Button asChild className="mb-4" size="lg">
+                        <a href="/">Try another photo</a>
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                        Tips for a good photo: ensure the vehicle is clearly visible, well-lit, and occupies most of the frame. Avoid heavy filters.
+                    </p>
                 </div>
             </div>
         )

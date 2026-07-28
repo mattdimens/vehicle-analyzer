@@ -9,6 +9,7 @@ import { analysisConfig } from "@/config/analysis"
 import { resolveVehicleUrl } from "@/data/vehicles/supported-vehicles"
 import Link from "next/link"
 import type { AnalysisRecord } from "@/types/analysis"
+import { ResultsShellHeader } from "@/components/analysis/results-shell-header"
 
 // ── Error Boundary ─────────────────────────────────────────────────────
 
@@ -125,11 +126,11 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
         }
     }
 
-    // Rejected: full selector fallback
+    // Rejected: full selector fallback (for Medium confidence rejection)
     if (userRejected) {
         return (
             <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border">
-                <h2 className="text-2xl font-bold mb-4">Let&apos;s find the right vehicle</h2>
+                <h2 className="text-2xl font-bold mb-4">Let's find the right vehicle</h2>
                 <p className="text-muted-foreground mb-8">Please select your vehicle manually below:</p>
                 <VehicleSelector />
             </div>
@@ -139,20 +140,31 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     // Low confidence: withhold results until confirmed
     if (isLowConfidence && !userConfirmed) {
         return (
-            <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border text-center">
-                <h2 className="text-2xl font-bold mb-2">We think this might be a:</h2>
-                <p className="text-3xl font-extrabold text-primary mb-8">
-                    {primary.year} {primary.make} {primary.model} {primary.trim || ''}
-                </p>
+            <div className="w-full max-w-6xl mx-auto space-y-8">
+                <ResultsShellHeader />
+                <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
+                    <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden mb-6 opacity-80">
+                        <img src={record.image_url} alt="Uploaded photo" className="object-cover w-full h-full" />
+                    </div>
+                    <h2 className="text-xl font-semibold mb-2">We think we&apos;ve got it, but we&apos;re not fully sure.</h2>
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                        Here&apos;s our best read on your vehicle. Confirm it and we&apos;ll pull matching parts, or set it straight below.
+                    </p>
 
-                <p className="text-muted-foreground mb-6">Is this correct?</p>
-                <div className="flex items-center justify-center gap-4 mb-8">
-                    <Button onClick={handleConfirm} size="lg" className="bg-emerald-600 hover:bg-emerald-700">
-                        <Check className="w-5 h-5 mr-2" /> Yes, that&apos;s it
-                    </Button>
-                    <Button onClick={handleReject} size="lg" variant="outline">
-                        <X className="w-5 h-5 mr-2" /> No, let me pick
-                    </Button>
+                    <div className="bg-muted/30 border border-border/50 rounded-lg p-6 mb-8 w-full max-w-md">
+                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Best Guess</p>
+                        <p className="text-2xl font-bold text-foreground mb-4">
+                            {primary.year} {primary.make} {primary.model} {primary.trim || ''}
+                        </p>
+                        <Button onClick={handleConfirm} size="lg" className="w-full">
+                            <Check className="w-5 h-5 mr-2" /> Yes, that&apos;s my vehicle
+                        </Button>
+                    </div>
+
+                    <div className="w-full max-w-md border-t pt-8 text-left">
+                        <p className="text-sm font-medium mb-4">Not quite? Pick your vehicle</p>
+                        <VehicleSelector />
+                    </div>
                 </div>
             </div>
         )

@@ -54,3 +54,50 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: record })
 }
+
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+
+    const body = await request.json()
+    const { refinedYear } = body
+
+    if (!refinedYear || !/^\d{4}$/.test(String(refinedYear))) {
+        return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+    }
+
+    const supabase = getSupabase()
+
+    // Fetch current record
+    const { data: record, error: fetchError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (fetchError || !record) {
+        return NextResponse.json({ error: 'Record not found' }, { status: 404 })
+    }
+
+    // Update the year in result_data.primary
+    const resultData = (record.result_data as any) || {}
+    if (resultData.primary) {
+        resultData.primary.year = String(refinedYear)
+    }
+
+    const { data: updated, error: updateError } = await supabase
+        .from('analyses')
+        .update({ result_data: resultData as any })
+        .eq('id', id)
+        .select('*')
+        .single()
+
+    if (updateError) {
+        return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, data: updated })
+}

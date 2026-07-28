@@ -1,61 +1,97 @@
 "use client"
 
-import { useState } from "react"
-import { Check, X, AlertCircle } from "lucide-react"
+import { useState, useMemo } from "react"
+import { Check, X, AlertCircle, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { analysisConfig } from "@/config/analysis"
-import { supportedVehicles } from "@/data/vehicles/supported-vehicles"
+import { supportedVehicles, resolveVehicleUrl } from "@/data/vehicles/supported-vehicles"
+import Link from "next/link"
 
-export function ResultLayout({ record }: { record: any }) {
+/**
+ * Parse a year string like "2011-2014" into an array of individual years.
+ * Returns null if the string is a single year (no range).
+ */
+function parseYearRange(year: string): number[] | null {
+    if (!year?.includes('-')) return null
+    const parts = year.split('-').map(s => parseInt(s.trim(), 10))
+    if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return null
+    const [start, end] = parts
+    if (start > end || end - start > 30) return null // sanity bound
+    const years: number[] = []
+    for (let y = start; y <= end; y++) years.push(y)
+    return years
+}
+
+interface ResultLayoutProps {
+    record: any
+    onRecordUpdate?: (updated: any) => void
+}
+
+export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     const [userConfirmed, setUserConfirmed] = useState(false)
     const [userRejected, setUserRejected] = useState(false)
+    const [selectedYear, setSelectedYear] = useState<string>("")
+    const [isUpdatingYear, setIsUpdatingYear] = useState(false)
+    const [localRecord, setLocalRecord] = useState(record)
 
-    const { confidence, result_data, detected_products } = record
+    // Use localRecord so year refinements render without full refetch
+    const { confidence, result_data, detected_products } = localRecord
     const { primary } = result_data || {}
-    
+
     const isMediumConfidence = confidence >= analysisConfig.confidenceThresholds.medium && confidence < analysisConfig.confidenceThresholds.high
     const isLowConfidence = confidence < analysisConfig.confidenceThresholds.medium
+
+    // Year range detection
+    const yearRange = useMemo(() => parseYearRange(primary?.year), [primary?.year])
+    const hasYearRange = yearRange !== null
+
+    // Catalog resolution (works for both exact years and after refinement)
+    const exactYear = !hasYearRange && primary?.year ? parseInt(primary.year, 10) : null
+    const catalogUrl = exactYear && primary
+        ? resolveVehicleUrl(primary.make, primary.model, exactYear)
+        : null
 
     const handleConfirm = () => setUserConfirmed(true)
     const handleReject = () => setUserRejected(true)
 
-    // Disambiguate year if it contains a hyphen
-    const needsYearDisambiguation = primary?.year?.includes('-') && !userConfirmed
+    const handleYearUpdate = async () => {
+        if (!selectedYear || isUpdatingYear) return
+        setIsUpdatingYear(true)
 
-    // Check if it's a catalog-supported vehicle
-    const isSupported = primary && supportedVehicles.some(
-        v => v.make.toLowerCase() === primary.make.toLowerCase() && v.model.toLowerCase() === primary.model.toLowerCase()
-    )
+        try {
+            const res = await fetch(`/api/analyses/${localRecord.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refinedYear: selectedYear }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.data) {
+                    setLocalRecord(data.data)
+                    onRecordUpdate?.(data.data)
+                }
+            }
+        } catch (err) {
+            console.error('Year update failed', err)
+        } finally {
+            setIsUpdatingYear(false)
+        }
+    }
 
+    // Rejected: full selector fallback
     if (userRejected) {
         return (
             <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border">
-                <h2 className="text-2xl font-bold mb-4">Let's find the right vehicle</h2>
+                <h2 className="text-2xl font-bold mb-4">Let&apos;s find the right vehicle</h2>
                 <p className="text-muted-foreground mb-8">Please select your vehicle manually below:</p>
                 <VehicleSelector />
             </div>
         )
     }
 
-    if (needsYearDisambiguation && !isLowConfidence) {
-        return (
-            <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border">
-                <div className="mb-6 p-4 border rounded-xl border-amber-200 bg-amber-50">
-                    <div className="flex items-center gap-2 mb-1">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        <h4 className="font-semibold text-amber-800 text-sm">Partial Match</h4>
-                    </div>
-                    <p className="text-sm text-amber-700 ml-6">
-                        We identified a {primary?.make} {primary?.model}, but we need the exact year.
-                    </p>
-                </div>
-                <VehicleSelector />
-            </div>
-        )
-    }
-
+    // Low confidence: withhold results until confirmed
     if (isLowConfidence && !userConfirmed) {
         return (
             <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border text-center">
@@ -63,11 +99,11 @@ export function ResultLayout({ record }: { record: any }) {
                 <p className="text-3xl font-extrabold text-primary mb-8">
                     {primary?.year} {primary?.make} {primary?.model} {primary?.trim}
                 </p>
-                
+
                 <p className="text-muted-foreground mb-6">Is this correct?</p>
                 <div className="flex items-center justify-center gap-4 mb-8">
                     <Button onClick={handleConfirm} size="lg" className="bg-emerald-600 hover:bg-emerald-700">
-                        <Check className="w-5 h-5 mr-2" /> Yes, that's it
+                        <Check className="w-5 h-5 mr-2" /> Yes, that&apos;s it
                     </Button>
                     <Button onClick={handleReject} size="lg" variant="outline">
                         <X className="w-5 h-5 mr-2" /> No, let me pick
@@ -77,6 +113,7 @@ export function ResultLayout({ record }: { record: any }) {
         )
     }
 
+    // High confidence, medium confidence, and partial (year range) all render full results
     return (
         <div className="w-full max-w-6xl mx-auto space-y-6">
             {/* Medium Confidence Confirm/Correct Bar */}
@@ -87,7 +124,7 @@ export function ResultLayout({ record }: { record: any }) {
                         <div>
                             <p className="font-semibold text-amber-900">Please verify our identification</p>
                             <p className="text-sm text-amber-800">
-                                We identified this as a {primary?.year} {primary?.make} {primary?.model}, but we aren't completely sure.
+                                We identified this as a {primary?.year} {primary?.make} {primary?.model}, but we are not completely sure.
                             </p>
                         </div>
                     </div>
@@ -102,18 +139,73 @@ export function ResultLayout({ record }: { record: any }) {
                 </div>
             )}
 
-            {isSupported && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+            {/* Year Refinement Card (only for year ranges, not for uncertain identity) */}
+            {hasYearRange && (
+                <div className="bg-white border border-border rounded-xl p-5 sm:p-6 shadow-sm">
+                    <h3 className="text-base font-semibold text-foreground mb-1">Know the exact year?</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Narrow it down for more precise matches.</p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                            {/* Make (read-only) */}
+                            <div className="w-full sm:w-auto">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Make</label>
+                                <div className="px-3 py-2 text-sm font-medium bg-muted/50 rounded-lg border border-border text-foreground min-w-[100px]">
+                                    {primary?.make}
+                                </div>
+                            </div>
+                            {/* Model (read-only) */}
+                            <div className="w-full sm:w-auto">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Model</label>
+                                <div className="px-3 py-2 text-sm font-medium bg-muted/50 rounded-lg border border-border text-foreground min-w-[100px]">
+                                    {primary?.model}
+                                </div>
+                            </div>
+                            {/* Year (dropdown) */}
+                            <div className="w-full sm:w-auto">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Year</label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedYear}
+                                        onChange={e => setSelectedYear(e.target.value)}
+                                        className="w-full sm:w-[120px] appearance-none px-3 py-2 pr-8 text-sm rounded-lg border border-border bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    >
+                                        <option value="">Select year</option>
+                                        {yearRange!.map(y => (
+                                            <option key={y} value={String(y)}>{y}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                </div>
+                            </div>
+                        </div>
+                        <Button
+                            onClick={handleYearUpdate}
+                            disabled={!selectedYear || isUpdatingYear}
+                            className="w-full sm:w-auto"
+                            size="default"
+                        >
+                            {isUpdatingYear ? "Updating..." : "Update Results"}
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Catalog banner (only for resolved exact years) */}
+            {catalogUrl && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                     <p className="text-blue-800 font-medium text-sm">
-                        ✨ Good news! We have a specialized catalog of curated parts for the {primary?.make} {primary?.model}. Check out our top picks below.
+                        We have a specialized catalog of curated parts for the {primary?.make} {primary?.model}.{" "}
+                        <Link href={catalogUrl} className="underline underline-offset-2 font-semibold hover:text-blue-900">
+                            View curated picks
+                        </Link>
                     </p>
                 </div>
             )}
 
-            <ResultsDisplay 
-                results={result_data} 
-                detectedProducts={detected_products} 
-                imageUrls={[record.image_url]}
+            <ResultsDisplay
+                results={result_data}
+                detectedProducts={detected_products}
+                imageUrls={[localRecord.image_url]}
                 hideSaveActions={false}
             />
         </div>

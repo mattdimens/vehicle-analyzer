@@ -172,7 +172,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 detectedProducts: [],
                 partIdentification: null,
                 error: null,
-                qualityIssues: [],
                 loadingMessage: null
             }))
 

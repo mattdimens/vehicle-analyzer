@@ -93,20 +93,27 @@ export function HeroDualEntry() {
     trackEvent('photo_analysis_started', { platform: getPlatform(), entry_point: 'homepage' })
     
     try {
-      // 1. Get signed url and upload
+      // 2) Client downscaling to save bandwidth & API cost
+      const { downscaleImage } = await import("@/lib/image-processing")
+      const optimizedFile = await downscaleImage(attachedFile)
+
+      // 3) Create signed URL for upload
       const { createSignedUploadUrl } = await import("@/app/actions")
-      const uploadRes = await createSignedUploadUrl(attachedFile.name, attachedFile.type)
+      const uploadRes = await createSignedUploadUrl(optimizedFile.name, optimizedFile.type)
       if (!uploadRes.success) throw new Error(uploadRes.error)
       
-      const uploadResponse = await fetch(uploadRes.data.signedUrl, {
-          method: "PUT",
-          body: attachedFile,
-          headers: { "Content-Type": attachedFile.type },
+      const { signedUrl, path } = uploadRes.data
+      
+      // 4) Perform the upload
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        body: optimizedFile,
+        headers: { "Content-Type": optimizedFile.type },
       })
       if (!uploadResponse.ok) throw new Error("Upload failed")
       
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const publicUrl = `${supabaseUrl}/storage/v1/object/public/vehicle_images/${uploadRes.data.path}`
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/vehicle_images/${path}`
 
       // 2. Create analysis record
       const res = await fetch("/api/analyses", {

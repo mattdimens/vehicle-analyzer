@@ -5,6 +5,8 @@ import { createClient, Session, User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { PENDING_GARAGE_SAVE_KEY } from '@/components/save-to-garage-button'
 import { PENDING_PARTS_SAVE_KEY } from '@/components/save-to-parts-button'
+import { normalizeYear } from '@/lib/normalize-year'
+import { trackEvent, getPlatform } from '@/lib/analytics'
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -49,6 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     // Remove from localStorage FIRST to prevent duplicate inserts on retry
                     localStorage.removeItem(PENDING_GARAGE_SAVE_KEY)
 
+                    // Normalize year before inserting (AI may return range strings)
+                    if ('year' in vehicleData) {
+                        const normalized = normalizeYear(vehicleData.year)
+                        if (normalized === null) {
+                            toast.error('Could not determine the vehicle year. Please confirm the year and try again.')
+                            // Don't restore to localStorage — the data is unsaveable as-is
+                            return
+                        }
+                        vehicleData.year = normalized
+                    }
+
                     const { error } = await supabase.from('garage_vehicles').insert({
                         ...vehicleData,
                         user_id: userId,
@@ -62,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                     setTimeout(() => {
                         toast.success("Pending vehicle successfully saved to your garage!")
+                        trackEvent('save_to_garage', { platform: getPlatform() })
                     }, 500)
                 }
 
@@ -83,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                     setTimeout(() => {
                         toast.success("Pending part successfully saved to your garage!")
+                        trackEvent('save_part', { platform: getPlatform() })
                     }, 500)
                 }
             } catch (error) {

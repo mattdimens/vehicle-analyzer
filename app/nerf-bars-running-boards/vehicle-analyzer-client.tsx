@@ -45,36 +45,14 @@ const useCaseCards: UseCaseCard[] = [
     },
 ]
 
-const runningBoardFaqs: FaqItem[] = [
-    {
-        question: "What's the difference between running boards and nerf bars?",
-        answer: "Running boards are wide, flat platforms that run the full length of the cab for easy step-in access. Nerf bars are round tubes (usually 3–4 inches in diameter) with small step pads welded on. They look sportier but offer less foot surface area. Choose running boards for family vehicles and nerf bars for a more athletic aesthetic."
-    },
-    {
-        question: "Do I need a specific mounting bracket for my truck?",
-        answer: "Yes, brackets are vehicle-specific because each truck has unique rocker panel dimensions and factory mounting points. Most quality running board kits include the correct brackets for your year, make, and model. Universal brackets exist but may require drilling and don't always fit as securely."
-    },
-    {
-        question: "Can I install running boards myself?",
-        answer: "Most bolt-on running boards can be installed in 1–2 hours with basic hand tools, with no drilling required if you use a vehicle-specific kit. You'll typically need a socket set, a torque wrench, and a friend to help hold the board in position while you tighten the bolts."
-    },
-    {
-        question: "What material is best for running boards?",
-        answer: "Aluminum is lightweight and corrosion-resistant, ideal for daily drivers especially in salty climates. Stainless steel is heavier but gives a polished chrome look. Powder-coated steel is the toughest option for off-road use; it hides trail damage and handles heavy loads without bending."
-    },
-    {
-        question: "How does cab size affect running board fitment?",
-        answer: "Cab size determines the length of running board you need. A regular cab needs the shortest boards, an extended cab needs mid-length, and a crew cab needs the longest. Installing the wrong length means the board either stops short of the rear door or extends awkwardly past the body."
-    },
-]
-
-export default function RunningBoardsClient() {
+export default function RunningBoardsClient({ faqItems }: { faqItems: FaqItem[] }) {
     return (
         <VehicleAnalyzer
             title="Running Board Analyzer"
             description="The right running boards depend on your cab size, door count, and mounting points. Upload a photo and we'll figure out the specs so you get a perfect fit, no measuring tape required."
             promptContext="nerf bars, running boards, side steps, rock sliders, and power steps"
             categoryLabel="Running Boards & Nerf Bars"
+            entryPoint="nerf_bars"
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Running Board Analyzer</span> Works</>}
             useCaseCards={useCaseCards}
@@ -82,7 +60,7 @@ export default function RunningBoardsClient() {
             useCaseSubtitle="From daily drivers to trail rigs and work fleets, find the right side step without crawling under the truck with a tape measure."
             educationalContent={<RunningBoardGuide />}
             ctaModule={<SaveToGarageCTA placement="category" categoryName="running boards" />}
-            faqContent={<FaqAccordion items={runningBoardFaqs} />}
+            faqContent={<FaqAccordion items={faqItems} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/#categories" },

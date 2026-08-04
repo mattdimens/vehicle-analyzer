@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { DetectedProductSchema, PartIdentificationSchema } from '@/lib/schemas'
 import {
   getAI,
   SCOUT_MODEL,
@@ -12,6 +13,7 @@ import {
   buildSpecificLogicInstruction,
   sanitizePromptContext,
 } from '@/lib/gemini'
+import { assertSupabaseStorageUrl, assertSupabaseStorageUrls } from '@/lib/url-validation'
 
 // Initialize the server-side Supabase client
 const supabase = createClient(
@@ -22,13 +24,28 @@ const supabase = createClient(
 // --- File upload validation constants ---
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 
+export type ImageInput = string | { inlineData: { data: string, mimeType: string } }
+
+async function resolveImageParts(inputs: ImageInput[]) {
+  const { fetchImageForGemini } = await import('@/lib/gemini')
+  return Promise.all(
+    inputs.map((input) => {
+      if (typeof input === 'string') {
+        assertSupabaseStorageUrl(input)
+        return fetchImageForGemini(input)
+      }
+      return input
+    })
+  )
+}
+
 export async function analyzeVehicleFitment(
-  imageUrls: string[],
+  imageInputs: ImageInput[],
   promptContext?: string
 ): Promise<{ success: true, data: Record<string, unknown>, modelUsed: string } | { success: false, error: string }> {
   try {
-    const { getAI, SCOUT_MODEL, SNIPER_MODEL, CASCADE_CONFIDENCE_THRESHOLD, cleanJsonResponse, fetchImageForGemini, buildSpecificLogicInstruction } = await import('@/lib/gemini')
-    const imageParts = await Promise.all(imageUrls.map(url => fetchImageForGemini(url)))
+    const { getAI, SCOUT_MODEL, SNIPER_MODEL, CASCADE_CONFIDENCE_THRESHOLD, cleanJsonResponse, buildSpecificLogicInstruction } = await import('@/lib/gemini')
+    const imageParts = await resolveImageParts(imageInputs)
     const contextInstruction = promptContext ? ` PAY SPECIAL ATTENTION to ${promptContext}. Ensure your analysis is relevant to users interested in ${promptContext}.` : ''
     const specificLogicInstruction = buildSpecificLogicInstruction(promptContext)
     
@@ -74,7 +91,6 @@ export async function analyzeVehicleFitment(
     const scoutResponse = await getAI().models.generateContent({
         model: SCOUT_MODEL,
         contents: [{ role: 'user', parts: [{ text: prompt }, ...imageParts] }],
-        config: { tools: [{ codeExecution: {} }] },
     })
     const scoutText = cleanJsonResponse(scoutResponse.text ?? '')
     let finalResult: Record<string, unknown>
@@ -175,54 +191,7 @@ export interface DetectedProduct {
 }
 // --- End of new interfaces ---
 
-// --- Zod schemas for runtime validation of AI responses ---
-const PrimaryVehicleSchema = z.object({
-  make: z.string(),
-  model: z.string(),
-  year: z.string(),
-  trim: z.string(),
-  cabStyle: z.string().nullable(),
-  bedLength: z.string().nullable(),
-  vehicleType: z.string(),
-  color: z.string(),
-  condition: z.string(),
-  confidence: z.number(),
-})
 
-const AnalysisResultsSchema = z.object({
-  primary: PrimaryVehicleSchema,
-  engineDetails: z.string().nullable(),
-  otherPossibilities: z.array(z.object({
-    name: z.string().default(''),
-    vehicle: z.string().optional(),
-    yearRange: z.string().optional(),
-    trim: z.string().optional(),
-    confidence: z.number(),
-  }).transform(item => ({
-    name: item.name || item.vehicle || 'Unknown',
-    confidence: item.confidence,
-  }))),
-  recommendedAccessories: z.array(z.string()),
-  tieredRecommendations: z.array(z.object({
-    title: z.string(),
-    items: z.array(z.string()),
-  })).optional(),
-})
-
-const DetectedProductSchema = z.object({
-  type: z.string(),
-  brand: z.string(),
-  model: z.string(),
-  confidence: z.number(),
-  reasoning: z.string(),
-})
-
-const ImageQualityResultSchema = z.object({
-  isHighQuality: z.boolean(),
-  score: z.number(),
-  issues: z.array(z.string()),
-})
-// --- End of Zod schemas ---
 
 // ---------------------------------------------------------------------------
 // Helper: call Gemini via the new @google/genai SDK
@@ -239,7 +208,7 @@ async function callGemini(model: string, prompt: string, imageParts: ReturnType<
 // Function 2: Detect Visible Products (Stage 1)
 // ---------------------------------------------------------------------------
 export async function detectVisibleProducts(
-  publicImageUrls: string[],
+  imageInputs: ImageInput[],
   vehicleDetails: string | null,
   promptContext?: string
 ): Promise<
@@ -247,9 +216,7 @@ export async function detectVisibleProducts(
   | { success: false; error: string }
 > {
   try {
-    const imageParts = await Promise.all(
-      publicImageUrls.map((url) => fetchImageForGemini(url))
-    )
+    const imageParts = await resolveImageParts(imageInputs)
 
     const vehicleContext = vehicleDetails
       ? `Given that this is a ${vehicleDetails}`
@@ -289,15 +256,13 @@ export async function detectVisibleProducts(
 // Function 3: Refine Product Details (Stage 2)
 // ---------------------------------------------------------------------------
 export async function refineProductDetails(
-  publicImageUrls: string[],
+  imageInputs: ImageInput[],
   productType: string,
   vehicleDetails: string | null,
   promptContext?: string
 ): Promise<DetectedProduct> {
   try {
-    const imageParts = await Promise.all(
-      publicImageUrls.map((url) => fetchImageForGemini(url))
-    )
+    const imageParts = await resolveImageParts(imageInputs)
 
     const stage2Context = vehicleDetails ? `on this ${vehicleDetails}` : ''
 
@@ -333,8 +298,10 @@ export async function refineProductDetails(
     }
     let product = scoutParse.data
 
-    // --- Gatekeeper: check Scout confidence ---
-    if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
+    // --- Gatekeeper: check Scout confidence (Skip if hardcoded unknown fallback) ---
+    const isHardcodedUnknown = product.brand === 'Unknown' && product.model === 'Unknown' && product.confidence === 50
+    
+    if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD && !isHardcodedUnknown) {
       console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType}: escalating to Sniper`)
       const sniperText = await callGemini(SNIPER_MODEL, prompt, imageParts)
 
@@ -360,55 +327,6 @@ export async function refineProductDetails(
   }
 }
 
-export interface ImageQualityResult {
-  isHighQuality: boolean
-  score: number
-  issues: string[]
-}
-
-// ---------------------------------------------------------------------------
-// Function 4: Check Image Quality (with Zod validation, Issue #20)
-// ---------------------------------------------------------------------------
-export async function checkImageQuality(
-  publicImageUrls: string[]
-): Promise<
-  | { success: true; data: ImageQualityResult }
-  | { success: false; error: string }
-> {
-  try {
-    const imageParts = await Promise.all(
-      publicImageUrls.map((url) => fetchImageForGemini(url))
-    )
-
-    const prompt =
-      'Analyze these vehicle images for quality issues that might affect AI identification. Check for: ' +
-      '1. Blurriness or low resolution. ' +
-      '2. Bad lighting (too dark, too bright, or strong glare). ' +
-      '3. Bad angle (too close, extreme angle, or only a small part of the vehicle is visible). ' +
-      '4. Obstructions or cropping (is the main body of the vehicle fully visible?). ' +
-      'Respond ONLY with a valid, minified JSON object: ' +
-      '{ "isHighQuality": boolean, "score": number (0-100), "issues": string[] (list of specific problems found across the images, or empty if good) }. ' +
-      'Set isHighQuality to false if the score is below 70.'
-
-    const cleanedText = await callGemini(SCOUT_MODEL, prompt, imageParts)
-
-    const rawResult = JSON.parse(cleanedText)
-    const parseResult = ImageQualityResultSchema.safeParse(rawResult)
-    if (!parseResult.success) {
-      console.error('Image quality check validation failed:', parseResult.error.flatten())
-      // Return a safe default rather than crashing
-      return { success: true, data: { isHighQuality: true, score: 100, issues: [] } }
-    }
-
-    return { success: true, data: parseResult.data }
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : String(err),
-    }
-  }
-}
-
 // --- Visual Part Identifier ---
 
 export interface PartIdentification {
@@ -421,15 +339,7 @@ export interface PartIdentification {
   reasoning: string
 }
 
-const PartIdentificationSchema = z.object({
-  partName: z.string(),
-  category: z.string(),
-  function: z.string(),
-  estimatedVehicle: z.string().nullable(),
-  confidence: z.number(),
-  amazonSearchTerm: z.string(),
-  reasoning: z.string(),
-})
+
 
 // ---------------------------------------------------------------------------
 // Function 5: Identify a Car Part from an Image
@@ -441,6 +351,9 @@ export async function identifyPart(
   | { success: false; error: string }
 > {
   try {
+    // Security: validate URL points to our Supabase storage
+    assertSupabaseStorageUrl(publicImageUrl)
+
     const imageParts = [await fetchImageForGemini(publicImageUrl)]
 
     const prompt =

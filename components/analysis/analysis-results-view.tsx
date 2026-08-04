@@ -170,7 +170,7 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                 <a
                                                     href={redirectUrl}
                                                     target="_blank"
-                                                    rel="nofollow sponsored"
+                                                    rel="nofollow sponsored noopener"
                                                     className="flex items-center justify-center"
                                                 >
                                                     <span className="sr-only">Search on Amazon</span>
@@ -235,7 +235,7 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                                 <a
                                                                     href={redirectUrl}
                                                                     target="_blank"
-                                                                    rel="nofollow sponsored"
+                                                                    rel="nofollow sponsored noopener"
                                                                     className="flex items-center justify-center gap-2"
                                                                 >
                                                                     <span className="text-xs font-medium text-muted-foreground">Buy on</span>
@@ -272,7 +272,7 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
                                                     <a
                                                         href={redirectUrl}
                                                         target="_blank"
-                                                        rel="nofollow sponsored"
+                                                        rel="nofollow sponsored noopener"
                                                         className="flex items-center justify-center gap-2"
                                                     >
                                                         <span className="text-xs font-medium text-muted-foreground">Buy on</span>

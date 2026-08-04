@@ -3,6 +3,7 @@ import { GarageDashboard } from "@/components/garage/garage-dashboard"
 export const metadata = {
     title: "My Garage | Visual Fitment",
     description: "Manage your saved vehicles and parts.",
+    robots: { index: false, follow: false },
 }
 
 export default function MyGaragePage() {

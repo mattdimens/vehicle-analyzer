@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
+import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 
 interface SaveToGarageButtonProps {
@@ -18,6 +19,7 @@ export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts 
         table: "garage_vehicles",
         pendingStorageKey: PENDING_GARAGE_SAVE_KEY,
         entityLabel: "vehicle",
+        onSaveSuccess: () => trackEvent('save_to_garage', { platform: getPlatform() }),
     })
 
     const handleSave = () => {

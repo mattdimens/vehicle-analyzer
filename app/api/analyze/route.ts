@@ -11,6 +11,10 @@ import {
     buildSpecificLogicInstruction,
     sanitizePromptContext,
 } from '@/lib/gemini'
+import { assertSupabaseStorageUrls, UrlValidationError } from '@/lib/url-validation'
+import { AnalysisResultsSchema } from '@/lib/schemas'
+
+export const maxDuration = 60
 
 // ---------------------------------------------------------------------------
 // Supabase client (server-side, lazy init to avoid build-time crashes)
@@ -57,16 +61,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Security: validate that every URL points to our Supabase storage
-        const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-        if (supabaseOrigin) {
-            for (const url of imageUrls) {
-                if (!url.startsWith(supabaseOrigin)) {
-                    return NextResponse.json(
-                        { error: 'All image URLs must originate from the expected storage domain' },
-                        { status: 400 }
-                    )
-                }
-            }
+        try {
+            assertSupabaseStorageUrls(imageUrls)
+        } catch (err) {
+            const message = err instanceof UrlValidationError ? err.message : 'Invalid image URL'
+            return NextResponse.json(
+                { error: message },
+                { status: 400 }
+            )
         }
 
         // 2. Fetch & convert all images ----------------------------------------
@@ -131,10 +133,7 @@ export async function POST(request: NextRequest) {
                         ...imageParts,
                     ],
                 },
-            ],
-            config: {
-                tools: [{ codeExecution: {} }],
-            },
+            ]
         })
 
         const scoutText = cleanJsonResponse(scoutResponse.text ?? '')
@@ -174,21 +173,36 @@ export async function POST(request: NextRequest) {
                         ],
                     },
                 ],
-                config: {
-                    tools: [{ codeExecution: {} }],
-                },
             })
 
             const sniperText = cleanJsonResponse(sniperResponse.text ?? '')
 
             try {
-                finalResult = JSON.parse(sniperText)
-                modelUsed = SNIPER_MODEL
+                const sniperParsed = JSON.parse(sniperText)
+                
+                // Only accept Sniper's result if it's actually valid JSON
+                // (We'll validate the schema below)
+                if (sniperParsed) {
+                    finalResult = sniperParsed
+                    modelUsed = SNIPER_MODEL
+                }
             } catch {
                 // If Sniper also fails to parse, keep the Scout result
                 console.warn('Sniper model returned invalid JSON, keeping Scout result')
             }
         }
+
+        // Validate finalResult against schema
+        const parseResult = AnalysisResultsSchema.safeParse(finalResult)
+        if (!parseResult.success) {
+            console.error('Fitment validation failed:', parseResult.error.flatten())
+            return NextResponse.json(
+                { success: false, error: 'The analysis returned an unexpected format, please try again.' },
+                { status: 502 }
+            )
+        }
+        
+        finalResult = parseResult.data
 
         // 7. Log to Supabase ---------------------------------------------------
         const insertPayload: Database['public']['Tables']['analysis_results']['Insert'] = {

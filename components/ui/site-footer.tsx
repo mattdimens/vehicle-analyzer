@@ -8,13 +8,13 @@ export function SiteFooter() {
         <p className="text-lg font-bold">Visual Fitment</p>
         <div className="my-6 flex space-x-6">
           <Link
-            href="#how-it-works"
+            href="/#how-it-works"
             className="text-sm text-muted-foreground transition-colors hover:text-primary"
           >
             How It Works
           </Link>
           <Link
-            href="#use-cases"
+            href="/#use-cases"
             className="text-sm text-muted-foreground transition-colors hover:text-primary"
           >
             Use Cases

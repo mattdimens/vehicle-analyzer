@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress"
 import { Loader, ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
-import { trackEvent } from "@/lib/analytics"
+import { trackEvent, getPlatform } from "@/lib/analytics"
+import { useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -52,6 +53,17 @@ export function ResultsDisplay({
 }: ResultsDisplayProps) {
     const isPreview = variant === "preview"
     const isLoading = loadingMessage !== null && loadingMessage !== ""
+
+    // Fire part_identification_completed exactly once per result (ref guard)
+    const partEventFiredRef = useRef(false)
+    useEffect(() => {
+        if (analysisMode !== "part" || !partIdentification || partEventFiredRef.current) return
+        partEventFiredRef.current = true
+
+        const confidence = partIdentification.confidence
+        const outcome = confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low'
+        trackEvent('part_identification_completed', { outcome, platform: getPlatform() })
+    }, [analysisMode, partIdentification])
 
     // --- Part Identification Mode ---
     if (analysisMode === "part") {
@@ -185,7 +197,7 @@ export function ResultsDisplay({
                             <a
                                 href={`/go?cat=${encodeURIComponent(partIdentification.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}&vehicle=${encodeURIComponent(partIdentification.estimatedVehicle || "")}&product=${encodeURIComponent(partIdentification.partName)}&source=part-identification`}
                                 target="_blank"
-                                rel="nofollow sponsored"
+                                rel="nofollow sponsored noopener"
                             >
                                 <Button size="lg" className="w-full sm:w-auto gap-2">
                                     <Image
@@ -604,7 +616,7 @@ export function ResultsDisplay({
                                                                 <a
                                                                     href={redirectUrl}
                                                                     target="_blank"
-                                                                    rel="nofollow sponsored"
+                                                                    rel="nofollow sponsored noopener"
                                                                     className="flex items-center justify-center"
                                                                 >
                                                                     <span className="sr-only">Search on Amazon</span>
@@ -671,7 +683,7 @@ export function ResultsDisplay({
                                                                             <a
                                                                                 href={redirectUrl}
                                                                                 target="_blank"
-                                                                                rel="nofollow sponsored"
+                                                                                rel="nofollow sponsored noopener"
                                                                                 className="flex items-center justify-center gap-2"
                                                                             >
                                                                                 <span className="text-xs font-medium text-muted-foreground">Buy on</span>
@@ -720,7 +732,7 @@ export function ResultsDisplay({
                                                                 <a
                                                                     href={redirectUrl}
                                                                     target="_blank"
-                                                                    rel="nofollow sponsored"
+                                                                    rel="nofollow sponsored noopener"
                                                                     className="flex items-center justify-center gap-2"
                                                                 >
                                                                     <span className="text-xs font-medium text-muted-foreground">Buy on</span>

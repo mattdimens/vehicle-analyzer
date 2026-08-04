@@ -7,10 +7,8 @@ import {
     createSignedUploadUrl,
     detectVisibleProducts,
     refineProductDetails,
-    checkImageQuality,
     identifyPart,
     updateAnalysisResultsProducts,
-    type ImageQualityResult,
     type AnalysisResults,
     type DetectedProduct,
     type PartIdentification
@@ -30,14 +28,11 @@ import { UseCases, type UseCaseCard } from "@/components/home/use-cases"
 import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-nav"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { BatchResults } from "@/components/home/batch-results"
-import { trackEvent } from "@/lib/analytics"
+import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { BatchItem } from "@/lib/types"
+import { downscaleImage } from "@/lib/image-processing"
 
-// Dynamic imports for dialogs, only loaded when opened (P-02)
-const QualityWarningDialog = dynamic(
-    () => import("@/components/home/quality-warning-dialog").then(mod => ({ default: mod.QualityWarningDialog })),
-    { ssr: false }
-)
+
 const ImageCropperDialog = dynamic(
     () => import("@/components/home/image-cropper-dialog").then(mod => ({ default: mod.ImageCropperDialog })),
     { ssr: false }
@@ -69,9 +64,11 @@ interface VehicleAnalyzerProps {
     blogSection?: React.ReactNode
     /** Catalog stats for the homepage stats bar (only when showCategories=true) */
     catalogStats?: { totalProducts: number; totalCategories: number; totalGenerations: number }
+    /** Analytics entry_point value for photo_analysis_started (e.g. 'truck_bed_covers') */
+    entryPoint?: string
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats, entryPoint = 'homepage' }: VehicleAnalyzerProps) {
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
@@ -102,9 +99,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     const [croppingItemId, setCroppingItemId] = useState<string | null>(null)
     const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null)
 
-    // Quality Check State (Global for the dialog)
-    const [currentQualityItem, setCurrentQualityItem] = useState<{ id: string, issues: string[] } | null>(null)
-
     // Track created object URLs for cleanup (P-05, avoid stale closure)
     const createdUrlsRef = useRef<string[]>([])
 
@@ -115,9 +109,12 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         }
     }, []) // Run once on unmount
 
-    const handleFilesSelect = (files: File[]) => {
+    const handleFilesSelect = async (files: File[]) => {
+        // Downscale files before uploading
+        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f)))
+
         // Create ONE item for all the dropped files (User intention: 1 Drop = 1 Vehicle)
-        const previews = files.map(file => {
+        const previews = downscaledFiles.map(file => {
             const url = URL.createObjectURL(file)
             createdUrlsRef.current.push(url) // Track for cleanup (P-05)
             return { id: crypto.randomUUID(), file, preview: url, publicUrl: null }
@@ -131,17 +128,18 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             detectedProducts: [],
             partIdentification: null,
             error: null,
-            qualityIssues: [],
             loadingMessage: null
         }
         setBatchItems(prev => [...prev, newItem])
         setAnalysisState("idle")
     }
 
-    const handleAddImageToItem = (itemId: string, files: File[]) => {
+    const handleAddImageToItem = async (itemId: string, files: File[]) => {
+        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f)))
+
         setBatchItems(prev => prev.map(item => {
             if (item.id === itemId) {
-                const newImages = files.map(file => {
+                const newImages = downscaledFiles.map(file => {
                     const url = URL.createObjectURL(file)
                     createdUrlsRef.current.push(url)
                     return { id: crypto.randomUUID(), file, preview: url, publicUrl: null }
@@ -380,17 +378,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             return currentItem
         }
 
-        updateItem({ status: "quality_check", progress: 30, loadingMessage: "Checking image quality..." })
-
-        // 2. Quality Check (Batched)
-        const qualityResponse = await checkImageQuality(publicUrls)
-        if (qualityResponse.success) {
-            const { isHighQuality, issues } = qualityResponse.data
-            if (!isHighQuality) {
-                updateItem({ qualityIssues: issues })
-            }
-        }
-
         updateItem({ status: "analyzing", progress: 40, loadingMessage: analysisMode === "part" ? "Identifying part..." : "Analyzing vehicle..." })
 
         // 3. Analysis
@@ -494,6 +481,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     const handleStartBatch = async () => {
         setAnalysisState("processing")
+
+        trackEvent('photo_analysis_started', { platform: getPlatform(), entry_point: entryPoint })
 
         // Scroll to results
         setTimeout(() => {
@@ -643,16 +632,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {faqContent}
                 {relatedContent}
             </main>
-
-            <QualityWarningDialog
-                isOpen={!!currentQualityItem}
-                issues={currentQualityItem?.issues || []}
-                onCancel={() => setCurrentQualityItem(null)}
-                onProceed={() => {
-                    // Logic to resume item? For now we just auto-proceed in batch mode
-                    setCurrentQualityItem(null)
-                }}
-            />
 
             <ImageCropperDialog
                 isOpen={showCropper}

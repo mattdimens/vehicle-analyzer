@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
+import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { PartIdentification } from "@/app/actions"
 
 interface SaveToPartsButtonProps {
@@ -17,6 +18,7 @@ export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPa
         table: "identified_parts",
         pendingStorageKey: PENDING_PARTS_SAVE_KEY,
         entityLabel: "part",
+        onSaveSuccess: () => trackEvent('save_part', { platform: getPlatform() }),
     })
 
     const handleSave = () => {

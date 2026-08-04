@@ -45,36 +45,14 @@ const useCaseCards: UseCaseCard[] = [
     },
 ]
 
-const bedCoverFaqs: FaqItem[] = [
-    {
-        question: "How do I measure my truck bed length?",
-        answer: "Measure from the inside of the bulkhead (the wall behind the cab) to the inside of the tailgate, at the floor, with the tailgate closed. Common lengths are 5'7\" (short), 6'4\"–6'6\" (standard), and 8' (long). Or skip the tape measure and upload a photo; our analysis figures it out from the image."
-    },
-    {
-        question: "What's the difference between a tonneau cover and a bed cap?",
-        answer: "A tonneau cover sits at bed-rail height and covers the bed opening. It's flat, low-profile, and available in soft or hard versions. A bed cap (or camper shell) is a raised enclosure that adds height and fully encloses the bed like a trunk. Tonneau covers are better for aerodynamics; caps are better for hauling tall cargo or camping."
-    },
-    {
-        question: "Do bed covers improve gas mileage?",
-        answer: "Yes, modestly. Studies show tonneau covers can improve fuel economy by 1–3% by reducing aerodynamic drag in the bed. Hard flush-mount covers tend to perform better than soft roll-ups, but the savings vary by driving speed and conditions."
-    },
-    {
-        question: "Can I use a bed cover with a bed liner?",
-        answer: "Absolutely. Most tonneau covers are designed to work alongside both spray-in and drop-in bed liners. The key is to make sure the liner doesn't raise the bed rail height enough to interfere with the cover's clamps or seals. Drop-in liners with raised edges sometimes need trimming around the mounting points."
-    },
-    {
-        question: "How does the analyzer identify my truck bed size?",
-        answer: "Our analysis examines your photo to determine the cab style (crew, extended, regular), which narrows down the possible bed lengths for that model. It cross-references visible proportions and known manufacturer configurations to confirm the exact bed size, giving you a match in seconds."
-    },
-]
-
-export default function TruckBedCoversClient() {
+export default function TruckBedCoversClient({ faqItems }: { faqItems: FaqItem[] }) {
     return (
         <VehicleAnalyzer
             title="Truck Bed Cover Analyzer"
             description="Short bed or long bed? Crew cab or extended? Upload a photo and we'll identify your exact bed length and cab configuration, then match you with tonneau covers and bed liners built for your truck."
             promptContext="truck bed covers, tonneau covers (hard, soft, roll-up, folding), bed liners, and bed caps"
             categoryLabel="Truck Bed Covers"
+            entryPoint="truck_bed_covers"
             detectedProductsTitle="Detected Tonneau Cover"
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Bed Cover Analyzer</span> Works</>}
@@ -83,7 +61,7 @@ export default function TruckBedCoversClient() {
             useCaseSubtitle="From first-time buyers to seasoned truck owners upgrading their setup, get the right cover without the guesswork."
             educationalContent={<BedCoverGuide />}
             ctaModule={<SaveToGarageCTA placement="category" categoryName="truck bed covers" />}
-            faqContent={<FaqAccordion items={bedCoverFaqs} />}
+            faqContent={<FaqAccordion items={faqItems} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/#categories" },

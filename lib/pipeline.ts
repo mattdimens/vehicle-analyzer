@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 import { analyzeVehicleFitment, detectVisibleProducts, refineProductDetails } from '@/app/actions'
 import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
-import { AnalysisResults, DetectedProduct } from '@/app/actions'
+import { DetectedProduct } from '@/app/actions'
+import { fetchImageForGemini } from '@/lib/gemini'
+import { AnalysisResultsSchema } from '@/lib/schemas'
 
 export function getSupabaseAdmin() {
     return createClient<Database>(
@@ -31,12 +33,20 @@ export async function runPipeline(id: string, imageUrl: string) {
     try {
         await supabase.from('analyses').update({ status: 'identifying' }).eq('id', id)
         
-        const fitmentRes = await analyzeVehicleFitment([imageUrl])
+        const imageParts = [await fetchImageForGemini(imageUrl)]
+
+        const fitmentRes = await analyzeVehicleFitment(imageParts)
         if (!fitmentRes.success) {
             throw new Error(fitmentRes.error || 'Failed to analyze vehicle')
         }
         
-        const result = fitmentRes.data as unknown as AnalysisResults
+        const parseResult = AnalysisResultsSchema.safeParse(fitmentRes.data)
+        if (!parseResult.success) {
+            console.error('Pipeline fitment validation failed:', parseResult.error.flatten())
+            throw new Error('The analysis returned an unexpected format, please try again.')
+        }
+        
+        const result = parseResult.data
         const vehicleDetailsString = `${result.primary.year} ${result.primary.make} ${result.primary.model} ${result.primary.trim}`
         
         if (result.primary.confidence >= 85) {
@@ -49,13 +59,13 @@ export async function runPipeline(id: string, imageUrl: string) {
             confidence: result.primary.confidence
         }).eq('id', id)
 
-        const detectRes = await detectVisibleProducts([imageUrl], vehicleDetailsString)
+        const detectRes = await detectVisibleProducts(imageParts, vehicleDetailsString)
         let finalDetectedProducts: DetectedProduct[] = []
 
         if (detectRes.success) {
             const types = detectRes.data
             const refinementResults = await Promise.allSettled(
-                types.map(type => refineProductDetails([imageUrl], type, vehicleDetailsString))
+                types.map(type => refineProductDetails(imageParts, type, vehicleDetailsString))
             )
             for (const r of refinementResults) {
                 if (r.status === 'fulfilled') {

@@ -5,6 +5,7 @@ import './globals.css'
 import { cn } from '../lib/utils'
 import { SiteHeader } from '../components/ui/site-header'
 import { SiteFooter } from '../components/ui/site-footer'
+import { Toaster } from '../components/ui/sonner'
 import { AuthProvider } from '../components/auth-provider'
 import { ErrorBoundary } from '../components/error-boundary'
 import { AnalyticsTracker } from '../components/analytics-tracker'
@@ -120,6 +121,9 @@ export default function RootLayout({
 
           {/* Site Footer */}
           <SiteFooter />
+
+          {/* Toast notifications */}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

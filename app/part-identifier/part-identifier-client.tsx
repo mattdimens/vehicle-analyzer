@@ -48,6 +48,7 @@ export default function PartIdentifierClient() {
             title="Visual Part Identifier"
             description="Upload a photo of any car part and instantly identify it: name, function, vehicle compatibility, and where to buy it."
             analysisMode="part"
+            entryPoint="part_identifier"
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Part Identifier</span> Works</>}
             useCaseCards={useCaseCards}

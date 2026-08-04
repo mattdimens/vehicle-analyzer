@@ -45,36 +45,14 @@ const useCaseCards: UseCaseCard[] = [
     },
 ]
 
-const wheelFaqs: FaqItem[] = [
-    {
-        question: "How do I find my vehicle's bolt pattern?",
-        answer: "Your bolt pattern is stamped on the back of each OEM wheel, listed in your owner's manual, or can be measured by counting the lugs and measuring the diameter of the circle they form. The fastest method is to upload a photo here; our analysis reads bolt pattern directly from the image in seconds."
-    },
-    {
-        question: "Can I put larger wheels on my truck?",
-        answer: "You can upsize within limits, but going too large affects speedometer accuracy, may rub on fenders or suspension, and can void your warranty. A safe rule of thumb is to stay within 1 inch of your factory diameter and compensate with a lower-profile tire to keep the overall rolling diameter close to stock."
-    },
-    {
-        question: "What offset do I need for my vehicle?",
-        answer: "Your ideal offset depends on your vehicle's factory spec. You can find it stamped on the back of your OEM wheel (e.g., ET45). Going more positive tucks the wheel inward, while more negative pushes it out. Staying within ±5mm of stock is the safest bet for avoiding rubbing or bearing issues."
-    },
-    {
-        question: "How accurate is the wheel analysis?",
-        answer: "Our analysis identifies bolt patterns and rim sizes with high confidence from clear, well-lit photos, typically within a 91% accuracy range. For critical purchases we always recommend confirming specs against your VIN or owner's manual, but the tool gives you an excellent starting point."
-    },
-    {
-        question: "Will aftermarket wheels void my warranty?",
-        answer: "Under the Magnuson-Moss Warranty Act, a dealer can't void your entire warranty just for installing aftermarket wheels. However, if a wheel-related modification directly causes a failure (like an incorrect bolt pattern damaging the hub), that specific repair may not be covered."
-    },
-]
-
-export default function WheelsRimsClient() {
+export default function WheelsRimsClient({ faqItems }: { faqItems: FaqItem[] }) {
     return (
         <VehicleAnalyzer
             title="Vehicle Wheel & Rim Analyzer"
             description="Whether you're hunting for the perfect wheel package or trying to match a setup you saw at a meet, upload your photo. We'll break down the bolt pattern, offset, and rim specs so you can shop with confidence. No more guessing if they'll fit."
             promptContext="wheels, rims, tires, lug nuts, and hubcaps"
             categoryLabel="Wheels & Rims"
+            entryPoint="wheels_rims"
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Wheel Analyzer</span> Works</>}
             useCaseCards={useCaseCards}
@@ -82,7 +60,7 @@ export default function WheelsRimsClient() {
             useCaseSubtitle="Whether you're upgrading, matching a build, or double-checking fitment, we do the spec work for you."
             educationalContent={<WheelFitmentGuide />}
             ctaModule={<SaveToGarageCTA placement="category" categoryName="wheels" />}
-            faqContent={<FaqAccordion items={wheelFaqs} />}
+            faqContent={<FaqAccordion items={faqItems} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/#categories" },

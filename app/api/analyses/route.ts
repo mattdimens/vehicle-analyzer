@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdmin, runPipeline } from '@/lib/pipeline'
+import { assertSupabaseStorageUrl, UrlValidationError } from '@/lib/url-validation'
 
 export const maxDuration = 60
 
@@ -14,6 +15,14 @@ export async function POST(request: NextRequest) {
 
     if (!imageUrl) {
         return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 })
+    }
+
+    // Security: validate that the URL points to our own Supabase storage
+    try {
+        assertSupabaseStorageUrl(imageUrl)
+    } catch (err) {
+        const message = err instanceof UrlValidationError ? err.message : 'Invalid image URL'
+        return NextResponse.json({ error: message }, { status: 400 })
     }
 
     const supabase = getSupabaseAdmin()

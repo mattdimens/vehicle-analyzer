@@ -14,7 +14,6 @@ import { Loader2, Edit2, Check, X, Car, Sparkles, Search } from "lucide-react"
 import { toast } from "sonner"
 import type { GarageVehicle } from "./garage-dashboard"
 import type { DetectedProduct } from "@/app/actions"
-import { addAmazonAffiliateTag } from "@/lib/amazon"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface VehicleDetailSheetProps {
@@ -219,9 +218,9 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                                                     className="w-full h-10 rounded-lg hover:bg-[#D1E7F0] hover:text-[#003223] border-primary/20 text-sm font-semibold transition-colors shadow-sm"
                                                 >
                                                     <a
-                                                        href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
+                                                        href={`/go?vehicle=${encodeURIComponent(`${vehicle.year} ${vehicle.make} ${vehicle.model}`)}&product=${encodeURIComponent(searchQuery)}&source=garage-vehicle`}
                                                         target="_blank"
-                                                        rel="noopener noreferrer"
+                                                        rel="nofollow sponsored noopener"
                                                         className="flex items-center justify-center gap-2"
                                                     >
                                                         Search on Amazon

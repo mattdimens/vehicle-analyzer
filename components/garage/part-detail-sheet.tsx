@@ -15,7 +15,6 @@ import { Loader2, Edit2, Check, Search, Car, Sparkles, AlertTriangle, Share } fr
 import { toast } from "sonner"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import type { IdentifiedPart } from "./garage-dashboard"
-import { addAmazonAffiliateTag } from "@/lib/amazon"
 
 interface PartDetailSheetProps {
     isOpen: boolean
@@ -31,7 +30,8 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
     const [isSavingNotes, setIsSavingNotes] = useState(false)
 
     const handleShare = () => {
-        const text = `Check out this ${part.part_name} I identified from my garage!\n\nAutomotive Part: ${part.part_name}\nCategory: ${part.part_category}\n${part.vehicle_make ? `Fitment: ${part.vehicle_year} ${part.vehicle_make} ${part.vehicle_model}` : ''}\n\nSearch it on Amazon: https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`
+        const goUrl = `https://visualfitment.com/go?product=${encodeURIComponent(searchQuery)}&source=garage-part-share`
+        const text = `Check out this ${part.part_name} I identified from my garage!\n\nAutomotive Part: ${part.part_name}\nCategory: ${part.part_category}\n${part.vehicle_make ? `Fitment: ${part.vehicle_year} ${part.vehicle_make} ${part.vehicle_model}` : ''}\n\nSearch it on Amazon: ${goUrl}`
         navigator.clipboard.writeText(text).then(() => {
             toast.success("Part details copied to clipboard!")
         }).catch(() => {
@@ -277,9 +277,9 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                         className="w-full bg-[#FF9900] hover:bg-[#E38900] text-black font-bold border-none rounded-xl h-14 text-base shadow-sm group transition-all"
                     >
                         <a
-                            href={addAmazonAffiliateTag(`https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}`)}
+                            href={`/go?product=${encodeURIComponent(searchQuery)}&source=garage-part`}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="nofollow sponsored noopener"
                             className="flex items-center justify-center gap-2"
                         >
                             <Search className="h-5 w-5 group-hover:scale-110 transition-transform" />

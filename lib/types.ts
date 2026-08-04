@@ -14,6 +14,5 @@ export interface BatchItem {
     detectedProducts: DetectedProduct[]
     partIdentification: PartIdentification | null
     error: string | null
-    qualityIssues: string[]
     loadingMessage: string | null
 }

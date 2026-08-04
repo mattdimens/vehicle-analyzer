@@ -1,4 +1,5 @@
 import './blog.css'
+import { BlogEntryDoor } from '@/components/blog-entry-door'
 
 export default function BlogLayout({
     children,
@@ -7,6 +8,7 @@ export default function BlogLayout({
 }) {
     return (
         <>
+            <BlogEntryDoor />
             {/* Google Fonts for blog pages: DM Serif Display + DM Sans */}
             {/* eslint-disable-next-line @next/next/no-page-custom-font */}
             <link

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import RunningBoardsClient from "./vehicle-analyzer-client"
+import { FaqItem } from "@/components/ui/faq-accordion"
 
 export const metadata: Metadata = {
     title: "Running Board & Nerf Bar Analyzer | Visual Fitment",
@@ -34,16 +35,40 @@ const breadcrumbJsonLd = {
     ],
 }
 
+export const runningBoardFaqs: FaqItem[] = [
+    {
+        question: "What's the difference between running boards and nerf bars?",
+        answer: "Running boards are wide, flat platforms that run the full length of the cab for easy step-in access. Nerf bars are round tubes (usually 3–4 inches in diameter) with small step pads welded on. They look sportier but offer less foot surface area. Choose running boards for family vehicles and nerf bars for a more athletic aesthetic."
+    },
+    {
+        question: "Do I need a specific mounting bracket for my truck?",
+        answer: "Yes, brackets are vehicle-specific because each truck has unique rocker panel dimensions and factory mounting points. Most quality running board kits include the correct brackets for your year, make, and model. Universal brackets exist but may require drilling and don't always fit as securely."
+    },
+    {
+        question: "Can I install running boards myself?",
+        answer: "Most bolt-on running boards can be installed in 1–2 hours with basic hand tools, with no drilling required if you use a vehicle-specific kit. You'll typically need a socket set, a torque wrench, and a friend to help hold the board in position while you tighten the bolts."
+    },
+    {
+        question: "What material is best for running boards?",
+        answer: "Aluminum is lightweight and corrosion-resistant, ideal for daily drivers especially in salty climates. Stainless steel is heavier but gives a polished chrome look. Powder-coated steel is the toughest option for off-road use; it hides trail damage and handles heavy loads without bending."
+    },
+    {
+        question: "How does cab size affect running board fitment?",
+        answer: "Cab size determines the length of running board you need. A regular cab needs the shortest boards, an extended cab needs mid-length, and a crew cab needs the longest. Installing the wrong length means the board either stops short of the rear door or extends awkwardly past the body."
+    },
+]
+
 const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-        { "@type": "Question", name: "What's the difference between running boards and nerf bars?", acceptedAnswer: { "@type": "Answer", text: "Running boards are wide, flat platforms for easy step-in access. Nerf bars are round tubes with small step pads; they look sportier but offer less foot surface area. Choose running boards for family vehicles and nerf bars for a more athletic look." } },
-        { "@type": "Question", name: "Do I need a specific mounting bracket for my truck?", acceptedAnswer: { "@type": "Answer", text: "Yes, brackets are vehicle-specific because each truck has unique rocker panel dimensions and factory mounting points. Most quality kits include the correct brackets for your year, make, and model." } },
-        { "@type": "Question", name: "Can I install running boards myself?", acceptedAnswer: { "@type": "Answer", text: "Most bolt-on running boards can be installed in 1–2 hours with basic hand tools, with no drilling required when using a vehicle-specific kit. You'll need a socket set, a torque wrench, and a friend to help hold the board." } },
-        { "@type": "Question", name: "What material is best for running boards?", acceptedAnswer: { "@type": "Answer", text: "Aluminum is lightweight and corrosion-resistant for daily drivers. Stainless steel gives a polished chrome look. Powder-coated steel is toughest for off-road use; it hides trail damage and handles heavy loads." } },
-        { "@type": "Question", name: "How does cab size affect running board fitment?", acceptedAnswer: { "@type": "Answer", text: "Cab size determines running board length. Regular cab needs the shortest boards, extended cab needs mid-length, and crew cab needs the longest. The wrong length will either stop short of the rear door or extend past the body." } },
-    ],
+    mainEntity: runningBoardFaqs.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+        },
+    })),
 }
 
 export default function RunningBoardsPage() {
@@ -57,7 +82,7 @@ export default function RunningBoardsPage() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
             />
-            <RunningBoardsClient />
+            <RunningBoardsClient faqItems={runningBoardFaqs} />
         </>
     )
 }

@@ -142,7 +142,6 @@ function buildBlogPostingSchema(post: BlogPost, slug: string) {
         author: {
             '@type': 'Person',
             name: fm.author,
-            url: 'https://visualfitment.com/about',
         },
         publisher: {
             '@type': 'Organization',
@@ -172,13 +171,7 @@ function buildBreadcrumbSchema(post: BlogPost) {
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://visualfitment.com' },
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://visualfitment.com/blog' },
-            {
-                '@type': 'ListItem',
-                position: 3,
-                name: fm.category,
-                item: `https://visualfitment.com/blog/category/${fm.categorySlug}`,
-            },
-            { '@type': 'ListItem', position: 4, name: fm.title },
+            { '@type': 'ListItem', position: 3, name: fm.title },
         ],
     }
 }

@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict gZgdTtqkTlkj3pfdJYdlpjsjqH6bHUJDlTQPXXDeM1UydJgA0qfDZn9XTRefTd7
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.6
@@ -23,7 +22,7 @@ SET row_security = off;
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA public;
+CREATE SCHEMA IF NOT EXISTS public;
 
 
 --
@@ -466,5 +465,4 @@ ALTER TABLE public.vehicle_selector_events ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gZgdTtqkTlkj3pfdJYdlpjsjqH6bHUJDlTQPXXDeM1UydJgA0qfDZn9XTRefTd7
 

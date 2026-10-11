@@ -19,7 +19,7 @@ The cloud environment is set up like this:
 
 - **Network:** Custom, with the default allowlist plus `*.supabase.co`.
 - **Gemini:** the key is a network secret, so it never enters the session. `GEMINI_API_KEY` holds a placeholder, and the proxy swaps in the real key on requests to `generativelanguage.googleapis.com`, so live Gemini calls work. They cost money: only make them when the task needs it.
-- **Supabase:** `SUPABASE_SERVICE_ROLE_KEY` is not available, so the photo-analysis pipeline and other server-side writes won't work. `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` may be set. If a service role key is added later, it must come from a separate dev project, never production.
+- **Supabase:** the three Supabase variables point at the dev project `visualfitment-dev` (`svkwgklyyqmwpcrgdjja`), not production. It has the same schema and no real data, so the full photo-analysis flow can run. Never put production Supabase keys in the cloud environment.
 - When the app can't run end to end, use the tests and the Vercel preview deploy.
 - Never prefix a server-only secret with `NEXT_PUBLIC_`. `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS and must stay server-side.
 

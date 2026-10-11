@@ -67,7 +67,7 @@ export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted
             <div
                 role="button"
                 tabIndex={0}
-                aria-selected={isActive}
+                aria-pressed={isActive}
                 className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both
                 ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -77,6 +77,7 @@ export function PartCard({ part, index = 0, isActive = false, onClick, onDeleted
                 {/* Thumbnail */}
                 <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
                     {part.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota
                         <img
                             src={part.photo_url}
                             alt={part.part_name}

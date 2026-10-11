@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, Component, type ReactNode } from "react"
-import { Check, X, AlertCircle, ChevronDown, RefreshCw } from "lucide-react"
+import { Check, AlertCircle, ChevronDown, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { AnalysisResultsView } from "@/components/analysis/analysis-results-view"
@@ -81,6 +81,10 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     const resultData = localRecord.result_data
     const primary = resultData?.primary
 
+    // Year range detection (hooks must run before any early return)
+    const primaryYear = primary?.year
+    const yearRange = useMemo(() => (primaryYear ? parseYearRange(primaryYear) : null), [primaryYear])
+
     // Guard: if no primary data, show nothing useful
     if (!primary) return null
 
@@ -90,8 +94,6 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     const isMediumConfidence = confidence >= analysisConfig.confidenceThresholds.medium && confidence < analysisConfig.confidenceThresholds.high
     const isLowConfidence = confidence < analysisConfig.confidenceThresholds.medium
 
-    // Year range detection
-    const yearRange = useMemo(() => parseYearRange(primary.year), [primary.year])
     const hasYearRange = yearRange !== null
 
     // Catalog resolution (only for exact years)
@@ -131,7 +133,7 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
     if (userRejected) {
         return (
             <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-border">
-                <h2 className="text-2xl font-bold mb-4">Let's find the right vehicle</h2>
+                <h2 className="text-2xl font-bold mb-4">Let&apos;s find the right vehicle</h2>
                 <p className="text-muted-foreground mb-8">Please select your vehicle manually below:</p>
                 <VehicleSelector location="results_correction" />
             </div>
@@ -145,6 +147,7 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
                 <ResultsShellHeader />
                 <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
                     <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden mb-6 opacity-80">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota */}
                         <img src={record.image_url} alt="Uploaded photo" className="object-cover w-full h-full" />
                     </div>
                     <h2 className="text-xl font-semibold mb-2">We think we&apos;ve got it, but we&apos;re not fully sure.</h2>

@@ -9,7 +9,7 @@ function runTests() {
                 make: 'Toyota',
                 model: 'Tacoma',
                 year: '2020',
-                confidence: null as any
+                confidence: null as unknown as number
             }
         }
     }
@@ -43,6 +43,7 @@ function runTests() {
         console.log("SUCCESS: All fixtures resolved correctly.")
     } else {
         console.error("FAILED")
+        process.exit(1)
     }
 }
 

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getServiceRoleClient } from "@/lib/supabase-server"
+import { resolveSessionId, setSessionCookie } from "@/lib/session-cookie"
 
 /**
  * POST /api/log-vehicle-selector
@@ -7,48 +8,51 @@ import { getServiceRoleClient } from "@/lib/supabase-server"
  * Logs a vehicle selector submission to the vehicle_selector_events table.
  * Uses the service-role client: RLS on this table rejects anon inserts
  * (Postgres 42501), so the previous anon-key insert never logged anything.
+ * The session id comes from the httpOnly `vf_sid` cookie (shared with /go),
+ * so selector events and affiliate clicks can be joined.
  * This is a lightweight API route so the client can fire-and-forget
  * without bundling server action dependencies.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const { sessionId, isNew } = resolveSessionId(request)
+  const respond = (body: Record<string, unknown>, status = 200) => {
+    const response = NextResponse.json(body, { status })
+    if (isNew) setSessionCookie(response, sessionId)
+    return response
+  }
+
   try {
     const body = await request.json()
-
-    const { make, model, year, supported, sessionId } = body
+    const { make, model, year, supported } = body
 
     if (!make || !model || typeof year !== "number") {
-      return NextResponse.json(
-        { error: "Missing required fields: make, model, year" },
-        { status: 400 }
-      )
+      return respond({ error: "Missing required fields: make, model, year" }, 400)
     }
-
     if (typeof make !== "string" || typeof model !== "string" || make.length > 60 || model.length > 60) {
-      return NextResponse.json({ error: "Invalid make or model" }, { status: 400 })
+      return respond({ error: "Invalid make or model" }, 400)
     }
     if (!Number.isInteger(year) || year < 1900 || year > 2100) {
-      return NextResponse.json({ error: "Invalid year" }, { status: 400 })
+      return respond({ error: "Invalid year" }, 400)
     }
 
-    const supabase = getServiceRoleClient()
-
-    const { error } = await supabase.from("vehicle_selector_events").insert({
+    const { error } = await getServiceRoleClient().from("vehicle_selector_events").insert({
       make,
       model,
       year,
       supported: !!supported,
-      session_id: typeof sessionId === "string" ? sessionId.slice(0, 64) : null,
+      session_id: sessionId,
+      source: "ymm_selector",
     })
 
     if (error) {
       console.error("Failed to log vehicle selector event:", error)
       // Return 200 anyway so the client UX is not blocked by logging failures
-      return NextResponse.json({ logged: false })
+      return respond({ logged: false })
     }
 
-    return NextResponse.json({ logged: true })
+    return respond({ logged: true })
   } catch {
     // Swallow errors so selector UX is never blocked by logging
-    return NextResponse.json({ logged: false })
+    return respond({ logged: false })
   }
 }

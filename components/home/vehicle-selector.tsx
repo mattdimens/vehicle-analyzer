@@ -107,7 +107,7 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
 
     // Show fallback message for unsupported vehicles
     setFallbackMessage({ make: selectedMake, model: selectedModel })
-  }, [canSubmit, selectedMake, selectedModel, selectedYear, router])
+  }, [canSubmit, selectedMake, selectedModel, selectedYear, router, location])
 
   const handleScrollToPhotoTool = useCallback(() => {
     const uploadTarget = document.getElementById("upload-zone")

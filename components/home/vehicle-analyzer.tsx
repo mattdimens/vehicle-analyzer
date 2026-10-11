@@ -11,13 +11,12 @@ import {
     updateAnalysisResultsProducts,
     type AnalysisResults,
     type DetectedProduct,
-    type PartIdentification
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
 import { HeroDualEntry } from "@/components/home/hero-dual-entry"
 import { SampleResultPreview } from "@/components/home/sample-result-preview"
 import { UploadZone } from "@/components/home/upload-zone"
-import { ResultsDisplay } from "@/components/home/results-display"
+
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
 import { BrowseByVehicle } from "@/components/home/browse-by-vehicle"
@@ -32,7 +31,7 @@ import { trackEvent, getPlatform } from "@/lib/analytics"
 import { getConfidenceBand } from "@/types/analysis"
 import type { BatchItem } from "@/lib/types"
 import { downscaleImage } from "@/lib/image-processing"
-
+import { apiErrorMessage, readJson, thrownErrorMessage } from "@/lib/api-errors"
 
 const ImageCropperDialog = dynamic(
     () => import("@/components/home/image-cropper-dialog").then(mod => ({ default: mod.ImageCropperDialog })),
@@ -105,8 +104,9 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     // Cleanup preview URLs
     useEffect(() => {
+        const urls = createdUrlsRef.current // same array that later pushes go into
         return () => {
-            createdUrlsRef.current.forEach(url => URL.revokeObjectURL(url))
+            urls.forEach(url => URL.revokeObjectURL(url))
         }
     }, []) // Run once on unmount
 
@@ -417,8 +417,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ imageUrls: publicUrls, promptContext }),
                     })
-                    const fitmentRes = await analyzeResponse.json()
-                    if (fitmentRes.success) {
+                    const fitmentRes = await readJson(analyzeResponse)
+                    if (analyzeResponse.ok && fitmentRes.success) {
                         result = fitmentRes.data as AnalysisResults
                         if (result.vehicle_present === false) {
                             trackCompletion('unusable')
@@ -427,7 +427,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                         const v = result.primary
                         vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
                     } else {
-                        throw new Error(fitmentRes.error)
+                        throw new Error(apiErrorMessage(analyzeResponse.status, fitmentRes, "Analysis failed. Please try again."))
                     }
                 }
 
@@ -478,7 +478,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         } catch (err) {
             if (analysisMode === "vehicle" && !completionTracked) trackCompletion('error')
-            const errorMsg = err instanceof Error ? err.message : String(err)
+            const errorMsg = thrownErrorMessage(err, "Analysis failed. Please try again.")
             updateItem({
                 status: "error",
                 error: errorMsg,
@@ -574,7 +574,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     )}
                 </div>
 
-
                 {/* Batch Results Display */}
                 {!showCategories && batchItems.length > 0 && (
                     <section id="analysis-results" className="bg-white w-full py-12">
@@ -591,7 +590,6 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {showCategories && <BrowseByVehicle />}
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
-
 
                 {/* Visual Separator */}
                 {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}

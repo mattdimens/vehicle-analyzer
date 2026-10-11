@@ -3,9 +3,7 @@ import { after } from "next/server";
 import { merchants } from "@/lib/affiliate/merchants";
 import { affiliateRouting, defaultMerchant } from "@/lib/affiliate/routing";
 import { getServiceRoleClient } from "@/lib/supabase-server";
-
-const SESSION_COOKIE_NAME = "vf_sid";
-const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+import { resolveSessionId, setSessionCookie } from "@/lib/session-cookie";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -34,12 +32,7 @@ export async function GET(req: NextRequest) {
     .split(/\s+/))).join(" ");
 
   // 3. Resolve session ID from cookie or generate a new one
-  let sessionId = req.cookies.get(SESSION_COOKIE_NAME)?.value || "";
-  let isNewSession = false;
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    isNewSession = true;
-  }
+  const { sessionId, isNew: isNewSession } = resolveSessionId(req);
 
   // 4. Log click asynchronously
   const logClick = async () => {
@@ -88,12 +81,7 @@ export async function GET(req: NextRequest) {
 
   // Set session cookie if new
   if (isNewSession) {
-    response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: SESSION_COOKIE_MAX_AGE,
-      path: "/",
-    });
+    setSessionCookie(response, sessionId);
   }
 
   return response;

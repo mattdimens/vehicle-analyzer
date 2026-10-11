@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { supabaseClient } from "@/lib/supabase-client"
 import { Loader2, Plus, CarFront, Wrench, Sparkles, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { VehicleCard } from "./vehicle-card"
@@ -31,7 +31,7 @@ export function GarageDashboard() {
     // Filter & Sort State
     const [activeTab, setActiveTab] = useState("vehicles")
     const [searchQuery, setSearchQuery] = useState("")
-    const [sortOrder, setSortOrder] = useState("date-desc")
+    const [sortOrder] = useState("date-desc")
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null)
 
     // Selection State: derive from ID to avoid stale state (Issue #30)
@@ -96,6 +96,8 @@ export function GarageDashboard() {
 
     useEffect(() => {
         if (!session) return
+        // Load the garage once signed in (shows the loading state first)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData()
     }, [session, fetchData])
 

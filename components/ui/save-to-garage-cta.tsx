@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,29 +17,41 @@ interface SaveToGarageCTAProps {
 
 const DISMISSED_STORAGE_KEY = "has_dismissed_garage_cta"
 
+const subscribeNoop = () => () => {}
+
+function readDismissed(): boolean {
+    try {
+        return sessionStorage.getItem(DISMISSED_STORAGE_KEY) !== null
+    } catch {
+        return false
+    }
+}
+
 export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGarageCTAProps) {
     const { session, signInWithGoogle } = useAuth()
-    const [isVisible, setIsVisible] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
-    const [mounted, setMounted] = useState(false)
+    const [dismissedNow, setDismissedNow] = useState(false)
 
-    useEffect(() => {
-        setMounted(true)
-        // Check session storage to see if user dismissed it this session
-        const hasDismissed = sessionStorage.getItem(DISMISSED_STORAGE_KEY)
-        if (!hasDismissed && !session) {
-            setIsVisible(true)
-        }
-    }, [session])
+    // Was it dismissed earlier this session? The server snapshot reports
+    // "dismissed" so nothing renders until hydration (no mismatch).
+    const dismissedEarlier = useSyncExternalStore(
+        subscribeNoop,
+        readDismissed,
+        () => true
+    )
 
     const handleDismiss = () => {
-        sessionStorage.setItem(DISMISSED_STORAGE_KEY, "true")
-        setIsVisible(false)
+        try {
+            sessionStorage.setItem(DISMISSED_STORAGE_KEY, "true")
+        } catch {
+            // Storage unavailable (private mode); dismissal lasts for this view only
+        }
+        setDismissedNow(true)
     }
 
     // Don't render anything until mounted to prevent hydration mismatches
     // Also don't render if they are logged in or have dismissed it
-    if (!mounted || !isVisible || session) return null
+    if (dismissedEarlier || dismissedNow || session) return null
 
     const getContent = () => {
         switch (placement) {

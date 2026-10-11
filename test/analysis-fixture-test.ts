@@ -12,7 +12,7 @@
  */
 
 import { bbcgw19uFixture, bbcgw19uMinimalFixture } from './fixtures/bbcgw19u'
-import type { AnalysisRecord, AnalysisResultData, AnalysisDetectedProduct } from '../types/analysis'
+import type { AnalysisRecord } from '../types/analysis'
 import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor } from '../types/analysis'
 
 let passed = 0
@@ -58,10 +58,8 @@ function testRecord(record: AnalysisRecord, label: string) {
 
         // Optional fields: trim, cabStyle, bedLength should not crash
         // Access them; they are either string, null, or undefined
-        const _trim = primary.trim
-        const _cabStyle = primary.cabStyle
-        const _bedLength = primary.bedLength
-        assert(true, 'optional primary fields accessed without error')
+        const optionalFields = [primary.trim, primary.cabStyle, primary.bedLength]
+        assert(optionalFields.every(v => v == null || typeof v === 'string'), 'optional primary fields are string or empty')
     }
 
     // engineDetails
@@ -87,7 +85,7 @@ function testRecord(record: AnalysisRecord, label: string) {
     const others = record.result_data?.otherPossibilities
     if (others && others.length > 0) {
         assert(typeof others[0].vehicle === 'string', 'otherPossibilities[0].vehicle is string (not .name)')
-        assert((others[0] as any).name === undefined, 'otherPossibilities[0] has no .name field')
+        assert((others[0] as unknown as Record<string, unknown>).name === undefined, 'otherPossibilities[0] has no .name field')
     }
 
     // recommendedAccessories

@@ -1,15 +1,12 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
-import { ExternalLink, Info, AlertCircle } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { trackEvent } from "@/lib/analytics"
+
 import type {
     AnalysisRecord,
-    AnalysisResultData,
-    AnalysisDetectedProduct,
 } from "@/types/analysis"
 import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor, getConfidence } from "@/types/analysis"
 import { ResultsShellHeader } from "@/components/analysis/results-shell-header"
@@ -129,7 +126,8 @@ export function AnalysisResultsView({ record }: AnalysisResultsViewProps) {
 
                                 const categorySlug = item.type.toLowerCase().replace(/[^a-z0-9]+/g, '-')
                                 const brandString = isUnknownBrand ? "" : item.brand
-                                const modelString = isUnknownModel ? "" : item.model
+                                // Unknown model: search by product type so the Amazon link isn't a bare vehicle search
+                                const modelString = isUnknownModel ? item.type : item.model
                                 const redirectUrl = `/go?cat=${encodeURIComponent(categorySlug)}&vehicle=${encodeURIComponent(vehicleString)}&brand=${encodeURIComponent(brandString)}&product=${encodeURIComponent(modelString)}&source=detected-products`
 
                                 return (

@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2, Info } from "lucide-react"
+import { CheckCircle2, AlertCircle, Loader2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { cn } from "@/lib/utils"
+
 import { ResultsDisplay } from "@/components/home/results-display"
 import type { BatchItem } from "@/lib/types"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
@@ -96,6 +95,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                     <div className="col-span-1 md:col-span-5 flex items-center gap-5">
                                         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border/50 bg-muted shadow-sm group-hover:shadow-md transition-all">
                                             {primaryImage ? (
+                                                // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota
                                                 <img
                                                     src={primaryImage.preview}
                                                     alt={`Vehicle analysis thumbnail ${items.indexOf(item) + 1} of ${items.length}`}

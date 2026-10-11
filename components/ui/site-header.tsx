@@ -21,7 +21,7 @@ import { getAllMakes } from "@/data/vehicles/index"
 
 import { useState } from 'react'
 import { useAuth } from '@/components/auth-provider'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { GoogleSignInButton } from '@/components/GoogleSignInButton'
 
 export function SiteHeader() {

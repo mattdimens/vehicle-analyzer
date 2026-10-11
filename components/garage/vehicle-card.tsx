@@ -80,7 +80,7 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
             <div
                 role="button"
                 tabIndex={0}
-                aria-selected={isActive}
+                aria-pressed={isActive}
                 className={`group relative flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer animate-in fade-in slide-in-from-left-4 fill-mode-both
                 ${isActive ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border/40 hover:border-primary/40 hover:shadow-sm'}`}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -90,6 +90,7 @@ export function VehicleCard({ vehicle, index = 0, isActive = false, onClick, onD
                 {/* Thumbnail */}
                 <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted">
                     {vehicle.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota
                         <img
                             src={vehicle.photo_url}
                             alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}

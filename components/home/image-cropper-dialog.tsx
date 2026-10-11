@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop, PixelCrop } from "react-image-crop"
 import "react-image-crop/dist/ReactCrop.css"
 import { Button } from "@/components/ui/button"
@@ -52,14 +52,17 @@ export function ImageCropperDialog({
     const [isProcessing, setIsProcessing] = useState(false)
     const imgRef = useRef<HTMLImageElement>(null)
 
-    // Reset crop when dialog opens
-    useEffect(() => {
+    // Reset crop each time the dialog opens (adjusting state during render,
+    // per React docs, instead of an effect)
+    const [wasOpen, setWasOpen] = useState(isOpen)
+    if (isOpen !== wasOpen) {
+        setWasOpen(isOpen)
         if (isOpen) {
             setCrop(undefined)
             setCompletedCrop(undefined)
             setIsProcessing(false)
         }
-    }, [isOpen])
+    }
 
     function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
         const { width, height } = e.currentTarget
@@ -138,6 +141,7 @@ export function ImageCropperDialog({
                             onComplete={(c) => setCompletedCrop(c)}
                             className="max-h-[60vh]"
                         >
+                            {/* eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota */}
                             <img
                                 ref={imgRef}
                                 alt="Crop me"

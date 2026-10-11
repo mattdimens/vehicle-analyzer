@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Upload, Loader, X, Send, Crop as CropIcon, AlertTriangle, Search, Tag, Zap, Layers, ChevronDown, ChevronUp, Camera, Maximize, RotateCw, XCircle, Eye, CheckCircle2 } from "lucide-react"
+
+import { Upload, Loader, X, Send, Crop as CropIcon, Search, Tag, Zap, Layers, ChevronDown, ChevronUp, Camera, Maximize, RotateCw, XCircle, Eye, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BatchItem } from "@/lib/types"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
@@ -55,7 +55,6 @@ export function UploadZone({
     activeMode = "vehicle",
     onModeSwitch,
 }: UploadZoneProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [showExampleModal, setShowExampleModal] = useState(false)
@@ -81,7 +80,6 @@ export function UploadZone({
 
     // Changing strategy to multi_replace.
 
-
     const handleDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData("application/vehicle-item-id", id)
         e.dataTransfer.effectAllowed = "move"
@@ -95,7 +93,7 @@ export function UploadZone({
         }
     }
 
-    const handleDragLeave = (e: React.DragEvent) => {
+    const handleDragLeave = () => {
         setDragOverId(null)
     }
 
@@ -337,6 +335,7 @@ export function UploadZone({
                                         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                                             {item.images.map((img) => (
                                                 <div key={img.id} className="relative group shrink-0 w-24 h-24 rounded-lg overflow-hidden border">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota */}
                                                     <img
                                                         src={img.preview}
                                                         alt={img.file.name}
@@ -426,9 +425,7 @@ export function UploadZone({
                                 {/* Add more button */}
                                 <div
                                     className="min-h-[160px] rounded-xl border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                                    onClick={(e) => {
-                                        // This click propagates to the dropzone root
-                                    }}
+                                    // Clicks propagate to the dropzone root, which opens the file picker
                                 >
                                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
                                     <span className="text-xs text-muted-foreground">{analysisMode === "part" ? "Add another part" : "Add another vehicle"}</span>

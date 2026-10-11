@@ -55,6 +55,17 @@ Four problems now matter most:
 | L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
 | Still open | N16, M7 leftovers, M10, M11, L1, L8 (selector `sessionId`: no client-readable session id exists), L11 |
 
+**Follow-up pass (PR "audit follow-ups"):**
+- Lint: **0 errors** (was 49). Two warnings remain: unused update handlers for the garage detail sheets (see below).
+- `npm test` runs three suites (unit checks for the new helpers, fixture rendering, confidence resolver); the resolver test now exits non-zero on failure.
+- `/blog` is static; later index pages prerender at `/blog/page/N`.
+- Selector events now carry the `vf_sid` session id and `source: 'ymm_selector'`.
+- Rate-limited visitors see "Too many requests. Please wait a minute and try again." instead of `[object Object]`; the `/r` retry button no longer passes an error object to React.
+- Hooks fixed: `useMemo` after an early return (`result-layout.tsx`) and two hooks after an early return (`from-the-blog.tsx`).
+- **New bug fixed:** Amazon links for detected products whose model was "Unknown" sent an empty `product`, so the search was just the vehicle ("2014 Ford F-150"). They now search by product type, on both `/r` and category pages.
+- **New finding:** `VehicleDetailSheet` and `PartDetailSheet` (garage editing, notes, Amazon buttons) are not rendered anywhere; the garage shows the read-only results view. The notes-column fix applies to the sheet but has no visible effect until the sheets are wired in or deleted.
+- Dependencies updated within ranges (`@supabase/supabase-js` 2.117, `@google/genai` 1.52); major upgrades skipped.
+
 **Your manual steps:**
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.

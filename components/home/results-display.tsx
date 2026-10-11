@@ -6,14 +6,13 @@ import {
     CardContent,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Loader, ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
+import { ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 import { trackEvent, getPlatform } from "@/lib/analytics"
-import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor } from "@/types/analysis"
+import { getConfidenceBand, getConfidenceBarColor } from "@/types/analysis"
 import { useEffect, useRef } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
 import { SaveToPartsButton } from "@/components/save-to-parts-button"
@@ -33,7 +32,6 @@ interface ResultsDisplayProps {
     isSavedToGarage?: boolean
     isSavedToParts?: boolean
     hideSaveActions?: boolean
-    variant?: "full" | "preview"
 }
 
 export function ResultsDisplay({
@@ -47,12 +45,8 @@ export function ResultsDisplay({
     detectedProductsTitle = "Detected Products",
     analysisMode = "vehicle",
     imageUrls = [],
-    isSavedToGarage,
-    isSavedToParts,
     hideSaveActions,
-    variant = "full",
 }: ResultsDisplayProps) {
-    const isPreview = variant === "preview"
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
     // Fire part_identification_completed exactly once per result (ref guard)
@@ -243,169 +237,6 @@ export function ResultsDisplay({
         return { name: text, description: null }
     }
 
-    // --- Preview mode: skip the outer section wrapper and loading/error states ---
-    if (isPreview) {
-        // Prepare capped products for preview
-        const sortedProducts = [...(detectedProducts || [])].sort((a, b) => b.confidence - a.confidence)
-        const previewProducts = sortedProducts.slice(0, 4)
-        const remainingProductCount = sortedProducts.length - 4
-
-        // Build secondary spec line from cabStyle, bedLength, engineDetails
-        const specParts: string[] = []
-        if (results?.primary.cabStyle) specParts.push(results.primary.cabStyle)
-        if (results?.primary.bedLength) specParts.push(`${results.primary.bedLength} bed`)
-        if (results?.engineDetails) specParts.push(results.engineDetails)
-        const secondarySpecLine = specParts.join(" · ")
-
-        // Prepare capped recommendations for preview
-        const allRecs = results?.tieredRecommendations?.flatMap(t => t.items) ?? results?.recommendedAccessories ?? []
-        const previewRecs = allRecs.slice(0, 3)
-        const remainingRecCount = allRecs.length - 3
-
-        return (
-            <div className="grid grid-cols-1 gap-4">
-                {/* Primary Identification */}
-                {results && (
-                    <div className="flex flex-col text-left">
-                        <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden p-3 md:p-4">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                <p className="text-base font-semibold flex items-center gap-2">
-                                    Primary Identification
-                                    <span className={`text-xs font-normal px-2.5 py-0.5 rounded-full ${getConfidenceBandColor(getConfidenceBand(results.primary.confidence))}`}>
-                                        {getConfidenceBand(results.primary.confidence)} Confidence
-                                    </span>
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-                                <div className="space-y-1">
-                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
-                                    <div className="text-sm font-semibold text-foreground">{results.primary.year}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
-                                    <div className="text-sm font-semibold text-foreground">{results.primary.make}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
-                                    <div className="text-sm font-semibold text-foreground">{results.primary.model}</div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
-                                    <div className="text-sm font-semibold text-foreground">{results.primary.trim}</div>
-                                </div>
-                            </div>
-
-                            {secondarySpecLine && (
-                                <p className="mt-2 text-xs text-muted-foreground">{secondarySpecLine}</p>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Detected Products (capped to 3) */}
-                {previewProducts.length > 0 && (
-                    <div className="flex flex-col text-left space-y-1.5">
-                        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">{detectedProductsTitle}</p>
-                        <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden">
-                            {/* Table Header */}
-                            <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 bg-muted/30 text-[11px] font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/40">
-                                <div className="col-span-3">Product Type</div>
-                                <div className="col-span-2">Brand</div>
-                                <div className="col-span-4">Model</div>
-                                <div className="col-span-3">Confidence</div>
-                            </div>
-
-                            <div className="divide-y divide-border/40">
-                                {previewProducts.map((item, index) => {
-                                    const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
-                                    const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
-                                    
-                                    // Map product types to category slugs for the sample preview
-                                    let slug = "exterior"
-                                    if (item.type.toLowerCase().includes("wheel") || item.type.toLowerCase().includes("tire")) slug = "wheels-tires"
-                                    else if (item.type.toLowerCase().includes("light")) slug = "lighting"
-                                    else if (item.type.toLowerCase().includes("recovery") || item.type.toLowerCase().includes("skid")) slug = "off-road"
-
-                                    return (
-                                        <Link 
-                                            key={index} 
-                                            href={`/vehicles/toyota/tacoma/4th-gen/#cat-${slug}`}
-                                            className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-2 items-center hover:bg-muted/10 transition-colors cursor-pointer group"
-                                        >
-                                            <div className="col-span-1 md:col-span-3 text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                                                {item.type}
-                                            </div>
-                                            <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
-                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
-                                                {!isUnknownBrand ? item.brand : <span className="text-muted-foreground italic">Unknown</span>}
-                                            </div>
-                                            <div className="col-span-1 md:col-span-4 text-sm text-foreground/80">
-                                                <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
-                                                {!isUnknownModel ? item.model : <span className="text-muted-foreground italic">Unknown</span>}
-                                            </div>
-                                            <div className="col-span-1 md:col-span-3 flex items-center gap-2">
-                                                <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>
-                                                <div
-                                                    className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"
-                                                    role="progressbar"
-                                                    aria-valuenow={item.confidence}
-                                                    aria-valuemin={0}
-                                                    aria-valuemax={100}
-                                                    aria-label={`${item.type} confidence`}
-                                                >
-                                                    <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
-                                                </div>
-                                                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                                                    {getConfidenceBand(item.confidence)}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
-
-                            {remainingProductCount > 0 && (
-                                <div className="px-4 py-2 border-t border-border/40">
-                                    <p className="text-xs text-muted-foreground">+{remainingProductCount} more parts identified</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Recommended Accessories (compact chip row) */}
-                {results && previewRecs.length > 0 && (
-                    <div className="flex flex-col text-left space-y-1">
-                        <p className="text-sm font-semibold text-foreground">
-                            Recommended for Your {results.primary.year} {results.primary.make} {results.primary.model}
-                        </p>
-                        <div className="flex flex-wrap gap-2 items-center">
-                            {previewRecs.map((rec, i) => {
-                                // Extract name and category slug (passed in description field for the preview mock)
-                                const parsed = parseRecommendation(rec)
-                                const slug = parsed.description || "exterior"
-                                
-                                return (
-                                    <Link
-                                        key={i}
-                                        href={`/vehicles/toyota/tacoma/4th-gen/#cat-${slug}`}
-                                        className="border border-border text-foreground/70 text-sm px-2.5 py-1 rounded-lg hover:bg-muted/50 hover:text-primary transition-colors cursor-pointer"
-                                    >
-                                        {parsed.name}
-                                    </Link>
-                                )
-                            })}
-                            {remainingRecCount > 0 && (
-                                <span className="text-sm text-muted-foreground">+{remainingRecCount} more</span>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        )
-    }
-
     return (
         <>
             <section id="results" className="w-full bg-card py-16 md:py-20">
@@ -551,25 +382,9 @@ export function ResultsDisplay({
                                                 const vehicleString = results ? `${results.primary.year} ${results.primary.make} ${results.primary.model}` : ""
                                                 const categorySlug = item.type.toLowerCase().replace(/[^a-z0-9]+/g, '-')
                                                 const brandString = isUnknownBrand ? "" : item.brand
-                                                const modelString = isUnknownModel ? "" : item.model
+                                                // Unknown model: search by product type so the Amazon link isn't a bare vehicle search
+                                                const modelString = isUnknownModel ? item.type : item.model
                                                 const redirectUrl = `/go?cat=${encodeURIComponent(categorySlug)}&vehicle=${encodeURIComponent(vehicleString)}&brand=${encodeURIComponent(brandString)}&product=${encodeURIComponent(modelString)}&source=detected-products`
-
-                                                // Build Amazon search query (kept for client-side analytics)
-                                                let searchQuery = ""
-                                                if (results) {
-                                                    const vehicleDetails = `${results.primary.year} ${results.primary.make} ${results.primary.model}`
-                                                    if (isUnknownBrand || isUnknownModel) {
-                                                        searchQuery = `${vehicleDetails} ${item.type}`
-                                                    } else {
-                                                        searchQuery = `${vehicleDetails} ${item.brand} ${item.model}`
-                                                    }
-                                                } else {
-                                                    if (!isUnknownBrand && !isUnknownModel) {
-                                                        searchQuery = `${item.brand} ${item.model}`
-                                                    } else {
-                                                        searchQuery = item.type
-                                                    }
-                                                }
 
                                                 return (
                                                     <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 md:px-8 py-4 items-center hover:bg-muted/10 transition-colors">

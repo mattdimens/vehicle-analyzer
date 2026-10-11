@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
-import { analysisConfig } from "@/config/analysis"
 import { ResultLayout } from "./result-layout"
 import { ResultsShellHeader } from "./results-shell-header"
 import type { AnalysisRecord } from "@/types/analysis"
+import { apiErrorMessage, readJson } from "@/lib/api-errors"
 
 export function AnalysisView({ id }: { id: string }) {
     const [record, setRecord] = useState<AnalysisRecord | null>(null)
@@ -38,6 +39,8 @@ export function AnalysisView({ id }: { id: string }) {
     }, [id])
 
     useEffect(() => {
+        // Initial load; fetchRecord only sets state after its request resolves
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchRecord()
     }, [fetchRecord])
 
@@ -101,8 +104,7 @@ export function AnalysisView({ id }: { id: string }) {
         setRetryError(null)
         const res = await fetch(`/api/analyses/${id}/process`, { method: 'POST' })
         if (!res.ok) {
-            const data = await res.json().catch(() => ({}))
-            setRetryError(data.error || 'Could not restart the analysis. Please try again.')
+            setRetryError(apiErrorMessage(res.status, await readJson(res), 'Could not restart the analysis. Please try again.'))
             return
         }
         // Allow the retried run to report its own completion
@@ -197,7 +199,7 @@ export function AnalysisView({ id }: { id: string }) {
                         Upload a clear shot of a car or truck and we&apos;ll break down what&apos;s on it.
                     </p>
                     <Button asChild className="mb-4" size="lg">
-                        <a href="/">Try another photo</a>
+                        <Link href="/#upload-zone">Try another photo</Link>
                     </Button>
                     <p className="text-xs text-muted-foreground mt-2 max-w-xs">
                         Tips for a good photo: ensure the vehicle is clearly visible, well-lit, and occupies most of the frame. Avoid heavy filters.

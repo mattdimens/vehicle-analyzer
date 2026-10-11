@@ -27,8 +27,6 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
 
-    if (posts.length === 0) return null
-
     const updateScrollState = useCallback(() => {
         const el = scrollRef.current
         if (!el) return
@@ -55,6 +53,9 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
             window.removeEventListener("resize", updateScrollState)
         }
     }, [updateScrollState])
+
+    // After all hooks: React requires the same hook order on every render
+    if (posts.length === 0) return null
 
     const scrollTo = (direction: "left" | "right") => {
         const el = scrollRef.current

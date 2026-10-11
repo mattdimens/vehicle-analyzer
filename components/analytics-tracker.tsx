@@ -28,7 +28,7 @@ export function AnalyticsTracker() {
                     source_page: sourcePage,
                     ...(catalogMatch !== undefined ? { catalog_match: catalogMatch } : {})
                 })
-            } catch (err) {
+            } catch {
                 // Ignore parse errors
             }
         }

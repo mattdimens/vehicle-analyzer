@@ -55,7 +55,7 @@ export default function PrivacyPage() {
                                 <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className={linkClass}>Google Analytics opt-out browser add-on</a>.
                             </p>
                             <p className="mb-3">
-                                When you click a product link, we set our own <code>vf_sid</code> cookie: a random identifier that lasts one year and lets us group product-link clicks from the same browser in our own reports. It contains no personal information and is not shared with anyone.
+                                When you click a product link or use the vehicle selector, we set our own <code>vf_sid</code> cookie: a random identifier that lasts one year and lets us group product-link clicks and vehicle searches from the same browser in our own reports. It contains no personal information and is not shared with anyone.
                             </p>
                             <p>
                                 We also use your browser&apos;s local storage to keep you signed in, to remember a vehicle or part you asked to save while signing in, and (for the current visit only) to record which page you arrived on.

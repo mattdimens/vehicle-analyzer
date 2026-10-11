@@ -1,4 +1,4 @@
-import { buildGoUrl } from "@/data/vehicles/index"
+
 import { ProductCard } from "./product-card"
 import type { VehicleCategory } from "@/data/vehicles/types"
 

@@ -70,6 +70,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
             <SheetContent side={isDesktop ? "right" : "bottom"} className="max-w-3xl w-full sm:max-w-md md:max-w-xl lg:max-w-2xl p-0 gap-0 overflow-y-auto max-h-[96vh] md:max-h-screen rounded-t-[2rem] md:rounded-t-none md:rounded-l-[2rem]">
                 <div className="relative w-full h-56 md:h-72 bg-muted shrink-0 rounded-t-[2rem] md:rounded-t-none md:rounded-tl-[2rem] overflow-hidden">
                     {vehicle.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota
                         <img
                             src={vehicle.photo_url}
                             alt="Vehicle"
@@ -209,7 +210,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
                                             <div className="mt-5 flex flex-col gap-3">
                                                 <div className="text-[11px] text-muted-foreground italic flex items-start gap-1.5 bg-muted/40 p-2 rounded-md border border-border/40">
                                                     <Search className="h-3 w-3 shrink-0 mt-0.5 opacity-60" />
-                                                    <span className="leading-tight">Searching Amazon for: <span className="font-medium text-foreground/70">"{searchQuery}"</span></span>
+                                                    <span className="leading-tight">Searching Amazon for: <span className="font-medium text-foreground/70">&quot;{searchQuery}&quot;</span></span>
                                                 </div>
                                                 <Button
                                                     asChild

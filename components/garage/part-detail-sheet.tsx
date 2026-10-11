@@ -26,7 +26,7 @@ interface PartDetailSheetProps {
 export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetailSheetProps) {
     const isDesktop = useMediaQuery("(min-width: 768px)")
     const [isEditingNotes, setIsEditingNotes] = useState(false)
-    const [notesInput, setNotesInput] = useState(part.description || "")
+    const [notesInput, setNotesInput] = useState(part.notes || "")
     const [isSavingNotes, setIsSavingNotes] = useState(false)
 
     const handleShare = () => {
@@ -40,8 +40,10 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
     }
 
     const handleSaveNotes = async () => {
+        // User notes live in their own column; `description` is the AI's
+        // explanation of the part and must not be overwritten.
         const newNotes = notesInput.trim() || null
-        if (newNotes === part.description) {
+        if (newNotes === (part.notes || null)) {
             setIsEditingNotes(false)
             return
         }
@@ -50,12 +52,12 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
         try {
             const { error } = await supabaseClient
                 .from("identified_parts")
-                .update({ description: newNotes })
+                .update({ notes: newNotes })
                 .eq("id", part.id)
 
             if (error) throw error
 
-            onUpdated(part.id, { description: newNotes })
+            onUpdated(part.id, { notes: newNotes })
             toast.success("Part notes updated")
             setIsEditingNotes(false)
         } catch (error) {
@@ -119,6 +121,7 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                     {/* Header Image Section */}
                     <div className="relative w-full h-56 md:h-72 bg-muted shrink-0">
                         {part.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase/blob URL); skip Vercel image optimization quota
                             <img
                                 src={part.photo_url}
                                 alt={part.part_name}
@@ -226,13 +229,24 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                                 </div>
                             </div>
 
+                            {/* AI description (read-only) */}
+                            {part.description && (
+                                <div>
+                                    <h3 className="text-lg font-bold font-heading flex items-center gap-2 mb-3 border-b border-border/60 pb-2">
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                        What It Does
+                                    </h3>
+                                    <p className="text-sm text-foreground/80 leading-relaxed">{part.description}</p>
+                                </div>
+                            )}
+
                             {/* Notes Section */}
                             <div className="space-y-6">
                                 <div>
                                     <div className="flex items-center justify-between mb-4 border-b border-border/60 pb-2">
                                         <h3 className="text-lg font-bold font-heading flex items-center gap-2">
                                             <Edit2 className="h-4 w-4 text-primary" />
-                                            Notes & Description
+                                            Your Notes
                                         </h3>
                                         {!isEditingNotes && (
                                             <Button size="sm" variant="ghost" className="h-7 px-3 text-xs font-semibold rounded-full bg-secondary/50 hover:bg-secondary" onClick={() => setIsEditingNotes(true)}>
@@ -247,11 +261,11 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                                                 className="min-h-[160px] resize-none bg-background focus-visible:ring-primary shadow-sm"
                                                 value={notesInput}
                                                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotesInput(e.target.value)}
-                                                placeholder="Add your own installation notes, links, or custom descriptions here..."
+                                                placeholder="Add your own installation notes, links, or reminders here..."
                                                 autoFocus
                                             />
                                             <div className="flex gap-2 justify-end">
-                                                <Button variant="outline" size="sm" onClick={() => { setIsEditingNotes(false); setNotesInput(part.description || "") }} className="rounded-full px-4">
+                                                <Button variant="outline" size="sm" onClick={() => { setIsEditingNotes(false); setNotesInput(part.notes || "") }} className="rounded-full px-4">
                                                     Cancel
                                                 </Button>
                                                 <Button size="sm" onClick={handleSaveNotes} disabled={isSavingNotes} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 shadow-sm">
@@ -262,7 +276,7 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
                                         </div>
                                     ) : (
                                         <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap bg-[#f9fafb] p-5 rounded-2xl border border-border/40 min-h-[160px] shadow-inner font-medium">
-                                            {part.description || <span className="text-muted-foreground/60 italic font-normal">No notes or description added yet. Click edit to add your own notes.</span>}
+                                            {part.notes || <span className="text-muted-foreground/60 italic font-normal">No notes yet. Click edit to add installation notes, links, or reminders.</span>}
                                         </div>
                                     )}
                                 </div>

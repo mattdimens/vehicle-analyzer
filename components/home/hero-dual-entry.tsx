@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState, useEffect } from "react"
+import { useRef, useState, useEffect } from "react"
 import { useDropzone } from "react-dropzone"
 import Link from "next/link"
 import Image from "next/image"
@@ -9,6 +9,7 @@ import { Upload, Camera, Send, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
+import { apiErrorMessage, readJson, thrownErrorMessage } from "@/lib/api-errors"
 
 /**
  * Dual-entry hero for the homepage.
@@ -117,14 +118,14 @@ export function HeroDualEntry() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageUrl: publicUrl })
       })
-      const data = await res.json()
-      if (data.success && data.id) {
+      const data = await readJson(res)
+      if (res.ok && data.success && data.id) {
         router.push(`/r/${data.id}`)
       } else {
-        throw new Error(data.error || "Failed to start analysis")
+        throw new Error(apiErrorMessage(res.status, data, "Failed to start analysis"))
       }
     } catch (err) {
-      setDropError(err instanceof Error ? err.message : String(err))
+      setDropError(thrownErrorMessage(err, "Something went wrong. Please try again."))
       setIsSubmitting(false)
     }
   }

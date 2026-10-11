@@ -49,23 +49,23 @@ Four problems now matter most:
 | **New: selector logging was broken** | Found during the smoke test: `vehicle_selector_events` rejects anon inserts (RLS 42501), so `/api/log-vehicle-selector` has logged nothing. **Fixed:** it now uses the service-role client and validates input. |
 | **New: CSP blocked GA4 Google Signals** | `stats.g.doubleclick.net` was blocked. **Fixed:** `img-src`/`connect-src` now follow Google's GA4 CSP list (also closes M9). Google Fonts hosts were removed. |
 | M1 | **Fixed (Oct 11, follow-up PR).** `types/supabase.ts` is now generated from the live schema with `supabase gen types`. Regenerating found three real bugs, all fixed in the same PR: (1) the pipeline's `logDemand` inserted a nonexistent `generation` column and no required `year`/`supported`, so photo-analysis demand was never logged; (2) `identified_parts.vehicle_year` is an integer, so saving a part whose estimated vehicle began with a year range failed; (3) `identified_parts.confidence` is text, so the garage now coerces it before comparing. |
-| New (open) | `identified_parts` has a `notes` column the app never uses. The garage's "Notes & Description" editor overwrites the AI's `description` instead. |
+| New (closed) | `identified_parts.notes` is unused; the only editor for it was in the never-rendered garage sheet, now deleted. |
 | M2 | Partly: the fitment prompt now lives only in `lib/analysis-stages.ts` |
 | M3, M4, M8, L5 README | Fixed (dead files and assets deleted, `.env.example`, README) |
 | L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
 | L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
 | M10 | **Fixed.** Schema and RLS policies are committed in `supabase/migrations/20261011000000_remote_schema.sql` (pg_dump of `public`). Verified from the dump: RLS is enabled on all 7 tables; `garage_vehicles`, `identified_parts` and `profiles` have SELECT/INSERT/UPDATE/DELETE policies scoped to `auth.uid()`; the other four tables have no policies (service role only). `analyses` has an `updated_at` trigger. The `model_used` constraint now allows any `gemini-%` model. Follow-up `20261011000100_function_search_path.sql` (pins `search_path` on the two trigger functions) was applied Oct 11. |
-| Still open | M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85), L11 major-version upgrades, garage detail sheets (wire in or delete), blog content |
+| Still open | M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85), L11 major-version upgrades, blog content |
 
 **Follow-up pass (PR "audit follow-ups"):**
-- Lint: **0 errors** (was 49). Two warnings remain: unused update handlers for the garage detail sheets (see below).
+- Lint: **0 errors** (was 49). After the garage sheets were removed, 0 warnings too.
 - `npm test` runs three suites (unit checks for the new helpers, fixture rendering, confidence resolver); the resolver test now exits non-zero on failure.
 - `/blog` is static; later index pages prerender at `/blog/page/N`.
 - Selector events now carry the `vf_sid` session id and `source: 'ymm_selector'`.
 - Rate-limited visitors see "Too many requests. Please wait a minute and try again." instead of `[object Object]`; the `/r` retry button no longer passes an error object to React.
 - Hooks fixed: `useMemo` after an early return (`result-layout.tsx`) and two hooks after an early return (`from-the-blog.tsx`).
 - **New bug fixed:** Amazon links for detected products whose model was "Unknown" sent an empty `product`, so the search was just the vehicle ("2014 Ford F-150"). They now search by product type, on both `/r` and category pages.
-- **New finding:** `VehicleDetailSheet` and `PartDetailSheet` (garage editing, notes, Amazon buttons) are not rendered anywhere; the garage shows the read-only results view. The notes-column fix applies to the sheet but has no visible effect until the sheets are wired in or deleted.
+- **New finding, resolved:** `VehicleDetailSheet` and `PartDetailSheet` (garage editing, notes, Amazon buttons) were never rendered; the garage shows the read-only results view. Deleted Oct 11 along with the hook and textarea only they used (recoverable from git history).
 - Dependencies updated within ranges (`@supabase/supabase-js` 2.117, `@google/genai` 1.52); major upgrades skipped.
 
 **Your manual steps:**

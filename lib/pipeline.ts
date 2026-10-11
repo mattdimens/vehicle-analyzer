@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
 import { runFitmentAnalysis, detectProductTypes, refineProduct, type DetectedProduct } from '@/lib/analysis-stages'
 import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
+import { normalizeYear } from '@/lib/normalize-year'
 import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 
@@ -12,18 +13,22 @@ export function getSupabaseAdmin() {
     )
 }
 
-async function logDemand(vehicleMake: string, vehicleModel: string) {
+async function logDemand(vehicleMake: string, vehicleModel: string, vehicleYear: string) {
     const isSupported = supportedVehicles.some(
         v => v.make.toLowerCase() === vehicleMake.toLowerCase() && v.model.toLowerCase() === vehicleModel.toLowerCase()
     )
-    if (!isSupported) {
+    // year is NOT NULL in vehicle_selector_events; ranges log their first year
+    const year = normalizeYear(vehicleYear)
+    if (!isSupported && year !== null) {
         const supabase = getSupabaseAdmin()
-        await supabase.from('vehicle_selector_events').insert({
+        const { error } = await supabase.from('vehicle_selector_events').insert({
             make: vehicleMake,
             model: vehicleModel,
-            generation: null,
+            year,
+            supported: false,
             source: 'photo_analysis'
         })
+        if (error) console.error('Failed to log photo-analysis demand:', error.message)
     }
 }
 
@@ -52,7 +57,7 @@ export async function runPipeline(id: string, imageUrl: string) {
         const vehicleDetailsString = `${result.primary.year} ${result.primary.make} ${result.primary.model} ${result.primary.trim}`
         
         if (result.primary.confidence >= 85) {
-            await logDemand(result.primary.make, result.primary.model)
+            await logDemand(result.primary.make, result.primary.model, result.primary.year)
         }
 
         await supabase.from('analyses').update({

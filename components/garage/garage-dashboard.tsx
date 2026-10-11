@@ -134,8 +134,8 @@ export function GarageDashboard() {
                 )
             })
             .sort((a, b) => {
-                if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                if (sortOrder === "date-desc") return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+                if (sortOrder === "date-asc") return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
                 if (sortOrder === "name-asc" || sortOrder === "name-desc") {
                     const nameA = a.nickname || `${a.year} ${a.make} ${a.model}`
                     const nameB = b.nickname || `${b.year} ${b.make} ${b.model}`
@@ -158,8 +158,8 @@ export function GarageDashboard() {
                 )
             })
             .sort((a, b) => {
-                if (sortOrder === "date-desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                if (sortOrder === "date-asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                if (sortOrder === "date-desc") return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+                if (sortOrder === "date-asc") return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
                 if (sortOrder === "name-asc") return a.part_name.localeCompare(b.part_name)
                 if (sortOrder === "name-desc") return b.part_name.localeCompare(a.part_name)
                 if (sortOrder === "category") return (a.part_category || "").localeCompare(b.part_category || "")

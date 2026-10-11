@@ -107,20 +107,10 @@ export function GarageDashboard() {
         if (selectedVehicleId === id) setSelectedVehicleId(null)
     }
 
-    // Handle vehicle update in state
-    const handleVehicleUpdated = (id: string, updates: Partial<GarageVehicleRow>) => {
-        setVehicles(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v))
-    }
-
     // Handle part deletion
     const handlePartDeleted = (id: string) => {
         setParts(prev => prev.filter(p => p.id !== id))
         if (selectedPartId === id) setSelectedPartId(null)
-    }
-
-    // Handle part update
-    const handlePartUpdated = (id: string, updates: Partial<IdentifiedPartRow>) => {
-        setParts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
     }
 
     // Issue #28: memoize filtered/sorted lists

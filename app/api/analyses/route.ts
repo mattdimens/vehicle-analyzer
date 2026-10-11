@@ -6,14 +6,15 @@ import { assertSupabaseStorageUrl, UrlValidationError } from '@/lib/url-validati
 export const maxDuration = 60
 
 function generateId() {
-    return Math.random().toString(36).substring(2, 10) // 8 char opaque ID
+    // 12 hex chars (48 bits) from a CSPRNG; result links are public-by-link
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 12)
 }
 
 export async function POST(request: NextRequest) {
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     const { imageUrl } = body
 
-    if (!imageUrl) {
+    if (!imageUrl || typeof imageUrl !== 'string') {
         return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 })
     }
 

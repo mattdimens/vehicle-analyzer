@@ -21,10 +21,6 @@ import { VehicleSelector } from "@/components/home/vehicle-selector"
  * remains available on sub-pages.
  */
 
-interface HeroDualEntryProps {
-  onFilesSelect: (files: File[]) => void
-}
-
 export function HeroDualEntry() {
   const router = useRouter()
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -95,7 +91,7 @@ export function HeroDualEntry() {
     try {
       // 2) Client downscaling to save bandwidth & API cost
       const { downscaleImage } = await import("@/lib/image-processing")
-      const optimizedFile = await downscaleImage(attachedFile)
+      const optimizedFile = await downscaleImage(attachedFile).catch(() => attachedFile)
 
       // 3) Create signed URL for upload
       const { createSignedUploadUrl } = await import("@/app/actions")
@@ -158,7 +154,7 @@ export function HeroDualEntry() {
           </div>
 
           {/* Photo Tool Panel (mobile: first, desktop: first) */}
-          <div className="order-1 md:order-1 rounded-2xl border bg-card shadow-lg overflow-hidden">
+          <div id="upload-zone" className="order-1 md:order-1 scroll-mt-20 rounded-2xl border bg-card shadow-lg overflow-hidden">
             <div
               {...(!attachedFile ? getRootProps() : {})}
               role="button"

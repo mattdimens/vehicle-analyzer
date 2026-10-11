@@ -113,8 +113,11 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
     const uploadTarget = document.getElementById("upload-zone")
     if (uploadTarget) {
       uploadTarget.scrollIntoView({ behavior: "smooth", block: "start" })
+    } else {
+      // Results and error pages have no photo tool; send the user to it
+      router.push("/#upload-zone")
     }
-  }, [])
+  }, [router])
 
   const selectBaseClass =
     "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
@@ -202,7 +205,7 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
         <div className="mt-4 rounded-lg bg-white/10 border border-white/20 p-4">
           <p className="text-sm text-white/90 leading-relaxed">
             We have not built the {fallbackMessage.make} {fallbackMessage.model} catalog yet,
-            but our analyzer can identify your truck and find compatible parts right now.
+            but our analyzer can identify your vehicle and find compatible parts right now.
           </p>
           <Button
             onClick={handleScrollToPhotoTool}

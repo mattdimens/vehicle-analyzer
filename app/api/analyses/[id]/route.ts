@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/supabase'
+import type { Database, Json } from '@/types/supabase'
 
 function getSupabase() {
     return createClient<Database>(
@@ -40,9 +40,10 @@ export async function GET(
             
             const { data: updatedRecord } = await supabase
                 .from('analyses')
-                .update({ 
-                    status: 'error', 
-                    error_details: 'Analysis timed out. Please retry.' 
+                .update({
+                    status: 'error',
+                    error_details: 'Analysis timed out. Please retry.',
+                    updated_at: new Date().toISOString(),
                 })
                 .eq('id', id)
                 .select('*')
@@ -62,12 +63,13 @@ export async function PATCH(
     const { id } = await params
     if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
 
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     const { refinedYear } = body
 
     if (!refinedYear || !/^\d{4}$/.test(String(refinedYear))) {
         return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
     }
+    const year = parseInt(String(refinedYear), 10)
 
     const supabase = getSupabase()
 
@@ -82,15 +84,20 @@ export async function PATCH(
         return NextResponse.json({ error: 'Record not found' }, { status: 404 })
     }
 
-    // Update the year in result_data.primary
-    const resultData = (record.result_data as any) || {}
-    if (resultData.primary) {
-        resultData.primary.year = String(refinedYear)
+    // Only allow narrowing the AI's own year range (e.g. "2021-2024" -> "2022").
+    // This endpoint is unauthenticated, so it must not accept arbitrary edits.
+    const resultData = (record.result_data ?? {}) as { primary?: { year?: unknown } } & Record<string, unknown>
+    const currentYear = typeof resultData.primary?.year === 'string' ? resultData.primary.year : ''
+    const range = currentYear.match(/^(\d{4})\s*[-–]\s*(\d{4})$/)
+    if (!resultData.primary || !range || year < parseInt(range[1], 10) || year > parseInt(range[2], 10)) {
+        return NextResponse.json({ error: 'Year must be within the identified range' }, { status: 400 })
     }
+
+    const updatedData = { ...resultData, primary: { ...resultData.primary, year: String(year) } }
 
     const { data: updated, error: updateError } = await supabase
         .from('analyses')
-        .update({ result_data: resultData as any })
+        .update({ result_data: updatedData as unknown as Json, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select('*')
         .single()

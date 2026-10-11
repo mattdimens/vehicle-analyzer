@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VisualFitment.com
 
-## Getting Started
+Upload a photo of a vehicle (or a loose part) and get its year/make/model, visible aftermarket products, and compatible accessories with Amazon affiliate links.
 
-First, run the development server:
+Stack: Next.js (App Router) on Vercel, Supabase (Postgres, storage, Google auth), Google Gemini, GA4.
+
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in the values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+All environment variables are documented in [.env.example](.env.example). Set the same ones in Vercel.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it fits together
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Homepage photo flow:** `components/home/hero-dual-entry.tsx` uploads to the `vehicle_images` bucket, `POST /api/analyses` creates a row, and `lib/pipeline.ts` runs in the background (`waitUntil`). `/r/[id]` polls `GET /api/analyses/[id]`.
+- **Category pages and part identifier:** `components/home/vehicle-analyzer.tsx` calls `POST /api/analyze` plus the Server Actions in `app/actions.ts`.
+- **Gemini stages:** `lib/analysis-stages.ts` (server-only). Each stage runs a Flash "scout" pass and escalates to the Pro "sniper" model at or below `CASCADE_CONFIDENCE_THRESHOLD` (`lib/gemini.ts`). Anything browser-callable must validate image URLs with `lib/url-validation.ts` first.
+- **Affiliate links:** every outbound product link goes through `/go` (`app/go/route.ts`), which logs to `affiliate_clicks` and redirects using `lib/affiliate/merchants.ts`. Links use `target="_blank" rel="nofollow sponsored noopener"`.
+- **Vehicle catalog:** `data/vehicles/` drives `/vehicles/*` and the sitemap.
+- **Blog:** MDX in `content/blog/`, rendered by `app/blog/[slug]/page.tsx`.
 
-## Learn More
+## Checks
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The latest audit is in [REVIEW.md](REVIEW.md).

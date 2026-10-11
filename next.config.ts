@@ -25,10 +25,11 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' blob: data: https://*.supabase.co https://www.google-analytics.com",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.google.com https://www.googletagmanager.com https://generativelanguage.googleapis.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
+              // GA4 hosts per Google's CSP guide (includes Google Signals / doubleclick)
+              "img-src 'self' blob: data: https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com",
+              "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

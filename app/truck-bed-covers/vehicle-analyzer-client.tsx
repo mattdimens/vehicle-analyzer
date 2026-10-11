@@ -64,7 +64,7 @@ export default function TruckBedCoversClient({ faqItems }: { faqItems: FaqItem[]
             faqContent={<FaqAccordion items={faqItems} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },
-                { label: "Categories", href: "/#categories" },
+                { label: "Categories", href: "/#product-categories" },
                 { label: "Truck Bed Covers" },
             ]}
             relatedContent={

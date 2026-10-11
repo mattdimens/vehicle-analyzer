@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/supabase'
-import { analyzeVehicleFitment, detectVisibleProducts, refineProductDetails } from '@/app/actions'
+import type { Database, Json } from '@/types/supabase'
+import { runFitmentAnalysis, detectProductTypes, refineProduct, type DetectedProduct } from '@/lib/analysis-stages'
 import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
-import { DetectedProduct } from '@/app/actions'
 import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 
@@ -28,14 +27,17 @@ async function logDemand(vehicleMake: string, vehicleModel: string) {
     }
 }
 
+/** Stamp updated_at on every write so stale-record checks work without a DB trigger. */
+const now = () => new Date().toISOString()
+
 export async function runPipeline(id: string, imageUrl: string) {
     const supabase = getSupabaseAdmin()
     try {
-        await supabase.from('analyses').update({ status: 'identifying' }).eq('id', id)
+        await supabase.from('analyses').update({ status: 'identifying', error_details: null, updated_at: now() }).eq('id', id)
         
         const imageParts = [await fetchImageForGemini(imageUrl)]
 
-        const fitmentRes = await analyzeVehicleFitment(imageParts)
+        const fitmentRes = await runFitmentAnalysis(imageParts)
         if (!fitmentRes.success) {
             throw new Error(fitmentRes.error || 'Failed to analyze vehicle')
         }
@@ -55,17 +57,18 @@ export async function runPipeline(id: string, imageUrl: string) {
 
         await supabase.from('analyses').update({
             status: 'detecting_products',
-            result_data: fitmentRes.data as any,
-            confidence: result.primary.confidence
+            result_data: fitmentRes.data as Json,
+            confidence: result.primary.confidence,
+            updated_at: now(),
         }).eq('id', id)
 
-        const detectRes = await detectVisibleProducts(imageParts, vehicleDetailsString)
-        let finalDetectedProducts: DetectedProduct[] = []
+        const detectRes = await detectProductTypes(imageParts, vehicleDetailsString)
+        const finalDetectedProducts: DetectedProduct[] = []
 
         if (detectRes.success) {
             const types = detectRes.data
             const refinementResults = await Promise.allSettled(
-                types.map(type => refineProductDetails(imageParts, type, vehicleDetailsString))
+                types.map(type => refineProduct(imageParts, type, vehicleDetailsString))
             )
             for (const r of refinementResults) {
                 if (r.status === 'fulfilled') {
@@ -76,14 +79,16 @@ export async function runPipeline(id: string, imageUrl: string) {
 
         await supabase.from('analyses').update({
             status: 'complete',
-            detected_products: finalDetectedProducts as any,
+            detected_products: finalDetectedProducts as unknown as Json,
+            updated_at: now(),
         }).eq('id', id)
 
     } catch (err) {
         console.error('Pipeline error for', id, err)
         await supabase.from('analyses').update({
             status: 'error',
-            error_details: err instanceof Error ? err.message : String(err)
+            error_details: err instanceof Error ? err.message : String(err),
+            updated_at: now(),
         }).eq('id', id)
     }
 }

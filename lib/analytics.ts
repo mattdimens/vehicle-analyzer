@@ -30,6 +30,22 @@ export function setEntryDoor(door: EntryDoor) {
     }
 }
 
+const LANDING_PATH_KEY = 'vf_landing_path'
+
+/** Record the first path seen this session (call once per page load). */
+export function recordLandingPath() {
+    if (typeof window === 'undefined') return
+    if (!window.sessionStorage.getItem(LANDING_PATH_KEY)) {
+        window.sessionStorage.setItem(LANDING_PATH_KEY, window.location.pathname)
+    }
+}
+
+/** The path this session started on, or the current path if none was recorded yet. */
+export function getLandingPath(): string {
+    if (typeof window === 'undefined') return '/'
+    return window.sessionStorage.getItem(LANDING_PATH_KEY) || window.location.pathname
+}
+
 export function getPlatform(): 'mobile' | 'desktop' {
     if (typeof window === 'undefined') return 'desktop'
     return window.innerWidth < 768 ? 'mobile' : 'desktop'

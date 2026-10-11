@@ -283,6 +283,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
                             width={960}
                             height={540}
                             loading="eager"
+                            fetchPriority="high"
                         />
                     </figure>
                 )}

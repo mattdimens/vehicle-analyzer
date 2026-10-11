@@ -4,6 +4,11 @@ import { getSupabaseAdmin, runPipeline } from '@/lib/pipeline'
 
 export const maxDuration = 60
 
+/** Minimum gap between retries of the same analysis. */
+const RETRY_COOLDOWN_MS = 10_000
+/** Analyses older than this can no longer be re-run (start a new one instead). */
+const MAX_RETRY_AGE_MS = 24 * 60 * 60 * 1000
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -35,6 +40,14 @@ export async function POST(
 
     if (record.status === 'complete') {
         return NextResponse.json({ status: 'complete', message: 'Already complete' })
+    }
+
+    // Abuse guard: each retry re-runs several paid Gemini calls
+    if (Date.now() - new Date(record.created_at).getTime() > MAX_RETRY_AGE_MS) {
+        return NextResponse.json({ error: 'This analysis is too old to retry. Please upload the photo again.' }, { status: 410 })
+    }
+    if (record.status === 'error' && Date.now() - new Date(record.updated_at).getTime() < RETRY_COOLDOWN_MS) {
+        return NextResponse.json({ error: 'Please wait a few seconds before retrying.' }, { status: 429 })
     }
 
     waitUntil(runPipeline(id, record.image_url))

@@ -14,16 +14,23 @@ export const PrimaryVehicleSchema = z.object({
 })
 
 export const AnalysisResultsSchema = z.object({
+    // Optional extras: never fail validation over these, just drop bad values.
+    vehicle_present: z.boolean().optional().catch(undefined),
+    confidence_score: z.number().optional().catch(undefined),
+    seo_optimized_alt_text: z.string().optional().catch(undefined),
     primary: PrimaryVehicleSchema,
     engineDetails: z.string().nullable(),
     otherPossibilities: z.array(z.object({
         name: z.string().default(''),
-        vehicle: z.string().optional(),
-        yearRange: z.string().optional(),
-        trim: z.string().optional(),
+        vehicle: z.string().nullish(),
+        yearRange: z.string().nullish(),
+        trim: z.string().nullish(),
         confidence: z.number(),
     }).transform(item => ({
         name: item.name || item.vehicle || 'Unknown',
+        vehicle: item.vehicle ?? undefined,
+        yearRange: item.yearRange ?? undefined,
+        trim: item.trim ?? undefined,
         confidence: item.confidence,
     }))),
     recommendedAccessories: z.array(z.string()),

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { getServiceRoleClient } from "@/lib/supabase-server"
 
 /**
  * POST /api/log-vehicle-selector
  *
  * Logs a vehicle selector submission to the vehicle_selector_events table.
- * Uses the anon key (client-safe) because the table's RLS allows anonymous
- * inserts.  This is a lightweight API route so the client can fire-and-forget
+ * Uses the service-role client: RLS on this table rejects anon inserts
+ * (Postgres 42501), so the previous anon-key insert never logged anything.
+ * This is a lightweight API route so the client can fire-and-forget
  * without bundling server action dependencies.
  */
 export async function POST(request: Request) {
@@ -22,17 +23,21 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    if (typeof make !== "string" || typeof model !== "string" || make.length > 60 || model.length > 60) {
+      return NextResponse.json({ error: "Invalid make or model" }, { status: 400 })
+    }
+    if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+      return NextResponse.json({ error: "Invalid year" }, { status: 400 })
+    }
+
+    const supabase = getServiceRoleClient()
 
     const { error } = await supabase.from("vehicle_selector_events").insert({
       make,
       model,
       year,
       supported: !!supported,
-      session_id: sessionId || null,
+      session_id: typeof sessionId === "string" ? sessionId.slice(0, 64) : null,
     })
 
     if (error) {

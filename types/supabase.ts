@@ -48,12 +48,17 @@ export type Database = {
                 }
                 Relationships: []
             }
+            // Hand-maintained until `supabase gen types` is run (see REVIEW.md M1).
+            // year/supported/session_id confirmed against the live schema (Aug 2026).
             vehicle_selector_events: {
                 Row: {
                     id: string
                     created_at: string
                     make: string
                     model: string
+                    year: number | null
+                    supported: boolean | null
+                    session_id: string | null
                     generation: string | null
                     source: string | null
                 }
@@ -62,6 +67,9 @@ export type Database = {
                     created_at?: string
                     make: string
                     model: string
+                    year?: number | null
+                    supported?: boolean | null
+                    session_id?: string | null
                     generation?: string | null
                     source?: string | null
                 }
@@ -70,8 +78,56 @@ export type Database = {
                     created_at?: string
                     make?: string
                     model?: string
+                    year?: number | null
+                    supported?: boolean | null
+                    session_id?: string | null
                     generation?: string | null
                     source?: string | null
+                }
+                Relationships: []
+            }
+            affiliate_clicks: {
+                Row: {
+                    id: string
+                    created_at: string
+                    merchant: string | null
+                    category: string | null
+                    vehicle: string | null
+                    brand: string | null
+                    product: string | null
+                    composed_query: string | null
+                    destination_url: string | null
+                    source: string | null
+                    session_id: string | null
+                    user_id: string | null
+                }
+                Insert: {
+                    id?: string
+                    created_at?: string
+                    merchant?: string | null
+                    category?: string | null
+                    vehicle?: string | null
+                    brand?: string | null
+                    product?: string | null
+                    composed_query?: string | null
+                    destination_url?: string | null
+                    source?: string | null
+                    session_id?: string | null
+                    user_id?: string | null
+                }
+                Update: {
+                    id?: string
+                    created_at?: string
+                    merchant?: string | null
+                    category?: string | null
+                    vehicle?: string | null
+                    brand?: string | null
+                    product?: string | null
+                    composed_query?: string | null
+                    destination_url?: string | null
+                    source?: string | null
+                    session_id?: string | null
+                    user_id?: string | null
                 }
                 Relationships: []
             }

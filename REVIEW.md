@@ -1,246 +1,253 @@
-# VisualFitment.com — Full Codebase Audit
+# VisualFitment.com: Codebase Audit
 
-Date: August 4, 2026. Read-only audit of the repository on the `main` branch. No code was changed. This replaces the July 6, 2026 audit (a backup of that file was saved to the session scratchpad).
+Date: October 11, 2026. Read-only audit of `main` at `b96835e` (no commits since August 4). No source code was changed. This replaces the August 4, 2026 audit, which is still in git history (`git show ba90031:REVIEW.md`).
 
-Verification method: every source file was read; `next build` and `eslint` were run; row-level security was probed empirically against the live Supabase project using read-only queries with both the anonymous key and the service key (no data was written or modified).
+**Method:** I read every server-side file, every API route, and every file on the affiliate, analytics, auth/save, and upload paths. I spot-checked the rest of the UI. I ran `tsc --noEmit`, `eslint`, `next build`, `npm audit --omit=dev` and `npm outdated`.
+
+**Not re-verified this time:** I did not probe the live Supabase project. Reading `.env.local` was blocked, and I did not ask for the keys. The August audit's empirical RLS result (anon reads return 0 rows on every table) stands, but it is now two months old. Four items below are marked **(verify)** because they depend on database or bucket configuration that is not in the repo.
 
 ---
 
 ## 1. Executive Summary
 
-The site builds cleanly, the Gemini models have been correctly migrated to the new versions, none of the removed API parameters are in use anywhere, and the anonymous-access test against the live database confirmed that row-level security is blocking public reads on every table, including the ones holding user garages. Those three previously flagged issues are in good shape. The affiliate redirect layer itself is sound: every link on the public pages goes through `/go`, the redirect can only ever send people to Amazon, and 1,631 clicks have been logged to date. However, three things need attention soon. First, the photo-analysis machinery is still open to the whole internet with no sign-in and no rate limits, and one of the two analysis endpoints will fetch any web address a caller supplies, which means a stranger or a bot could run up your Gemini bill or probe your infrastructure. Second, the "Save to My Garage" feature fails silently whenever the AI returns a year range like "2021-2024" (the database column only accepts a single number), and because the toast notification system was never actually mounted in the app, the user sees no error, no confirmation, and no feedback of any kind anywhere on the site; every toast message in the codebase is currently invisible. Third, the two Amazon buttons inside the My Garage detail panels bypass the `/go` layer entirely, so those clicks are never logged, never counted in analytics, and use a hardcoded affiliate tag. On the analytics side, GA4 is wired up correctly, but several key funnel steps (saving to garage, photo analyses started from category pages, part identifications) fire no events at all. The rest of the findings are waste and polish: a discarded image-quality AI call that costs money on every category-page analysis, duplicated prompt logic, dead code including an environment-validation module that never runs, about 1.9 MB of unused images, and FAQ text on the three category pages that has already drifted out of sync with its schema markup.
+The August fix pass held up well. The toast system is mounted. Year ranges no longer break "Save to My Garage". Every Amazon link now goes through `/go` with `nofollow sponsored noopener`. FAQ schema and visible FAQ text come from one source. The wasted image-quality Gemini call is gone. Uploads are downscaled before they are sent. Typecheck and build are clean.
 
-**The three most important fixes, in order: (1) lock down or rate-limit the analysis endpoints, (2) mount the toast component and fix the year-range save failure, (3) route the garage Amazon buttons through `/go`.**
+Four problems now matter most:
+
+1. **The installed Next.js version has published critical advisories.** Next 16.0.7 is affected by 12+ GitHub advisories, including Server Actions source-code exposure and a CSRF bypass of Server Actions. This app depends on Server Actions. The fix is a minor bump to 16.4.0.
+2. **Gemini cost abuse is only half closed.** URL validation landed, but there is still no rate limiting anywhere. Two public Server Actions also accept raw base64 image data, which skips the URL check completely. Anyone can use them as a free Gemini Flash/Pro proxy on your bill.
+3. **The privacy policy is factually wrong.** It describes "anonymous" analytics from a hosting provider and says only essential cookies are set. The site actually runs Google Analytics 4 and sets a one-year `vf_sid` affiliate-tracking cookie. Both Google Analytics' terms and the Amazon Associates agreement require accurate disclosure. The deletion-request contact is still "coming soon".
+4. **The "Analyze a photo" buttons do nothing on the homepage.** Every CTA that targets `#upload-zone` (header CTA, mobile menu, the selector's "Analyze My Photo Instead" fallback, blog CTAs, vehicle-page CTAs, educational guides, garage empty state) points at an element the homepage never renders. On the homepage the header button calls `preventDefault()` and then finds nothing to scroll to. The selector fallback is shown to every non-Tacoma visitor, which is most selector users, and it is a dead button.
+
+**Fix first, in order:** (1) `npm i next@16.4.0 eslint-config-next@16.4.0` plus `npm audit fix`; (2) add rate limiting and remove the `inlineData` passthrough from public actions; (3) rewrite the privacy policy; (4) add `id="upload-zone"` to the homepage photo panel.
 
 ---
 
-## 2. Findings by Severity
+## 1a. Fix Pass (branch `audit-fixes-2026-10`, October 11, 2026)
+
+**Checks after the pass:** `tsc` and `next build` (Next 16.4.0) are clean. Lint is at 101 problems (from 111). `npm audit --omit=dev` shows only 4 moderate advisories, all in build-time `gray-matter`. I smoke-tested on `npm run dev`: homepage CTAs, the selector fallback on `/` and `/r/[id]`, blog fonts and hero, vehicle-page JSON-LD, sitemap, the CSP header, and URL rejection on `/api/analyze` and `/api/analyses`. No live Gemini analyses were run.
+
+| Finding | Status |
+|---|---|
+| N1 | **Fixed.** Next 16.4.0, `npm audit fix` |
+| N2 | **Fixed in code.** The Gemini stages moved to server-only `lib/analysis-stages.ts`. Public actions accept validated URLs only, prompt inputs are sanitized, product types are capped at 8, and `/process` has a 10 s cooldown and a 24 h max age. **Still needed:** a Vercel WAF rate-limit rule (see below). |
+| N3 | **Mostly fixed.** The policy is rewritten (GA4, `vf_sid`, Gemini paid tier, Supabase, Amazon, storage). There is no privacy contact address yet: while `CONTACT_EMAIL` ([app/privacy/page.tsx:10](app/privacy/page.tsx:10)) is empty, the page points to in-app deletion in My Garage and says a contact address is coming. Set it as soon as you have one. |
+| N4 | **Fixed.** `id="upload-zone"` is on the hero photo panel, and the selector fallback navigates to `/#upload-zone` when the tool isn't on the page |
+| N5 | **Fixed.** Vehicle pages emit a plain `ItemList` of names, with no `Product`/`Offer` |
+| N6 | **Fixed.** A failed sniper parse keeps the scout result |
+| N7 | **Fixed in code.** The extension comes from the MIME type. **Still needed:** bucket MIME and size limits. |
+| N8 | **Fixed.** One shared browser client; `lib/supabase.ts` and `@supabase/ssr` removed |
+| N9 | **Fixed.** The schema keeps `vehicle_present`, `confidence_score`, alt text, `yearRange`, and `trim`; category pages show a "no vehicle" error |
+| N10 | **Corrected:** the `>= 90` labels sat in `results-display.tsx`'s `variant="preview"` branch, which no caller uses. The live view shows raw percentages. Labels and part colors now use `getConfidenceBand()` anyway (part `medium` cutoff moved from 50 to 55, so `part_identification_completed` outcomes shift slightly). The dead preview branch (which also hardcodes Tacoma links) is still there; deleting it was not approved in this pass. |
+| N11 | **Fixed.** Heroes went from 3.5/4.9 MB PNGs to 290/430 KB JPGs with `fetchPriority="high"`; blog fonts moved to `next/font`. The homepage sample card was loading the same 4.9 MB PNG from Supabase and now uses local `/images/sample-result.jpg` (L3). |
+| N12 | **Fixed.** The pipeline and routes stamp `updated_at` on every write |
+| N13 | **Fixed.** `/r` reports completion only for runs it watched, including retries. Category pages fire `analysis_completed` with a new `entry_point` param. |
+| N14 | **Fixed.** The products update is write-once, has a 15 min window, and is schema-validated. PATCH only narrows the AI's own year range. |
+| N15 | **Fixed.** `/api/analyze` logs with the service-role client |
+| N16 | Open (planned refactor: one server endpoint for the category flow) |
+| **New: selector logging was broken** | Found during the smoke test: `vehicle_selector_events` rejects anon inserts (RLS 42501), so `/api/log-vehicle-selector` has logged nothing. **Fixed:** it now uses the service-role client and validates input. |
+| **New: CSP blocked GA4 Google Signals** | `stats.g.doubleclick.net` was blocked. **Fixed:** `img-src`/`connect-src` now follow Google's GA4 CSP list (also closes M9). Google Fonts hosts were removed. |
+| M1 | Partly: added `affiliate_clicks` and the real `vehicle_selector_events` columns by hand, typed the service client, and removed `as any` in `/go`. Still run `supabase gen types`. |
+| M2 | Partly: the fitment prompt now lives only in `lib/analysis-stages.ts` |
+| M3, M4, M8, L5 README | Fixed (dead files and assets deleted, `.env.example`, README) |
+| L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
+| L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
+| Still open | N16, M7 leftovers, M10, M11, L1, L8 (selector `sessionId`: no client-readable session id exists), L11 |
+
+**Your manual steps:**
+1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
+2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
+3. In Supabase → Storage → `vehicle_images`, restrict allowed MIME types to `image/jpeg, image/png, image/gif, image/webp` and set a file size limit (about 5 MB).
+4. Run `supabase gen types typescript --project-id <id> > types/supabase.ts` and commit your RLS policies and migrations.
+
+---
+
+## 2. Status of the August 2026 Findings
+
+| ID | Finding | Status |
+|---|---|---|
+| C1 | Open analysis endpoints / SSRF | **Partly fixed.** SSRF is closed via `lib/url-validation.ts`. Rate limiting was never added, and a new bypass exists (see N2). |
+| C2 | Year-range save failure | Fixed (`lib/normalize-year.ts`, used in both save paths) |
+| C3 | Toaster not mounted | Fixed ([app/layout.tsx:126](app/layout.tsx:126)) |
+| H1 | Garage Amazon links bypass `/go` | Fixed; `lib/amazon.ts` deleted |
+| H2 | FAQ text vs schema drift | Fixed (single exported array per page) |
+| H3 | Missing funnel events | Mostly fixed. Category-page vehicle analyses still fire no completion event (N13). |
+| H4 | `/go` silent logging failure / no session | Fixed (loud `console.error`, `vf_sid` cookie). `user_id` is still never written. |
+| H5 | Missing `noopener` | Fixed |
+| H6 | Discarded quality-check call | Fixed (removed) |
+| H7 | Fitment not schema-validated | Fixed, but the schema now strips needed fields (N9) |
+| H8 | Image cost multiplication | Mostly fixed. Downscaling is in, `codeExecution` is gone, and the sniper is skipped on the Unknown fallback. Category flow still re-downloads every image once per Gemini call (N16). |
+| H9 | Pipeline timeouts | `/api/analyze` now has `maxDuration = 60`; pipeline limit unchanged |
+| M1 | Stale DB types | **Open** ([types/supabase.ts](types/supabase.ts) still lacks `affiliate_clicks`, `profiles`, and real `vehicle_selector_events` columns) |
+| M2 | Duplicated prompt / logic | **Open** (prompt still duplicated at [app/actions.ts:52](app/actions.ts:52) and [app/api/analyze/route.ts:86](app/api/analyze/route.ts:86); `parseRecommendation` x3; 3 browser Supabase clients, now a bug: N8) |
+| M3 | Dead code | **Open** (`lib/env.ts`, `lib/supabase.ts`, `components/home/stats-bar.tsx`, `test-db.js`, unrun `test/`, shadowing re-import at [app/actions.ts:30](app/actions.ts:30) and [:47](app/actions.ts:47)) |
+| M4 | Unused images in `public/` | **Open** (about 1.9 MB) |
+| M5 | Broken links / phantom schema URLs | Schema URLs fixed. Footer `/#use-cases` is still dead (L3). |
+| M6 | `/my-garage` indexable | Fixed |
+| M7 | Confidence thresholds disagree | **Open, and now a visible bug** (N10) |
+| M8 | Tag defined twice / no `.env.example` | Tag fixed; `.env.example` still missing |
+| M9 | CSP `img-src` misses regional GA | **Open** ([next.config.ts:30](next.config.ts:30)). The Aug 4 "GA4 update" commit changed `connect-src` only. |
+| M10 | Reporting table gaps / migrations | **Open** |
+| M11 | `/blog` dynamic | **Open** (still `ƒ /blog`) |
+| L1 | Lint failures | **Open** (111 problems, 55 errors) |
+| L2 | `Math.random` IDs | **Open** ([app/api/analyses/route.ts:8](app/api/analyses/route.ts:8)) |
+| L3 | Sample image from Supabase | **Open** |
+| L4 | Middle-click tracking | Fixed |
+| L5 | README boilerplate etc. | **Open** |
+
+---
+
+## 3. Findings by Severity
 
 ### CRITICAL
 
-#### C1. Analysis endpoints are open to the internet, and one accepts arbitrary URLs (cost abuse + SSRF)
+#### N1. Next.js 16.0.7 has published critical advisories, including Server Actions exposure
 
-- **Files:** [app/api/analyses/route.ts:11-36](app/api/analyses/route.ts:11), [lib/pipeline.ts:29-79](lib/pipeline.ts:29), [lib/gemini.ts:34-43](lib/gemini.ts:34), [app/api/analyze/route.ts:37](app/api/analyze/route.ts:37), [app/actions.ts:25-103](app/actions.ts:25)
-- **Impact:** `POST /api/analyses` accepts any `imageUrl` string with no validation and no authentication, then the server fetches that URL (`fetchImageForGemini`) and feeds it to Gemini. A caller can point it at internal or third-party addresses (server-side request forgery) or simply loop it to burn your Gemini budget and Vercel compute. The sibling endpoint `/api/analyze` does validate that URLs come from your Supabase storage (good), but it, the signed-upload action, and all five Gemini-calling server actions in `app/actions.ts` are callable by anyone with no rate limits or quotas. This was flagged in the July audit and remains open. A single script could generate thousands of paid AI calls per hour.
-- **Recommended fix:** In `/api/analyses`, reuse the same origin check `/api/analyze` already has (reject any `imageUrl` not starting with your `NEXT_PUBLIC_SUPABASE_URL`). Then add IP-based rate limiting (Vercel WAF rules or an Upstash limiter) across `/api/analyses`, `/api/analyze`, and the server actions, with a small anonymous per-hour cap.
+- **Files:** [package.json](package.json) (`next ^16.0.7`, lockfile pins 16.0.7)
+- **Impact:** `npm audit` reports `next` (critical) affected by 12+ advisories. Several directly hit this app's architecture: Server Actions source-code exposure (GHSA-w37m-7fhw-fmv9), a `null` origin bypassing the Server Actions CSRF check (GHSA-mq59-m269-xvcx), and several Server Components DoS issues. The site exposes five Server Actions to the browser. Other flagged packages: `protobufjs` (critical, via `@google/genai`), `ws`, `sharp` (bundled libvips/libheif CVEs), `source-map-js`, `yaml` (high/moderate).
+- **Fix:** `npm i next@16.4.0 eslint-config-next@16.4.0`, then `npm audit fix`. Rebuild and smoke-test the upload and `/go` paths. 16.4.0 is in the same major, so this is low risk.
 
-#### C2. "Save to My Garage" silently fails whenever the AI returns a year range
+#### N2. No rate limiting anywhere, and two public Server Actions skip URL validation entirely
 
-- **Files:** [components/save-to-garage-button.tsx:24-35](components/save-to-garage-button.tsx:24), [hooks/use-save-to-supabase.ts:40-52](hooks/use-save-to-supabase.ts:40), [types/supabase.ts:119](types/supabase.ts:119) (`garage_vehicles.year` is a number), [components/auth-provider.tsx:52-66](components/auth-provider.tsx:52)
-- **Impact:** The AI frequently returns `year` as a range string like `"2021-2024"` (the prompt explicitly asks it to). The save button passes that string straight into `garage_vehicles.year`, which is an integer column, so Postgres rejects the insert. The error is caught and shown via `toast.error(...)` — which is invisible (see C3) — so the user clicks "Save to My Garage," nothing happens, and the vehicle is never saved. The same failure occurs in the post-sign-in pending-save path in the auth provider. This quietly breaks a core retention feature for exactly the analyses where the AI was less than fully certain, which is a large share of real uploads.
-- **Recommended fix:** Before saving, normalize the year: if it is a range, store the first year (or prompt the user to pick one via the existing year-refinement UI), and change the insert to send a real number. Longer term, consider making the column text or adding a `year_range` column so no information is lost.
-
-#### C3. The toast notification system is never mounted, so every success and error message in the app is invisible
-
-- **Files:** [components/ui/sonner.tsx](components/ui/sonner.tsx) (Toaster component exists but is imported nowhere), [app/layout.tsx:77-125](app/layout.tsx:77) (no `<Toaster />`), plus ~15 `toast(...)` call sites in [components/auth-provider.tsx](components/auth-provider.tsx), [hooks/use-save-to-supabase.ts](hooks/use-save-to-supabase.ts), [components/garage/vehicle-card.tsx](components/garage/vehicle-card.tsx), [components/garage/part-card.tsx](components/garage/part-card.tsx), [components/garage/vehicle-detail-sheet.tsx](components/garage/vehicle-detail-sheet.tsx), [components/garage/part-detail-sheet.tsx](components/garage/part-detail-sheet.tsx)
-- **Impact:** The sonner library's `<Toaster />` component must be rendered once (normally in the root layout) for any `toast()` call to display. It never is. Every confirmation ("Vehicle saved to your garage!", "Part deleted successfully") and every error ("Failed to save vehicle. Please try again.") is silently dropped. Users get zero feedback on saves, deletes, edits, and sign-in-to-save flows, and failures like C2 are completely masked.
-- **Recommended fix:** Render `<Toaster />` from `components/ui/sonner.tsx` once inside the root layout's body. One-line change; verify a save and a delete visibly confirm afterward.
+- **Files:** [app/actions.ts:29-40](app/actions.ts:29) (`resolveImageParts` passes any `{ inlineData }` object straight to Gemini), [:210](app/actions.ts:210) `detectVisibleProducts`, [:258](app/actions.ts:258) `refineProductDetails`; no `middleware.ts`/`proxy.ts` exists; [app/api/analyses/[id]/process/route.ts](app/api/analyses/[id]/process/route.ts)
+- **Impact:** `detectVisibleProducts` and `refineProductDetails` are imported by a client component ([components/home/vehicle-analyzer.tsx:6-15](components/home/vehicle-analyzer.tsx:6)), so they are public endpoints. Their `imageInputs: ImageInput[]` parameter accepts base64 `inlineData` objects, which bypass `assertSupabaseStorageUrl` completely. `productType` and `vehicleDetails` go into the prompt without sanitization. A script can send any image plus arbitrary prompt text and get Flash output back, escalated to the Pro model whenever confidence is 85 or below. Separately, nothing limits `/api/analyses`, `/api/analyze`, `identifyPart`, or `/api/analyses/{id}/process`. The last one re-runs the whole multi-call pipeline on any errored record, as many times as it is called.
+- **Fix:** (a) Change the exported actions to accept `string[]` URLs only and validate them. Keep the `inlineData` path for internal pipeline use through a non-exported helper in `lib/`. (b) Add IP-based limits: a Vercel WAF rate-limit rule on `/api/*` and on POSTs carrying the `Next-Action` header is the zero-code option, or use Upstash Ratelimit in `middleware.ts`. (c) Cap retries per analysis ID in `/process`.
 
 ### HIGH
 
-#### H1. My Garage Amazon buttons bypass the `/go` money path entirely
+#### N3. The privacy policy misdescribes analytics and cookies, and has no deletion contact
 
-- **Files:** [components/garage/part-detail-sheet.tsx:280-283](components/garage/part-detail-sheet.tsx:280), [components/garage/vehicle-detail-sheet.tsx:222-226](components/garage/vehicle-detail-sheet.tsx:222), [lib/amazon.ts:7](lib/amazon.ts:7)
-- **Impact:** These two buttons build `https://www.amazon.com/s?k=...` URLs directly with `addAmazonAffiliateTag`, which hardcodes the tag `visualfitment-20` and ignores the `AMAZON_ASSOCIATE_TAG` environment variable. Because they skip `/go`: (a) the click is never written to `affiliate_clicks`, (b) the GA4 `affiliate_click` event never fires (the tracker only watches `/go?` links), and (c) the links use `rel="noopener noreferrer"` instead of the required `nofollow sponsored`. Your most engaged users (people who saved items) are the ones whose purchase intent you are not measuring. A "share" text in the part sheet ([part-detail-sheet.tsx:34](components/garage/part-detail-sheet.tsx:34)) also embeds a raw untagged Amazon URL.
-- **Recommended fix:** Replace both hrefs with `/go?...` URLs (a `merchant=amazon` + `product`/`vehicle` query using the existing builder), which restores logging, analytics, and correct rel attributes in one step, and delete `lib/amazon.ts` once nothing uses it.
+- **Files:** [app/privacy/page.tsx:46](app/privacy/page.tsx:46), [:70](app/privacy/page.tsx:70), [:25-26](app/privacy/page.tsx:25); [app/layout.tsx:96-110](app/layout.tsx:96) (GA4), [app/go/route.ts:7-8](app/go/route.ts:7) and [:90-97](app/go/route.ts:90) (`vf_sid`, one year)
+- **Impact:** The policy says analytics come from "a third-party hosting provider" and are "anonymous", and that "the only cookies we set are essential ones". In fact the site loads Google Analytics 4, which sets `_ga`/`_ga_*` cookies, and sets a one-year `vf_sid` cookie whose only purpose is joining affiliate clicks into sessions. Google Analytics terms require disclosing GA use. The Amazon Associates Operating Agreement requires disclosing that third parties may set cookies. The deletion section has said "coming soon" since March. "Last updated: March 1, 2026" predates both changes. The images bucket is public-read, but the policy calls it "secure cloud storage". The "not used for model training" claim is only true on a paid Gemini API tier **(verify** your billing tier in Google AI Studio).
+- **Fix:** Name Google Analytics, Google Gemini, Supabase, and Amazon. List the cookies (`_ga*`, `vf_sid`, the Supabase auth token in localStorage). Give a real contact email for deletion requests, and update the date.
 
-#### H2. FAQ text and FAQPage schema have already drifted apart on all three category pages
+#### N4. "Analyze a photo" CTAs are dead on the homepage
 
-- **Files:** [app/truck-bed-covers/page.tsx:53-63](app/truck-bed-covers/page.tsx:53) (schema) vs [app/truck-bed-covers/vehicle-analyzer-client.tsx:48-70](app/truck-bed-covers/vehicle-analyzer-client.tsx:48) (visible text); same dual-source pattern in [app/wheels-rims/page.tsx](app/wheels-rims/page.tsx) + client, [app/nerf-bars-running-boards/page.tsx](app/nerf-bars-running-boards/page.tsx) + client
-- **Impact:** Each category page defines its FAQ answers twice: once as JSON-LD in the server page and once as the visible accordion in the client component. They are already different (for example, the visible bed-liner answer begins "Absolutely. Most tonneau covers…" while the schema version says "Most tonneau covers are designed…"; the measuring answer includes "(the wall behind the cab)" only in the visible copy). Google treats mismatched FAQ markup as spammy structured data and can drop rich results or issue a manual action. The blog does this correctly — visible FAQ and schema both come from the same MDX frontmatter ([app/blog/[slug]/page.tsx:186-200](app/blog/[slug]/page.tsx:186) and [:338-348](app/blog/[slug]/page.tsx:338)) and cannot drift.
-- **Recommended fix:** Define each category page's FAQ list once (a single exported array per page), and generate both the JSON-LD and the `FaqAccordion` items from it, mirroring the blog approach.
+- **Files:** [components/ui/site-header.tsx:52-62](components/ui/site-header.tsx:52), [components/home/vehicle-selector.tsx:112-117](components/home/vehicle-selector.tsx:112) and [:207-215](components/home/vehicle-selector.tsx:207), [components/home/vehicle-analyzer.tsx:524-525](components/home/vehicle-analyzer.tsx:524) (the only `id="upload-zone"`, rendered only when `!showCategories`, so never on the homepage); targets in `app/vehicles/**`, `app/blog/[slug]/page.tsx:216`, `components/educational/*`, `components/garage/garage-dashboard.tsx:332`
+- **Impact:** On the homepage, the header CTA calls `preventDefault()` and then `getElementById('upload-zone')`, which returns `null`, so the click does nothing. The vehicle selector's "Analyze My Photo Instead" button does the same in all three places it appears: the hero, the results-correction view, and the `/r` error state. It shows for every vehicle except the Tacoma. On mobile the photo panel sits above the selector, so the user taps and nothing visible happens. Cross-page links to `/#upload-zone` from the blog, vehicle pages, guides, and garage land at the top of the homepage rather than at the tool. That is tolerable because the hero is at the top, but it is not what the link promises.
+- **Fix:** Add `id="upload-zone"` (with `scroll-mt-20`) to the photo-tool panel in [components/home/hero-dual-entry.tsx:161](components/home/hero-dual-entry.tsx:161). On `/r/[id]`, make the fallback button a link to `/#upload-zone`.
 
-#### H3. Key conversion steps fire no analytics events
+#### N5. Product/Offer structured data on vehicle pages is invalid and misrepresents you as a seller
 
-- **Files:** [components/home/vehicle-analyzer.tsx:495-516](components/home/vehicle-analyzer.tsx:495) (category-page/part-identifier analyses: no events), [components/save-to-garage-button.tsx](components/save-to-garage-button.tsx) / [components/save-to-parts-button.tsx](components/save-to-parts-button.tsx) (no save event), [lib/analytics.ts:17](lib/analytics.ts:17) (`blog` entry door defined but never set anywhere)
-- **Impact:** The funnel has holes you cannot see in GA4: photo analyses started on `/truck-bed-covers`, `/wheels-rims`, `/nerf-bars-running-boards`, and `/part-identifier` produce zero events (only the homepage hero fires `photo_analysis_started`); "Save to My Garage" and "Save Part" — the clearest retention signals on the site — fire nothing; part identifications have no completion event; and visitors who arrive via blog posts can never be attributed to the `blog` entry door because `setEntryDoor('blog')` is never called. Combined with H1, both ends of the funnel (entry attribution and monetized exits from the garage) are under-measured.
-- **Recommended fix:** Fire `photo_analysis_started` (with `entry_point`) in `handleStartBatch`, add `save_to_garage` / `save_part` events in the two save buttons, add a completion event for part mode, and call `setEntryDoor('blog')` from a small client effect in the blog layout.
-
-#### H4. `/go` click logging can silently switch off, and never records who clicked
-
-- **Files:** [app/go/route.ts:34-57](app/go/route.ts:34), [lib/supabase-server.ts:5-16](lib/supabase-server.ts:5)
-- **Impact:** If `SUPABASE_SERVICE_ROLE_KEY` is ever missing or rotated incorrectly in Vercel, `logClick` returns early and every redirect proceeds unlogged — revenue clicks vanish from your data with no alert (the fallback client is even built with a `"dummy_key_to_prevent_crash_at_build"`). Separately, the `affiliate_clicks` table has `user_id` and `session_id` columns (confirmed against the live schema) that the route never populates, so you cannot join clicks to users or sessions for attribution.
-- **Recommended fix:** Log loudly (or send to an error tracker) when the key is missing rather than skipping silently; add a health check that compares GA `affiliate_click` counts with `affiliate_clicks` rows. Pass a session identifier (and user id when signed in) into the `/go` URL or a cookie, and write them in the insert.
-
-#### H5. Seven affiliate links are missing `noopener` (brand rule: `nofollow sponsored noopener`)
-
-- **Files:** [components/home/results-display.tsx:188](components/home/results-display.tsx:188), [:607](components/home/results-display.tsx:607), [:674](components/home/results-display.tsx:674), [:723](components/home/results-display.tsx:723); [components/analysis/analysis-results-view.tsx:173](components/analysis/analysis-results-view.tsx:173), [:238](components/analysis/analysis-results-view.tsx:238), [:275](components/analysis/analysis-results-view.tsx:275)
-- **Impact:** All seven use `target="_blank"` with `rel="nofollow sponsored"` only. Without `noopener`, the destination page gets a `window.opener` handle to your tab (modern browsers mitigate this, but the stated brand rule requires it explicitly). The two vehicle-catalog components ([product-card.tsx:62](components/vehicles/product-card.tsx:62), [popular-picks.tsx:68](components/vehicles/popular-picks.tsx:68)) already do it correctly, and the two garage links in H1 are missing `nofollow sponsored` altogether.
-- **Recommended fix:** Change all seven to `rel="nofollow sponsored noopener"`; fold the garage links into the H1 fix.
-
-#### H6. A paid Gemini image-quality check runs on every category-page analysis and its result is thrown away
-
-- **Files:** [components/home/vehicle-analyzer.tsx:386-392](components/home/vehicle-analyzer.tsx:386) (issues stored, never shown), [:106](components/home/vehicle-analyzer.tsx:106) and [:647-655](components/home/vehicle-analyzer.tsx:647) (`QualityWarningDialog` is rendered but `setCurrentQualityItem` is never called with a value, so it can never open), [app/actions.ts:372-410](app/actions.ts:372) (`checkImageQuality`)
-- **Impact:** Every analysis on the sub-pages makes a full Gemini Flash call (with all uploaded images attached) to assess photo quality, then stores the result in `qualityIssues`, which no component renders, and the warning dialog that was built for it is unreachable. You pay for one extra vision call per analysis and the user gains nothing.
-- **Recommended fix:** Either surface the result (open the existing dialog when `isHighQuality` is false) or remove the `checkImageQuality` step and dialog entirely. Removing it is the cheapest option; the pipeline's `vehicle_present` flag already covers the "no vehicle in photo" case.
-
-#### H7. The primary fitment result is never schema-validated before it reaches the database and the UI
-
-- **Files:** [app/api/analyze/route.ts:142-153](app/api/analyze/route.ts:142) (JSON.parse only), [app/actions.ts:80-99](app/actions.ts:80) (same), [lib/pipeline.ts:39-50](lib/pipeline.ts:39) (blind cast to `AnalysisResults`)
-- **Impact:** The product-detection and part-identification paths validate Gemini's output with Zod, but the main vehicle-fitment response — the one users see first — is only `JSON.parse`d. Valid JSON with a missing or reshaped `primary` object flows straight into `analysis_results`/`analyses` and the UI. The pipeline then reads `result.primary.year` and crashes into its catch block (analysis shows a generic error); on `/api/analyze` the malformed blob is returned to the client and stored. The sniper-fallback silently keeps a bad scout result if the sniper output fails to parse ([app/actions.ts:94-97](app/actions.ts:94)), which is reasonable, but there is no final shape check.
-- **Recommended fix:** Run the parsed object through the existing `AnalysisResultsSchema` (already defined in [app/actions.ts:192-210](app/actions.ts:192)) in both call sites, and return a clean "AI returned an unexpected format, please retry" error when it fails instead of persisting the blob.
-
-#### H8. Gemini spend is multiplied by re-downloading full-size images for every call, and the sniper re-fires on unidentifiable products
-
-- **Files:** [lib/gemini.ts:34-43](lib/gemini.ts:34) (fresh fetch + base64 per call), [components/home/vehicle-analyzer.tsx:311-338](components/home/vehicle-analyzer.tsx:311) (uploads original files, up to 10 files x 10 MB, no resize), [app/actions.ts:315-348](app/actions.ts:315) (scout returns the "Unknown/confidence 50" fallback, which is ≤ the 85 threshold, so the sniper always fires for products that simply are not identifiable), [app/api/analyze/route.ts:124-138](app/api/analyze/route.ts:124) and [:177-179](app/api/analyze/route.ts:177) plus [app/actions.ts:74-78](app/actions.ts:74) (a `codeExecution` tool is enabled on vision calls that only need JSON out)
-- **Impact:** One category-page analysis with several detected products can produce roughly 8-14 Gemini calls (quality check, fitment scout + possible sniper, product detection, then scout + possible sniper per product type), and each call re-downloads every image from Supabase and re-sends the full-resolution base64 payload, inflating token costs, Supabase egress, and latency. Enabling code execution on these calls adds cost/latency and increases the chance of non-JSON output for no benefit. The "Unknown brand, confidence 50" fallback guarantees a paid Pro-model retry on exactly the products least likely to benefit.
-- **Recommended fix:** Resize/compress images client-side before upload (e.g., cap the long edge at ~1568 px, JPEG ~80%); fetch and encode each image once per analysis and pass the parts to every stage; drop the `codeExecution` tool; and skip the sniper retry when the scout's answer is the hardcoded Unknown fallback rather than a genuine low-confidence identification.
-
-#### H9. The background pipeline can outlive its 60-second budget, producing "Analysis timed out" errors
-
-- **Files:** [app/api/analyses/route.ts:5](app/api/analyses/route.ts:5) (`maxDuration = 60`), [lib/pipeline.ts:29-79](lib/pipeline.ts:29) (fitment + detection + N refinements inside `waitUntil`), [app/api/analyses/[id]/route.ts:33-53](app/api/analyses/[id]/route.ts:33) (2-minute stale fallback), [app/api/analyze/route.ts](app/api/analyze/route.ts) (no `maxDuration` at all — scout + sniper sequential calls can exceed the platform default)
-- **Impact:** The homepage flow runs the entire multi-call pipeline inside `waitUntil` on a function capped at 60 seconds. A busy photo (many product types, sniper escalations, big images) can exceed that; the function is killed mid-flight, the record sticks in `identifying`/`detecting_products`, and the user eventually sees "Analysis timed out. Please retry." The category-page flow's `/api/analyze` route exports no `maxDuration`, so two sequential model calls run under the default limit and can 504 under load.
-- **Recommended fix:** Raise `maxDuration` on the analyses routes (and add one to `/api/analyze`), and reduce per-call latency via the H8 image work. If timeouts persist, split the pipeline into resumable steps (the `status` column already supports this).
+- **Files:** [app/vehicles/[make]/[model]/[generation]/page.tsx:141-153](app/vehicles/[make]/[model]/[generation]/page.tsx:141), [app/vehicles/[make]/[model]/page.tsx:150-152](app/vehicles/[make]/[model]/page.tsx:150)
+- **Impact:** Each catalog product is emitted as `Product` with an `Offer` that has no `price`/`priceCurrency`, is marked `InStock`, and has a URL pointing at `/go`. `/go` is disallowed in `robots.txt` and redirects to an Amazon search page. Google requires `price` on `Offer`, so these produce "Invalid item" errors in Search Console. Claiming in-stock offers for products you don't sell risks a structured-data manual action. Your vehicle pages are your main SEO surface, so this is where it hurts most.
+- **Fix:** Drop the `offers` block and keep `ItemList` → `Product` (name, description, brand) only, or emit an `ItemList` of plain names. Check the result in the Rich Results Test.
 
 ### MEDIUM
 
-#### M1. Generated database types are stale and hide schema mismatches
+#### N6. A malformed Pro (sniper) response throws away a valid Flash (scout) result
 
-- **Files:** [types/supabase.ts](types/supabase.ts) — missing the `affiliate_clicks` and `profiles` tables entirely; `vehicle_selector_events` lacks the real `year`, `supported`, and `session_id` columns (confirmed against the live database); [app/go/route.ts:38-47](app/go/route.ts:38) works around it with `as any`
-- **Impact:** The compiler cannot catch typos or drift on your revenue-logging insert, and future edits to `/go` or the selector logging can break silently.
-- **Recommended fix:** Regenerate types with the Supabase CLI (`supabase gen types typescript`) and remove the `as any`/`number | string` hacks that were patched around the stale file.
+- **Files:** [app/actions.ts:308](app/actions.ts:308) (`refineProductDetails`), [:390](app/actions.ts:390) (`identifyPart`); also [:287](app/actions.ts:287) and [:377](app/actions.ts:377)
+- **Impact:** The sniper's `JSON.parse` is not wrapped in its own try/catch. If the Pro model returns non-JSON, it throws to the outer catch. The product becomes "Error during product refinement", or the whole part identification fails, even though a schema-valid scout answer was already in hand. Scout parse failures surface a raw `SyntaxError` message to the user. The comments say "keeping Scout result", but the code doesn't.
+- **Fix:** Wrap each sniper `JSON.parse` in try/catch and fall through to the scout result, as `/api/analyze` already does at lines 180-192.
 
-#### M2. The 40-line Gemini fitment prompt (and other logic) is duplicated
+#### N7. Signed-upload action trusts the client's filename extension and declared MIME type (verify bucket config)
 
-- **Files:** [app/actions.ts:35-72](app/actions.ts:35) vs [app/api/analyze/route.ts:84-121](app/api/analyze/route.ts:84) (identical prompt, already at risk: only one site would get future edits); `parseRecommendation` defined three times ([components/home/results-display.tsx:224](components/home/results-display.tsx:224), [components/analysis/analysis-results-view.tsx:21](components/analysis/analysis-results-view.tsx:21), [components/home/sample-result-preview.tsx:10](components/home/sample-result-preview.tsx:10)); query dedupe logic duplicated between [lib/affiliate/merchants.ts:13-19](lib/affiliate/merchants.ts:13) and [app/go/route.ts:28-31](app/go/route.ts:28); two large near-duplicate results renderers ([components/home/results-display.tsx](components/home/results-display.tsx), 755 lines, vs [components/analysis/analysis-results-view.tsx](components/analysis/analysis-results-view.tsx)); three different browser Supabase client factories ([components/auth-provider.tsx:12](components/auth-provider.tsx:12), [lib/supabase-client.ts](lib/supabase-client.ts), [lib/supabase.ts](lib/supabase.ts))
-- **Impact:** Prompt tweaks, recommendation parsing changes, and auth/session fixes each have to be made in multiple places; missing one produces subtle inconsistencies between the homepage flow and the category-page flow.
-- **Recommended fix:** Move the prompt into `lib/gemini.ts` as a builder function; export one `parseRecommendation`; make `/go` reuse the merchant builder's query; consolidate on a single browser client module; plan to converge the two results renderers on the newer `analysis-results-view`.
+- **Files:** [app/actions.ts:122-153](app/actions.ts:122)
+- **Impact:** The extension comes from `fileName.split('.').pop()`, and the MIME check is against a client-declared string. A caller can request `uuid.html` with type `image/png`, then PUT any body and content type to the signed URL. Unless the `vehicle_images` bucket restricts MIME types and size, that makes your public bucket free file or phishing hosting under your Supabase domain. It is not XSS on visualfitment.com, but it is your project's reputation and egress.
+- **Fix:** Derive the extension from the validated MIME (`image/jpeg` → `jpg`). **(verify)** In Supabase → Storage → `vehicle_images`, set allowed MIME types to the four image types and a file size limit (about 5 MB is ample after downscaling).
 
-#### M3. Dead code, including an environment-validation module that never runs
+#### N8. Two independent Supabase auth clients run in the browser
 
-- **Files:** [lib/env.ts](lib/env.ts) (imported nowhere — the Zod env validation it promises never executes, so a missing `NEXT_PUBLIC_GA_ID` or `GEMINI_API_KEY` fails silently at runtime instead of loudly at boot), [lib/supabase.ts](lib/supabase.ts) (`getBrowserClient` unused), [components/home/stats-bar.tsx](components/home/stats-bar.tsx) (unused), [components/home/quality-warning-dialog.tsx](components/home/quality-warning-dialog.tsx) (unreachable, see H6), [test-db.js](test-db.js) (debug script at repo root), [test/](test/analysis-fixture-test.ts) (two fixture tests wired to no npm script, never run), [app/actions.ts:30](app/actions.ts:30) (dynamic re-import that shadows the top-of-file imports for no effect)
-- **Impact:** Dead paths mislead future work (the env module especially — it looks like validation exists) and inflate review surface.
-- **Recommended fix:** Either import `publicEnv`/`getServerEnv` where the raw `process.env` reads are, or delete the module; delete the other dead files; add a `"test"` script if the fixture tests are meant to gate anything.
+- **Files:** [components/auth-provider.tsx:12-14](components/auth-provider.tsx:12) (own `createClient`), [lib/supabase-client.ts](lib/supabase-client.ts) (used by the save hook and every garage component)
+- **Impact:** Both clients use the same localStorage key and both auto-refresh tokens. Supabase warns "Multiple GoTrueClient instances detected" because the two can race on refresh-token rotation, which shows up as random sign-outs ("Invalid Refresh Token: Already Used"). The provider's `onAuthStateChange` also doesn't see refreshes done by the other client.
+- **Fix:** Have `auth-provider.tsx` import `supabaseClient` from `lib/supabase-client.ts`, and delete the unused `lib/supabase.ts`.
 
-#### M4. ~1.9 MB of unreferenced images and template assets in `public/`
+#### N9. Fitment schema strips `vehicle_present`, and category pages have no "no vehicle" state
 
-- **Files:** `public/images/sample-result-raptor.jpg` (1.1 MB, referenced nowhere), `public/images/sample-result-tacoma.jpg` (273 KB, referenced nowhere — the homepage sample card actually loads its image from Supabase storage per [data/sample-analysis.ts:5](data/sample-analysis.ts:5)), `public/next.svg`, `public/vercel.svg`, `public/file.svg`, `public/globe.svg`, `public/window.svg` (create-next-app leftovers), `public/logo.png` (452 KB source for a 32 px header logo — next/image optimizes it, but the repo/deploy carries the full file)
-- **Impact:** Deployment bloat and confusion; no runtime cost since nothing loads them.
-- **Recommended fix:** Delete the unreferenced files; export a reasonably sized logo source.
+- **Files:** [lib/schemas.ts:16-34](lib/schemas.ts:16), [app/api/analyze/route.ts:196-205](app/api/analyze/route.ts:196)
+- **Impact:** Zod drops unknown keys, so `parseResult.data` loses `vehicle_present`, `confidence_score`, and `seo_optimized_alt_text`. The `otherPossibilities` transform also drops `yearRange` and `trim`. The homepage pipeline stores the raw object, so `/r/[id]` is unaffected. On `/truck-bed-covers`, `/wheels-rims`, and `/nerf-bars-running-boards`, a photo with no vehicle still renders a full fitment card for a hallucinated vehicle, and the `analysis_results` rows lose those fields.
+- **Fix:** Add `vehicle_present`, `confidence_score`, and `seo_optimized_alt_text` as optional fields and keep `yearRange`/`trim` (or use `.passthrough()`). Render the same "we don't see a vehicle" state the `/r` page has.
 
-#### M5. Broken and phantom internal links
+#### N10. Low-confidence results are labeled "Medium Confidence" on category pages
 
-- **Files:** [components/ui/site-footer.tsx:10-21](components/ui/site-footer.tsx:10) (`#how-it-works` and `#use-cases` are bare fragments that do nothing on every page except the homepage), [app/blog/[slug]/page.tsx:175-180](app/blog/[slug]/page.tsx:175) (breadcrumb schema points to `/blog/category/{slug}`, a route that does not exist), [:145](app/blog/[slug]/page.tsx:145) (author URL `https://visualfitment.com/about`, also nonexistent)
-- **Impact:** Footer links appear dead on most of the site; schema URLs that 404 undermine the structured data's credibility with crawlers.
-- **Recommended fix:** Prefix the footer fragments with `/` (`/#how-it-works`), and either create the category/about pages or remove those URLs from the schema.
+- **Files:** [components/home/results-display.tsx:277](components/home/results-display.tsx:277), [:362](components/home/results-display.tsx:362), [:64](components/home/results-display.tsx:64), [:108-113](components/home/results-display.tsx:108); [config/analysis.ts](config/analysis.ts)
+- **Impact:** The label is `confidence >= 90 ? "High" : "Medium"`, so a 20% identification reads "Medium Confidence". That undermines trust on exactly the results most likely to be wrong. Part identification uses a fourth band set (80/50). `/r` uses 80/55 from config.
+- **Fix:** Use `getConfidenceBand()` from [types/analysis.ts:91](types/analysis.ts:91) everywhere.
 
-#### M6. `/my-garage` is statically prerendered and indexable
+#### N11. Blog hero images are 3.5 MB and 4.9 MB PNGs served through raw `<img>`
 
-- **Files:** [app/my-garage/page.tsx:3-6](app/my-garage/page.tsx:3) (no `robots` metadata; page appears as Static in the build output)
-- **Impact:** A private dashboard shell can be indexed by search engines (only the empty logged-out shell, since data loads client-side, but it wastes crawl budget and looks broken in search results). `/r/[id]` handles this correctly with `robots: { index: false }`.
-- **Recommended fix:** Add `robots: { index: false, follow: false }` to the page metadata.
+- **Files:** `public/blog/images/truck-trim-levels-explained-hero.png` (4.9 MB), `leveling-kit-vs-lift-kit-hero.png` (3.5 MB); [app/blog/[slug]/page.tsx:280](app/blog/[slug]/page.tsx:280)
+- **Impact:** The above-the-fold hero is the LCP element. Five megabytes unoptimized on mobile will fail Core Web Vitals for those two posts. The other heroes are 100-240 KB JPGs. The blog layout also loads Google Fonts through a render-blocking external stylesheet ([app/blog/layout.tsx:25](app/blog/layout.tsx:25)) rather than `next/font`.
+- **Fix:** Re-export both as roughly 1600 px JPG/WebP under 250 KB, or switch the hero to `next/image` with `priority`. Move DM Sans / DM Serif Display to `next/font/google`.
 
-#### M7. Confidence thresholds disagree across three modules
+#### N12. Stale-analysis logic depends on a database trigger that isn't in the repo (verify)
 
-- **Files:** [config/analysis.ts:2-5](config/analysis.ts:2) (high = 80, medium = 55, used by `/r/[id]`), [lib/gemini.ts:8](lib/gemini.ts:8) (cascade threshold 85), [components/home/results-display.tsx:265](components/home/results-display.tsx:265) and [:350](components/home/results-display.tsx:350) (hardcoded `>= 90` for the "High Confidence" label in preview mode)
-- **Impact:** The same 82%-confidence analysis is labeled "High" on `/r/[id]` but "Medium" in the preview renderer, and the escalation cutoff is a third number; product decisions about these bands are hard to reason about.
-- **Recommended fix:** Route every band label and the cascade cutoff through `config/analysis.ts`.
+- **Files:** [app/api/analyses/[id]/route.ts:33-53](app/api/analyses/[id]/route.ts:33), [app/api/analyses/[id]/process/route.ts:28-34](app/api/analyses/[id]/process/route.ts:28), [lib/pipeline.ts](lib/pipeline.ts) (no update writes `updated_at`)
+- **Impact:** The two-minute "timed out" check reads `updated_at`, but no code sets it. Without an `ON UPDATE` trigger, `updated_at` stays at creation time. Then a "Try again" on an analysis older than two minutes gets marked "Analysis timed out" by the next poll while the retry is still running.
+- **Fix:** **(verify)** Confirm a `moddatetime`/`updated_at` trigger exists on `analyses`. If not, set `updated_at: new Date().toISOString()` in each pipeline update. Commit migrations so this is auditable.
 
-#### M8. Affiliate tag defined twice; environment variables undocumented
+#### N13. Analytics: completion events are double-counted on `/r` and missing on category pages
 
-- **Files:** [lib/affiliate/merchants.ts:21](lib/affiliate/merchants.ts:21) (`AMAZON_ASSOCIATE_TAG` env with `visualfitment-20` fallback), [lib/amazon.ts:7](lib/amazon.ts:7) (same tag hardcoded, no env); no `.env.example` documenting the six required variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AMAZON_ASSOCIATE_TAG`, `NEXT_PUBLIC_GA_ID`)
-- **Impact:** Changing the tag in Vercel would update `/go` links but not the garage links (H1), splitting commissions across two tags; new environments get set up by guesswork.
-- **Recommended fix:** Single source for the tag (the merchants registry), and add a committed `.env.example`.
+- **Files:** [components/analysis/analysis-view.tsx:50-89](components/analysis/analysis-view.tsx:50), [components/home/vehicle-analyzer.tsx:484](components/home/vehicle-analyzer.tsx:484)
+- **Impact:** `analysis_completed` fires on every page load of a finished `/r/{id}`, so revisits and shared links count as new completions and inflate the completion rate. After a failed analysis and a successful "Try again", the success never fires because the ref is already set. On category pages, vehicle analyses fire `photo_analysis_started` but never a completion event, so started→completed can't be computed there. Homepage `photo_analysis_started` fires before the upload, so upload failures count as starts.
+- **Fix:** Fire completion only when the view observed an in-progress status first, and reset the ref on retry. Add a completion event at the end of `processItem` in vehicle mode.
 
-#### M9. CSP allows GA's primary transport but not its image-beacon fallback
+#### N14. Anyone can rewrite analysis records
 
-- **Files:** [next.config.ts:27-31](next.config.ts:27) — `script-src` and `connect-src` correctly include `googletagmanager.com` and `*.google-analytics.com` (regional endpoints covered by the wildcard), but `img-src` lists only `www.google-analytics.com`, not `*.google-analytics.com` or `www.googletagmanager.com`
-- **Impact:** When GA falls back to image-pixel transport (older browsers, some beacon failures), hits to regional hosts like `region1.google-analytics.com` are blocked and those pageviews are lost. Small but real undercounting.
-- **Recommended fix:** Broaden `img-src` to `https://*.google-analytics.com https://www.googletagmanager.com`.
+- **Files:** [app/actions.ts:427-466](app/actions.ts:427) (`updateAnalysisResultsProducts`, public action, service-role key), [app/api/analyses/[id]/route.ts:58-103](app/api/analyses/[id]/route.ts:58) (`PATCH` with no auth)
+- **Impact:** `updateAnalysisResultsProducts` overwrites `detectedProducts` on any `analysis_results` row matched by `image_url`, and image URLs are returned by the public `/api/analyses/{id}`. `PATCH` lets anyone with a result link change its year. The impact is low (internal logging data, unindexed pages), but it is a write path with no ownership check.
+- **Fix:** Do the products update server-side inside `/api/analyze`, or key it by a row ID returned only to the caller, and stop exporting it as an action. Accept the PATCH risk or tie it to a short-lived token returned at creation.
 
-#### M10. Reporting-table gaps that need a dashboard check
+#### N15. `/api/analyze` logs with the anon key (verify)
 
-- **Files:** [app/go/route.ts:38](app/go/route.ts:38) (`affiliate_clicks` insert), [lib/pipeline.ts:14-27](lib/pipeline.ts:14) (writes `vehicle_selector_events` with no `year`/`supported`, while [app/api/log-vehicle-selector/route.ts:30-36](app/api/log-vehicle-selector/route.ts:30) requires them — two writers, two shapes)
-- **Impact:** `affiliate_clicks` is at 1,631 rows and growing on every redirect; whether it has indexes on `created_at`/`merchant`/`category` cannot be verified from the repo (no migrations are committed). The selector-events table mixes two record shapes, which will complicate demand reporting.
-- **Recommended fix:** Check indexes in the Supabase dashboard and add one on `created_at` (and any column you filter reports by); commit migrations to the repo going forward so the schema is auditable; unify the two selector-event writers.
+- **Files:** [app/api/analyze/route.ts:22-31](app/api/analyze/route.ts:22), [:214-221](app/api/analyze/route.ts:214)
+- **Impact:** Every other server write uses the service-role key, but this route inserts into `analysis_results` as `anon`. If RLS denies anon INSERT, which is likely given that anon SELECT returns nothing, every category-page analysis silently goes unlogged, and `updateAnalysisResultsProducts` then finds no row.
+- **Fix:** **(verify)** Check for recent rows with `model_used` set and no `detectedProducts` from category flows, or just switch this route to `getSupabaseAdmin()` like the pipeline.
 
-#### M11. `/blog` index renders server-side on every request
+#### N16. Category flow re-downloads every image for every Gemini call
 
-- **Files:** [app/blog/page.tsx:29-39](app/blog/page.tsx:29) (reads `searchParams`, making the route dynamic — visible as `ƒ /blog` in the build output); [:13](app/blog/page.tsx:13) canonical is always `/blog` even on `?page=2+`
-- **Impact:** Every blog-index view is a Vercel function invocation instead of a cached static page, and paginated pages canonicalize to page 1 (acceptable but worth being deliberate about).
-- **Recommended fix:** If pagination traffic is trivial, render page 1 statically and link to a `/blog/page/2` static route; otherwise leave it and accept the invocation cost.
+- **Files:** [components/home/vehicle-analyzer.tsx:427](components/home/vehicle-analyzer.tsx:427), [:434](components/home/vehicle-analyzer.tsx:434); [app/actions.ts:219](app/actions.ts:219), [:265](app/actions.ts:265)
+- **Impact:** The pipeline fetches images once. The category flow passes URLs, so `/api/analyze` plus `detectVisibleProducts` plus N × `refineProductDetails` each re-fetch and re-encode all images (up to 10) from Supabase. This adds egress and latency, not tokens.
+- **Fix:** Move the category flow onto a single server endpoint that fetches once, like `runPipeline`. That also removes the need for N2's public actions.
 
 ### LOW
 
-#### L1. ESLint reports 114 problems (55 errors)
-
-- **Files:** across the repo; representative: [hooks/use-media-query.ts:13](hooks/use-media-query.ts:13) (setState in effect), [lib/pipeline.ts:48](lib/pipeline.ts:48) (`any`), [test-db.js:1](test-db.js:1) (require imports), many unused vars in tests
-- **Impact:** `npm run lint` fails, so lint cannot be used as a CI gate; the errors themselves are style/typing, not runtime bugs (build passes).
-- **Recommended fix:** One `--fix` pass plus an hour of manual cleanup, then enforce lint in CI.
-
-#### L2. Analysis IDs come from `Math.random`
-
-- **Files:** [app/api/analyses/route.ts:7-9](app/api/analyses/route.ts:7)
-- **Impact:** 8-character base-36 IDs from a non-cryptographic RNG. Result pages are public-by-link and unindexed, so exposure is limited to guessability of other people's (anonymous) results.
-- **Recommended fix:** Use `crypto.randomUUID()` (or a nanoid) as elsewhere in the codebase.
-
-#### L3. Homepage sample-result image loads from Supabase storage
-
-- **Files:** [data/sample-analysis.ts:5](data/sample-analysis.ts:5)
-- **Impact:** The above-the-fold sample card depends on your storage bucket for a static marketing image; if the bucket or that object changes, the homepage hero degrades.
-- **Recommended fix:** Serve it from `public/images` (the unused `sample-result-tacoma.jpg` appears to have been intended for exactly this) and delete the storage dependency.
-
-#### L4. Middle-clicks on affiliate links are not tracked
-
-- **Files:** [components/analytics-tracker.tsx:8-38](components/analytics-tracker.tsx:8) (listens to `click` only; middle-click fires `auxclick`)
-- **Impact:** Open-in-new-tab-via-middle-click affiliate clicks reach `/go` (so they are logged in Supabase) but fire no GA event — a small, systematic GA undercount versus the database.
-- **Recommended fix:** Add an `auxclick` listener guarded to button 1.
-
-#### L5. Assorted cleanup
-
-- [README.md](README.md) is untouched create-next-app boilerplate — replace with setup notes and the env-var list (pairs with M8).
-- `baseline-browser-mapping` prints a staleness warning on every build — `npm i baseline-browser-mapping@latest -D`.
-- [components/home/hero-dual-entry.tsx:24-26](components/home/hero-dual-entry.tsx:24) declares a `HeroDualEntryProps` interface with an `onFilesSelect` prop the component never accepts.
-- `next-themes` is used only inside the unmounted Toaster ([components/ui/sonner.tsx:10](components/ui/sonner.tsx:10)) and there is no `ThemeProvider`; when C3 is fixed, the theme will always resolve to "system" — fine, but the dependency exists solely for that line.
-- Em-dash brand rule: **zero em dashes found** in any user-facing copy (checked all TSX, TS, and MDX byte-for-byte). FAQ copy does use en dashes in ranges ("6'4"–6'6"", "1–3%"), which the rule as stated permits.
+- **L1. Lint:** 111 problems (55 errors). `npm run lint` still fails, so it can't gate CI.
+- **L2. Untracked-but-ignored files:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` are listed in `.gitignore` but are still tracked by git, so the ignore entries do nothing. `git rm --cached` them, or delete them; `lib/env.ts` is dead anyway.
+- **L3. Dead anchors:** footer `/#use-cases` (UseCases renders only on sub-pages, [vehicle-analyzer.tsx:630](components/home/vehicle-analyzer.tsx:630)); category breadcrumb schema `/#categories` (no such id, [app/truck-bed-covers/page.tsx:33](app/truck-bed-covers/page.tsx:33) and siblings).
+- **L4. EXIF location data:** downscaling strips EXIF only when the image is resized. Photos at or under 1568 px are uploaded as-is to a public bucket, GPS tags included. Always re-encode, or strip metadata.
+- **L5. Upload decode failures are silent on category pages:** `handleFilesSelect` awaits `Promise.all(downscaleImage)` with no catch ([vehicle-analyzer.tsx:114](components/home/vehicle-analyzer.tsx:114)). The camera input's `accept="image/*"` ([upload-zone.tsx:267](components/home/upload-zone.tsx:267), [:381](components/home/upload-zone.tsx:381)) lets through formats the browser can't decode (for example HEIC in desktop Chrome), and then nothing happens. The homepage hero says "Maximum 10 files" but uses only the first one.
+- **L6. Nested `<main>`:** the root layout's `<main>` wraps page-level `<main>` elements in `vehicle-analyzer.tsx:508`, `app/r/[id]/page.tsx:15`, and `app/privacy/page.tsx:11`. Change the inner ones to `<div>`/`<section>`.
+- **L7. Entry-door attribution:** homepage landings never set a door, so a visitor who lands on `/`, reads a blog post, and then clicks an affiliate link is attributed to `blog`. Set `direct_or_other` explicitly on first page view.
+- **L8. Selector logging:** `/api/log-vehicle-selector` accepts `sessionId`, but the selector never sends it ([vehicle-selector.tsx:88-97](components/home/vehicle-selector.tsx:88)). The pipeline's `logDemand` writes a different row shape (no year/supported).
+- **L9. Sitemap `lastModified`:** every static and vehicle page reports the build date ([app/sitemap.ts:8](app/sitemap.ts:8)), which teaches Google to ignore your lastmod.
+- **L10. Unused prompt hardening:** `analyzeVehicleFitment` interpolates raw `promptContext` ([app/actions.ts:49](app/actions.ts:49)), while `/api/analyze` sanitizes it. The action is server-only today, so this is not exploitable, but the copies have drifted (see M2).
+- **L11. Dependencies:** `@supabase/supabase-js` 2.81 → 2.117, `@google/genai` 1.42 → 1.52 (2.x available), `baseline-browser-mapping` still prints a staleness warning on every build.
+- **L12. Content freshness:** all 7 blog posts are dated March 7-13, 2026, so nothing has been published in seven months. This is not a code defect, but `sitemap.ts` marks `/blog` as `daily`.
 
 ---
 
-## 3. Event Inventory Table
+## 4. GA4 Event Inventory (current)
 
-Every custom GA4 event currently fired in the codebase:
+| Event | Trigger | File |
+|---|---|---|
+| `photo_analysis_started` | Homepage submit (before upload); category/part "Start" | [hero-dual-entry.tsx:93](components/home/hero-dual-entry.tsx:93), [vehicle-analyzer.tsx:484](components/home/vehicle-analyzer.tsx:484) |
+| `analysis_completed` | `/r/{id}` terminal state, on **every** view (N13) | [analysis-view.tsx:83](components/analysis/analysis-view.tsx:83), [:87](components/analysis/analysis-view.tsx:87) |
+| `part_identification_completed` | Part result renders | [results-display.tsx:65](components/home/results-display.tsx:65) |
+| `ymm_selector_submitted` | Selector submit | [vehicle-selector.tsx:81](components/home/vehicle-selector.tsx:81) |
+| `browse_by_vehicle_click` | Homepage generation card | [browse-by-vehicle.tsx:24](components/home/browse-by-vehicle.tsx:24) |
+| `save_to_garage` / `save_part` | Successful insert (direct or post-sign-in) | [save-to-garage-button.tsx:22](components/save-to-garage-button.tsx:22), [save-to-parts-button.tsx:21](components/save-to-parts-button.tsx:21), [auth-provider.tsx:78](components/auth-provider.tsx:78), [:100](components/auth-provider.tsx:100) |
+| `affiliate_click` | Click or middle-click on any `/go?` link | [analytics-tracker.tsx:24](components/analytics-tracker.tsx:24) |
 
-| Event name | Trigger | Parameters | File / line |
-|---|---|---|---|
-| `photo_analysis_started` | "Analyze My Photo" submit in the homepage hero (only there) | `platform` ('mobile'/'desktop'), `entry_point: 'homepage'` | [components/home/hero-dual-entry.tsx:93](components/home/hero-dual-entry.tsx:93) |
-| `ymm_selector_submitted` | Year/Make/Model selector submit (hero, results-correction, degraded state) | `supported` (boolean), `location` ('hero' / 'results_correction' / 'degraded_state') | [components/home/vehicle-selector.tsx:81](components/home/vehicle-selector.tsx:81) |
-| `browse_by_vehicle_click` | Click on a homepage "Browse by Vehicle" generation card | `generation` (label) | [components/home/browse-by-vehicle.tsx:24](components/home/browse-by-vehicle.tsx:24) |
-| `analysis_completed` | `/r/[id]` reaches a terminal state (once per view, ref-guarded) | `outcome` ('error' / 'unusable' / 'partial' / 'high' / 'medium' / 'low'), `catalog_match` (boolean), `platform` | [components/analysis/analysis-view.tsx:83](components/analysis/analysis-view.tsx:83), [:87](components/analysis/analysis-view.tsx:87) |
-| `affiliate_click` | Document-level click listener on any `<a>` whose href contains `/go?` | `entry_door`, `source_page` (normalized from the `source` param), `catalog_match` (only when source is vehicle_page) | [components/analytics-tracker.tsx:26](components/analytics-tracker.tsx:26) |
-
-Event-health notes:
-
-- **No event fires twice.** `analysis_completed` has two call sites but a ref guard and mutually exclusive paths.
-- **No event fires with undefined parameters** (the tracker's optional `catalog_match` is conditionally spread).
-- **Defined but never used:** the `blog` value of `EntryDoor` ([lib/analytics.ts:17](lib/analytics.ts:17)) — `setEntryDoor('blog')` is never called, so blog-first sessions report `direct_or_other`.
-- **Funnel gaps (see H3):** no photo-upload/started event on the three category pages or the part identifier; no event for "Save to My Garage" or "Save Part"; no part-identification completion event; garage Amazon clicks fire nothing because they bypass `/go` (H1).
-- **Other pixels:** none. No Meta, TikTok, or affiliate-network pixels exist in the codebase; GA4 is the only tracker, and there is no dead tracking script weight.
+Missing: category-page vehicle `analysis_completed` (N13). There is still no Meta, TikTok, or other pixel; GA4 is the only tracker.
 
 ---
 
-## 4. Verification Notes (the three known issues)
+## 5. Build & Tooling Snapshot
 
-### Gemini models and removed parameters — **PASS**
+- `tsc --noEmit`: clean
+- `next build` (16.0.7, Turbopack): clean, 31 routes; `/blog` and `/go` dynamic, everything else static/SSG
+- `eslint`: 111 problems (55 errors, 56 warnings)
+- `npm audit --omit=dev`: 14 vulnerabilities (2 critical, 8 high, 4 moderate); all fixable without major bumps
 
-- `SCOUT_MODEL = 'gemini-3.6-flash'` and `SNIPER_MODEL = 'gemini-3.1-pro-preview'`, defined once in [lib/gemini.ts:6-7](lib/gemini.ts:6) and imported everywhere else. The dead `gemini-3-pro-preview` string appears nowhere in the codebase.
-- Removed parameters: **zero uses** of `temperature`, `top_p`/`topP`, `top_k`/`topK`, `candidate_count`/`candidateCount`, or `thinking_budget`/`thinkingBudget` anywhere (a raw-string sweep of all TS/TSX confirmed; the only near-matches were `stopPropagation` in UI code). `thinking_level` is not set either — all calls use API defaults, which is valid.
-- Caveats worth knowing (not failures): a `codeExecution` tool is enabled on the scout/sniper fitment calls for no clear reason (H8), and the fitment response is not schema-validated (H7).
+## 6. Suggested Fix Batches
 
-### GA4 fix — **PASS (with two caveats)**
+1. **Security (half a day):** N1 upgrade; N2 action signatures plus a WAF rate limit; N7 extension and bucket limits; N14.
+2. **Conversion and trust (1-2 hours):** N4 anchor id; N10 confidence bands; N9 no-vehicle state on category pages.
+3. **Compliance (1 hour plus your review):** N3 privacy policy rewrite.
+4. **SEO and performance (1-2 hours):** N5 schema; N11 hero images and fonts; L3, L9.
+5. **Correctness and data (half a day):** N6, N8, N12, N13, N15, N16; regenerate types (M1); commit migrations (M10).
+6. **Cleanup:** M2-M4, L1, L2, L5-L8, README and `.env.example`.
 
-- The env variable exists: `.env.local` contains a `NEXT_PUBLIC_GA_ID` with a `G-` value, and [app/layout.tsx:24](app/layout.tsx:24) reads it and conditionally injects the gtag loader + config on **all** pages via the root layout ([:95-110](app/layout.tsx:95)) — home, vehicle pages, blog, category pages, results, and garage all inherit it.
-- CSP now permits GA: `script-src` includes `https://www.googletagmanager.com https://www.google-analytics.com`, and `connect-src` includes `https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com` ([next.config.ts:27-31](next.config.ts:27)) — the wildcard covers regional collection endpoints (`region1.google-analytics.com` etc.) for the primary fetch/beacon transport.
-- Caveat 1: this repo cannot prove `NEXT_PUBLIC_GA_ID` is set in the **Vercel production** environment; if it is absent there, the tag silently does not render (and the env-validation module that would have caught it is dead code, M3). Verify once in the Vercel dashboard.
-- Caveat 2: `img-src` does not cover regional GA hosts, so the rare image-beacon fallback is CSP-blocked (M9).
-
-### Supabase RLS — **PASS for public exposure (empirically tested); policies themselves not auditable from the repo**
-
-- Live read-only probe with the **anonymous key**: `profiles`, `garage_vehicles`, `identified_parts`, `analyses`, `analysis_results`, `affiliate_clicks`, and `vehicle_selector_events` all returned **0 rows** to anon.
-- The same head-count queries with the service key show the tables are **not** empty: profiles 8, garage_vehicles 1, identified_parts 4, analyses 13, analysis_results 485, affiliate_clicks 1,631, vehicle_selector_events 7. Conclusion: RLS is enabled and blocking anonymous SELECT on every table — the previously flagged exposure is closed.
-- The service-role key is used **only** in server-side code ([app/actions.ts:17-20](app/actions.ts:17) under `'use server'`, [lib/pipeline.ts:7-12](lib/pipeline.ts:7), [lib/supabase-server.ts](lib/supabase-server.ts), and the API routes) and is never referenced with a `NEXT_PUBLIC_` prefix, so it cannot leak into client bundles.
-- Auth is Google-only as intended: the only sign-in path is `signInWithOAuth({ provider: 'google' })` ([components/auth-provider.tsx:121-129](components/auth-provider.tsx:121)); no password, magic-link, or other provider code exists.
-- **Remaining gap:** no SQL migrations are committed, so the policy definitions (in particular whether *authenticated* users' SELECT/UPDATE/DELETE on `garage_vehicles` and `identified_parts` are scoped to `auth.uid()`) cannot be read from the repo, and testing them would require a second real user account. The client code adds `user_id` filters as defense-in-depth ([components/garage/garage-dashboard.tsx:66-75](components/garage/garage-dashboard.tsx:66), delete paths in vehicle/part cards), but the detail-sheet **updates** filter only by row id ([components/garage/vehicle-detail-sheet.tsx:49-52](components/garage/vehicle-detail-sheet.tsx:49), [components/garage/part-detail-sheet.tsx:51-54](components/garage/part-detail-sheet.tsx:51)) and rely entirely on RLS. Confirm in the Supabase dashboard that each user table has `USING (auth.uid() = user_id)` (and matching `WITH CHECK`) on SELECT/UPDATE/DELETE, and commit the policies as migration files so future audits can verify them from code. Session handling uses supabase-js in the browser (localStorage sessions) with no `@supabase/ssr` middleware — acceptable for this fully client-side garage, but it means server components can never know who is signed in; adopt the SSR cookie pattern if server-side personalization is ever needed.
-
----
-
-*Audit complete. Build: clean (Next.js 16.0.7, 31 static pages, no errors or warnings beyond a stale `baseline-browser-mapping` notice). Lint: 114 problems (55 errors, 59 warnings), all style/typing. No files other than this one were modified.*
+*No source files were modified by this audit; only REVIEW.md was rewritten.*

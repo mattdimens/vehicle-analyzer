@@ -1,7 +1,8 @@
 /**
  * Downscales an image File so that its longest edge is at most `maxSize` pixels.
  * Uses a canvas to resize the image and returns a new JPEG File at `quality`.
- * If the image is already smaller than `maxSize`, it returns the original file.
+ * Small non-JPEG images are returned unchanged; small JPEGs are re-encoded at
+ * their original size so EXIF metadata (including GPS location) is stripped.
  *
  * @param file The original image file
  * @param maxSize Maximum pixels for the longest edge (default 1568)
@@ -32,11 +33,13 @@ export async function downscaleImage(
                     width = Math.round((width * maxSize) / height)
                     height = maxSize
                 }
-            } else {
-                // If it's already small enough, just return original
+            } else if (file.type !== 'image/jpeg') {
+                // Small non-JPEGs pass through untouched (keeps PNG transparency)
                 URL.revokeObjectURL(img.src)
                 return resolve(file)
             }
+            // Small JPEGs fall through and are re-encoded at the same size:
+            // canvas output drops EXIF, so GPS tags never reach the public bucket.
 
             const canvas = document.createElement('canvas')
             canvas.width = width

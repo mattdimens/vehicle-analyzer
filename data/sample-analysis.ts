@@ -2,7 +2,7 @@ import type { AnalysisRecord } from "@/types/analysis"
 
 export const sampleAnalysisRecord: AnalysisRecord = {
     id: "bbcgw19u",
-    image_url: "https://jktvsbtgwtzsszebzyay.supabase.co/storage/v1/object/public/vehicle_images/0085c835-03b7-4973-861b-e6dcc9abd320.png",
+    image_url: "/images/sample-result.jpg",
     status: "complete",
     result_data: {
         primary: {

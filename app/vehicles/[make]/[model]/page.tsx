@@ -140,30 +140,19 @@ export default async function ModelHubPage({ params }: PageProps) {
     ],
   }
 
-  // JSON-LD: ItemList + Product for each product across categories
-  const allProducts = mergedCategories.flatMap((cat) =>
-    cat.products.map((p) => ({
-      "@type": "Product" as const,
-      name: p.title,
-      description: p.blurb,
-      ...(p.brand ? { brand: { "@type": "Brand" as const, name: p.brand } } : {}),
-      offers: {
-        "@type": "Offer" as const,
-        url: `${BASE_URL}/go?cat=${encodeURIComponent(cat.slug)}&vehicle=${encodeURIComponent(vehicleString)}&product=${encodeURIComponent(p.title)}&source=vehicle-page`,
-        availability: "https://schema.org/InStock",
-      },
-    }))
-  )
+  // JSON-LD: ItemList of product names. No Product/Offer markup: we don't sell
+  // these items, and Offers without a price are invalid for Google.
+  const allProducts = mergedCategories.flatMap((cat) => cat.products.map((p) => p.title))
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: model.h1,
     numberOfItems: allProducts.length,
-    itemListElement: allProducts.map((product, i) => ({
+    itemListElement: allProducts.map((name, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      item: product,
+      name,
     })),
   }
 

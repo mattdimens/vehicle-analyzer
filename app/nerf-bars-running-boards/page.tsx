@@ -30,7 +30,7 @@ const breadcrumbJsonLd = {
     "@type": "BreadcrumbList",
     itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: "https://visualfitment.com" },
-        { "@type": "ListItem", position: 2, name: "Categories", item: "https://visualfitment.com/#categories" },
+        { "@type": "ListItem", position: 2, name: "Categories", item: "https://visualfitment.com/#product-categories" },
         { "@type": "ListItem", position: 3, name: "Running Boards & Nerf Bars", item: "https://visualfitment.com/nerf-bars-running-boards" },
     ],
 }

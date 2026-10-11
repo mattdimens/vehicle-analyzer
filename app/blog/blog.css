@@ -26,6 +26,9 @@
 
 /* ---- BLOG PAGE WRAPPER ---- */
 .blog-page {
+  /* next/font variables are set by classes on this element (app/blog/layout.tsx) */
+  --blog-font-display: var(--font-dm-serif-display), Georgia, serif;
+  --blog-font-body: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, sans-serif;
   font-family: var(--blog-font-body);
   color: var(--blog-text-primary);
   background: var(--blog-bg-white);

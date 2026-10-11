@@ -10,6 +10,7 @@ import { Loader, ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 import { trackEvent, getPlatform } from "@/lib/analytics"
+import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor } from "@/types/analysis"
 import { useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -60,8 +61,7 @@ export function ResultsDisplay({
         if (analysisMode !== "part" || !partIdentification || partEventFiredRef.current) return
         partEventFiredRef.current = true
 
-        const confidence = partIdentification.confidence
-        const outcome = confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low'
+        const outcome = getConfidenceBand(partIdentification.confidence).toLowerCase()
         trackEvent('part_identification_completed', { outcome, platform: getPlatform() })
     }, [analysisMode, partIdentification])
 
@@ -104,14 +104,12 @@ export function ResultsDisplay({
         if (!partIdentification) return null
 
         const isLowConfidence = partIdentification.confidence < 30
+        const partBand = getConfidenceBand(partIdentification.confidence)
         const confidenceColor =
-            partIdentification.confidence >= 80 ? "text-emerald-600"
-                : partIdentification.confidence >= 50 ? "text-amber-600"
+            partBand === "High" ? "text-emerald-600"
+                : partBand === "Medium" ? "text-amber-600"
                     : "text-red-500"
-        const confidenceBarColor =
-            partIdentification.confidence >= 80 ? "bg-emerald-500"
-                : partIdentification.confidence >= 50 ? "bg-amber-500"
-                    : "bg-red-500"
+        const confidenceBarColor = getConfidenceBarColor(partBand)
 
         return (
             <>
@@ -273,8 +271,8 @@ export function ResultsDisplay({
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
                                 <p className="text-base font-semibold flex items-center gap-2">
                                     Primary Identification
-                                    <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                        {results.primary.confidence >= 90 ? "High Confidence" : "Medium Confidence"}
+                                    <span className={`text-xs font-normal px-2.5 py-0.5 rounded-full ${getConfidenceBandColor(getConfidenceBand(results.primary.confidence))}`}>
+                                        {getConfidenceBand(results.primary.confidence)} Confidence
                                     </span>
                                 </p>
                             </div>
@@ -359,7 +357,7 @@ export function ResultsDisplay({
                                                     <div className="h-full bg-primary/70 rounded-full" style={{ width: `${item.confidence}%` }}></div>
                                                 </div>
                                                 <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                                                    {item.confidence >= 90 ? "High" : "Medium"}
+                                                    {getConfidenceBand(item.confidence)}
                                                 </span>
                                             </div>
                                         </Link>

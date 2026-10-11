@@ -14,10 +14,10 @@ export function SiteFooter() {
             How It Works
           </Link>
           <Link
-            href="/#use-cases"
+            href="/blog"
             className="text-sm text-muted-foreground transition-colors hover:text-primary"
           >
-            Use Cases
+            Blog
           </Link>
           <Link
             href="/vehicles"

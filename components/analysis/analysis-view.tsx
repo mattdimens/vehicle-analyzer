@@ -47,11 +47,18 @@ export function AnalysisView({ id }: { id: string }) {
         return () => clearInterval(interval)
     }, [isPolling, fetchRecord])
 
+    // Only report a completion this view actually watched happen. Re-opening or
+    // sharing a finished /r link must not count as a new analysis_completed.
+    const hasSeenInProgress = useRef(false)
     const hasTrackedCompletion = useRef(false)
 
     useEffect(() => {
-        if (!record || record.status === 'identifying' || record.status === 'detecting_products') return
-        if (hasTrackedCompletion.current) return
+        if (!record) return
+        if (record.status === 'identifying' || record.status === 'detecting_products') {
+            hasSeenInProgress.current = true
+            return
+        }
+        if (!hasSeenInProgress.current || hasTrackedCompletion.current) return
         hasTrackedCompletion.current = true
 
         import('@/lib/analytics').then(({ trackEvent, getPlatform }) => {
@@ -88,11 +95,22 @@ export function AnalysisView({ id }: { id: string }) {
         })
     }, [record])
 
+    const [retryError, setRetryError] = useState<string | null>(null)
+
     const handleRetry = async () => {
-        setIsPolling(true)
+        setRetryError(null)
+        const res = await fetch(`/api/analyses/${id}/process`, { method: 'POST' })
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            setRetryError(data.error || 'Could not restart the analysis. Please try again.')
+            return
+        }
+        // Allow the retried run to report its own completion
+        hasTrackedCompletion.current = false
+        hasSeenInProgress.current = true
         setError(null)
         setRecord(prev => prev ? { ...prev, status: 'identifying', error_details: null } : null)
-        await fetch(`/api/analyses/${id}/process`, { method: 'POST' })
+        setIsPolling(true)
     }
 
     if (error) {
@@ -148,10 +166,11 @@ export function AnalysisView({ id }: { id: string }) {
                     <p className="text-muted-foreground mt-2 mb-6 max-w-md">
                         That analysis didn&apos;t finish. Give it another try, or pick your vehicle to keep going.
                     </p>
-                    <Button onClick={handleRetry} className="mb-8" size="lg">
+                    <Button onClick={handleRetry} className={retryError ? "mb-3" : "mb-8"} size="lg">
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Try again
                     </Button>
+                    {retryError && <p className="text-sm text-destructive mb-8">{retryError}</p>}
                     <div className="w-full max-w-md border-t pt-8 text-left">
                         <p className="text-sm font-medium mb-4">Or pick your vehicle</p>
                         <VehicleSelector location="degraded_state" />

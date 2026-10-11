@@ -31,7 +31,7 @@ export function cleanJsonResponse(text: string): string {
 }
 
 /** Fetch an image URL and convert it to Gemini inlineData format. */
-export async function fetchImageForGemini(url: string) {
+export async function fetchImageForGemini(url: string): Promise<{ inlineData: { data: string; mimeType: string } }> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`)
 
@@ -75,6 +75,22 @@ export function sanitizePromptContext(promptContext?: string): string | undefine
     .replace(/(?:ignore|override|forget|instead|system|prompt|instruction|disregard|pretend)/gi, '')
     .trim()
   return sanitized || undefined
+}
+
+/**
+ * Sanitize short free-text values (product types, vehicle descriptions) before
+ * interpolating them into a prompt: strip quoting/structural characters and
+ * instruction-like verbs, collapse whitespace, and cap the length.
+ */
+export function sanitizePromptText(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string') return null
+  const cleaned = value
+    .replace(/[\r\n"`{}<>\\]/g, ' ')
+    .replace(/\b(?:ignore|disregard|override|forget|pretend)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength)
+  return cleaned || null
 }
 
 // ---------------------------------------------------------------------------

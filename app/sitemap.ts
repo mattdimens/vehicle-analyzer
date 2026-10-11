@@ -5,8 +5,6 @@ import { getAllVehicleRoutes } from '@/data/vehicles/index'
 const BASE_URL = 'https://visualfitment.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const now = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-
     /**
      * Central route registry: add new pages here and they
      * automatically appear in the generated /sitemap.xml.
@@ -26,9 +24,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
             { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
         ]
 
+    // No lastModified on static and vehicle pages: a build date that changes on
+    // every deploy teaches Google to ignore lastmod. Blog posts use modifiedAt.
     const staticPages = routes.map(({ path, priority, changeFrequency }) => ({
         url: `${BASE_URL}${path}`,
-        lastModified: now,
         changeFrequency,
         priority,
     }))
@@ -57,7 +56,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
         return {
             url: `${BASE_URL}${path}`,
-            lastModified: now,
             changeFrequency: 'weekly' as const,
             priority,
         }

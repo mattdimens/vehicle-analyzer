@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         destination_url: destinationUrl,
         source,
         session_id: sessionId,
-      } as any);
+      });
 
       if (error) {
         console.error("[/go] Failed to insert affiliate click:", error.message, {

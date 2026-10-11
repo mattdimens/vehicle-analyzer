@@ -29,6 +29,7 @@ import { BreadcrumbNav, type BreadcrumbItem } from "@/components/ui/breadcrumb-n
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 import { BatchResults } from "@/components/home/batch-results"
 import { trackEvent, getPlatform } from "@/lib/analytics"
+import { getConfidenceBand } from "@/types/analysis"
 import type { BatchItem } from "@/lib/types"
 import { downscaleImage } from "@/lib/image-processing"
 
@@ -111,7 +112,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     const handleFilesSelect = async (files: File[]) => {
         // Downscale files before uploading
-        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f)))
+        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f).catch(() => f)))
 
         // Create ONE item for all the dropped files (User intention: 1 Drop = 1 Vehicle)
         const previews = downscaledFiles.map(file => {
@@ -135,7 +136,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     }
 
     const handleAddImageToItem = async (itemId: string, files: File[]) => {
-        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f)))
+        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f).catch(() => f)))
 
         setBatchItems(prev => prev.map(item => {
             if (item.id === itemId) {
@@ -377,6 +378,14 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             return currentItem
         }
 
+        // analysis_completed for category-page vehicle analyses (the homepage
+        // reports it from /r/[id]); same outcome values, plus entry_point
+        let completionTracked = false
+        const trackCompletion = (outcome: string) => {
+            completionTracked = true
+            trackEvent('analysis_completed', { outcome, platform: getPlatform(), entry_point: entryPoint })
+        }
+
         updateItem({ status: "analyzing", progress: 40, loadingMessage: analysisMode === "part" ? "Identifying part..." : "Analyzing vehicle..." })
 
         // 3. Analysis
@@ -411,7 +420,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     const fitmentRes = await analyzeResponse.json()
                     if (fitmentRes.success) {
                         result = fitmentRes.data as AnalysisResults
-                        const v = fitmentRes.data.primary
+                        if (result.vehicle_present === false) {
+                            trackCompletion('unusable')
+                            throw new Error("We don't see a vehicle in this photo. Upload a clear shot of a car or truck and try again.")
+                        }
+                        const v = result.primary
                         vehicleDetailsString = `${v.year} ${v.make} ${v.model} ${v.trim}`
                     } else {
                         throw new Error(fitmentRes.error)
@@ -456,9 +469,15 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     detectedProducts,
                     loadingMessage: null
                 })
+
+                if (result) {
+                    const isRange = result.primary.year?.includes('-')
+                    trackCompletion(isRange ? 'partial' : getConfidenceBand(result.primary.confidence).toLowerCase())
+                }
             }
 
         } catch (err) {
+            if (analysisMode === "vehicle" && !completionTracked) trackCompletion('error')
             const errorMsg = err instanceof Error ? err.message : String(err)
             updateItem({
                 status: "error",
@@ -505,7 +524,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
     return (
         <div className="flex min-h-screen flex-col">
-            <main className="flex-1">
+            <div className="flex-1">
                 <div className="bg-[#003223]">
                     {/* Homepage: dual-entry hero (photo tool + vehicle selector) */}
                     {showCategories ? (
@@ -630,7 +649,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {!showCategories && <UseCases cards={useCaseCards} heading={useCaseHeading} subtitle={useCaseSubtitle} />}
                 {faqContent}
                 {relatedContent}
-            </main>
+            </div>
 
             <ImageCropperDialog
                 isOpen={showCropper}

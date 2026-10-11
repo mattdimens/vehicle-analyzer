@@ -1,17 +1,16 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { createClient, Session, User } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
+import { supabaseClient as supabase } from '@/lib/supabase-client'
 import { toast } from 'sonner'
 import { PENDING_GARAGE_SAVE_KEY } from '@/components/save-to-garage-button'
 import { PENDING_PARTS_SAVE_KEY } from '@/components/save-to-parts-button'
 import { normalizeYear } from '@/lib/normalize-year'
 import { trackEvent, getPlatform } from '@/lib/analytics'
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// One shared browser client: a second GoTrueClient on the same storage key
+// races on refresh-token rotation and can sign users out.
 
 interface AuthContextType {
     session: Session | null

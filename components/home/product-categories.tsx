@@ -10,7 +10,7 @@ export function ProductCategories() {
     const flagshipGen = flagship.generations[0]
     const shopBaseUrl = `${flagship.routeBase}/${flagshipGen.slug}`
     return (
-        <section id="product-categories" className="w-full bg-white py-16 md:py-20">
+        <section id="product-categories" className="scroll-mt-14 w-full bg-white py-16 md:py-20">
             <div className="container max-w-6xl">
                 <div className="mb-16 text-center">
                     <h2 className="font-heading text-4xl font-bold text-black md:text-5xl">

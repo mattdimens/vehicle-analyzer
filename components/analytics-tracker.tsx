@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect } from "react"
-import { trackEvent, getEntryDoor } from "@/lib/analytics"
+import { trackEvent, getEntryDoor, recordLandingPath } from "@/lib/analytics"
 
 export function AnalyticsTracker() {
     useEffect(() => {
+        recordLandingPath()
+
         const fireAffiliateClick = (target: HTMLAnchorElement) => {
             try {
                 const url = new URL(target.href)

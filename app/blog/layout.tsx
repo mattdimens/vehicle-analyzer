@@ -1,5 +1,20 @@
 import './blog.css'
+import { DM_Sans, DM_Serif_Display } from 'next/font/google'
 import { BlogEntryDoor } from '@/components/blog-entry-door'
+
+// Self-hosted via next/font (no render-blocking request to fonts.googleapis.com)
+const dmSans = DM_Sans({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    style: ['normal', 'italic'],
+    variable: '--font-dm-sans',
+})
+
+const dmSerifDisplay = DM_Serif_Display({
+    subsets: ['latin'],
+    weight: '400',
+    variable: '--font-dm-serif-display',
+})
 
 export default function BlogLayout({
     children,
@@ -9,24 +24,7 @@ export default function BlogLayout({
     return (
         <>
             <BlogEntryDoor />
-            {/* Google Fonts for blog pages: DM Serif Display + DM Sans */}
-            {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-            <link
-                rel="preconnect"
-                href="https://fonts.googleapis.com"
-            />
-            {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-            <link
-                rel="preconnect"
-                href="https://fonts.gstatic.com"
-                crossOrigin="anonymous"
-            />
-            {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&display=swap"
-                rel="stylesheet"
-            />
-            <div className="blog-page">
+            <div className={`blog-page ${dmSans.variable} ${dmSerifDisplay.variable}`}>
                 {children}
             </div>
         </>

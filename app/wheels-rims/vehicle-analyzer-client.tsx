@@ -63,7 +63,7 @@ export default function WheelsRimsClient({ faqItems }: { faqItems: FaqItem[] }) 
             faqContent={<FaqAccordion items={faqItems} />}
             breadcrumbs={[
                 { label: "Home", href: "/" },
-                { label: "Categories", href: "/#categories" },
+                { label: "Categories", href: "/#product-categories" },
                 { label: "Wheels & Rims" },
             ]}
             relatedContent={

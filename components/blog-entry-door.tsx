@@ -1,16 +1,18 @@
 "use client"
 
 import { useEffect } from "react"
-import { setEntryDoor } from "@/lib/analytics"
+import { setEntryDoor, getLandingPath } from "@/lib/analytics"
 
 /**
- * Invisible component that sets the entry door to "blog" when mounted.
- * Placed in the blog layout so any session starting on a blog page
- * is correctly attributed.
+ * Invisible component that sets the entry door to "blog" when the session
+ * landed on a blog page. Visitors who start elsewhere and browse to the blog
+ * later keep their original door.
  */
 export function BlogEntryDoor() {
     useEffect(() => {
-        setEntryDoor('blog')
+        if (getLandingPath().startsWith('/blog')) {
+            setEntryDoor('blog')
+        }
     }, [])
 
     return null

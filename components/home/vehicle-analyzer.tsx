@@ -5,12 +5,9 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import {
     createSignedUploadUrl,
-    detectVisibleProducts,
-    refineProductDetails,
-    identifyPart,
-    updateAnalysisResultsProducts,
     type AnalysisResults,
     type DetectedProduct,
+    type PartIdentification,
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
 import { HeroDualEntry } from "@/components/home/hero-dual-entry"
@@ -393,13 +390,20 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             if (analysisMode === "part") {
                 // --- Part Identification Mode ---
                 updateItem({ loadingMessage: "Identifying your part...", progress: 50 })
-                const partRes = await identifyPart(publicUrls[0])
-                if (!partRes.success) throw new Error(partRes.error)
+                const partResponse = await fetch('/api/analyze/part', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl: publicUrls[0] }),
+                })
+                const partRes = await readJson(partResponse)
+                if (!partResponse.ok || !partRes.success) {
+                    throw new Error(apiErrorMessage(partResponse.status, partRes, "Part identification failed. Please try again."))
+                }
 
                 updateItem({
                     status: "complete",
                     progress: 100,
-                    partIdentification: partRes.data,
+                    partIdentification: partRes.data as PartIdentification,
                     loadingMessage: null
                 })
             } else {
@@ -435,30 +439,20 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 // Products
                 if (analysisType === "products" || analysisType === "all") {
-                    updateItem({ loadingMessage: "Detecting products..." })
-                    // PASS PROMPT CONTEXT HERE
-                    const detectRes = await detectVisibleProducts(publicUrls, vehicleDetailsString, promptContext)
-                    if (detectRes.success) {
-                        const types = detectRes.data
-                        updateItem({ loadingMessage: `Analyzing ${types.length} detected product${types.length === 1 ? '' : 's'}...`, progress: 65 })
-
-                        // Issue #12: parallel product refinement
-                        const refinementResults = await Promise.allSettled(
-                            types.map(type => refineProductDetails(publicUrls, type, vehicleDetailsString, promptContext))
-                        )
-                        for (const result of refinementResults) {
-                            if (result.status === 'fulfilled') {
-                                detectedProducts.push(result.value)
-                            }
-                        }
+                    updateItem({ loadingMessage: "Detecting and identifying products...", progress: 65 })
+                    // One request: the server fetches the images once, detects product
+                    // types, refines them in parallel, and logs them with the fitment row
+                    const productsResponse = await fetch('/api/analyze/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageUrls: publicUrls, vehicleDetails: vehicleDetailsString, promptContext }),
+                    })
+                    const productsRes = await readJson(productsResponse)
+                    if (productsResponse.ok && productsRes.success) {
+                        detectedProducts.push(...(productsRes.data as DetectedProduct[]))
                         updateItem({ detectedProducts: [...detectedProducts], progress: 95 })
-
-                        // Update the database analysis_results with the fully detected products
-                        if (publicUrls[0] && detectedProducts.length > 0) {
-                            await updateAnalysisResultsProducts(publicUrls[0], detectedProducts)
-                        }
                     } else {
-                        updateItem({ error: detectRes.error })
+                        updateItem({ error: apiErrorMessage(productsResponse.status, productsRes, "Product detection failed. Please try again.") })
                     }
                 }
 

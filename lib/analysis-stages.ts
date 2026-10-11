@@ -339,3 +339,24 @@ export async function runPartIdentification(
 
   return { identification, modelUsed }
 }
+
+// ---------------------------------------------------------------------------
+// Stages 1 + 2 together: detect product types, then refine them in parallel
+// ---------------------------------------------------------------------------
+export async function detectAndRefineProducts(
+  imageParts: ImagePart[],
+  vehicleDetails: string | null,
+  promptContext?: string
+): Promise<{ success: true; data: DetectedProduct[] } | { success: false; error: string }> {
+  const detectRes = await detectProductTypes(imageParts, vehicleDetails, promptContext)
+  if (!detectRes.success) return detectRes
+
+  const refinements = await Promise.allSettled(
+    detectRes.data.map((type) => refineProduct(imageParts, type, vehicleDetails, promptContext))
+  )
+  const products: DetectedProduct[] = []
+  for (const r of refinements) {
+    if (r.status === 'fulfilled') products.push(r.value)
+  }
+  return { success: true, data: products }
+}

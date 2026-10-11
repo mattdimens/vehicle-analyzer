@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Database, Json } from '@/types/supabase'
-import { fetchImageForGemini } from '@/lib/gemini'
 import { runFitmentAnalysis } from '@/lib/analysis-stages'
 import { getSupabaseAdmin } from '@/lib/pipeline'
-import { assertSupabaseStorageUrls, UrlValidationError } from '@/lib/url-validation'
+import { UrlValidationError } from '@/lib/url-validation'
+import { fetchValidatedImages } from '@/lib/request-images'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 
 export const maxDuration = 60
-
-// ---------------------------------------------------------------------------
-// Security constants
-// ---------------------------------------------------------------------------
-const MAX_IMAGE_URLS = 10
 
 // ---------------------------------------------------------------------------
 // POST /api/analyze
@@ -20,39 +15,17 @@ export async function POST(request: NextRequest) {
     try {
         // 1. Parse request body ------------------------------------------------
         const body = await request.json()
-        const imageUrls: unknown = body.imageUrls
         const promptContext: string | undefined = typeof body.promptContext === 'string' ? body.promptContext : undefined
 
-        if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
-            return NextResponse.json(
-                { error: 'Missing required field: imageUrls (must be a non-empty array)' },
-                { status: 400 }
-            )
-        }
-
-        // Security: cap the number of image URLs
-        if (imageUrls.length > MAX_IMAGE_URLS) {
-            return NextResponse.json(
-                { error: `Too many image URLs (max ${MAX_IMAGE_URLS})` },
-                { status: 400 }
-            )
-        }
-
-        // Security: validate that every URL points to our Supabase storage
+        // 2. Validate (our storage only, 1-10 URLs) and fetch each image once
+        let images: Awaited<ReturnType<typeof fetchValidatedImages>>
         try {
-            assertSupabaseStorageUrls(imageUrls)
+            images = await fetchValidatedImages(body.imageUrls)
         } catch (err) {
             const message = err instanceof UrlValidationError ? err.message : 'Invalid image URL'
-            return NextResponse.json(
-                { error: message },
-                { status: 400 }
-            )
+            return NextResponse.json({ error: message }, { status: 400 })
         }
-
-        // 2. Fetch & convert all images ----------------------------------------
-        const imageParts = await Promise.all(
-            (imageUrls as string[]).map((url) => fetchImageForGemini(url))
-        )
+        const imageParts = images.parts
 
         // 3. Scout + Sniper cascade (prompt lives in lib/analysis-stages.ts) ---
         const fitmentRes = await runFitmentAnalysis(imageParts, promptContext)
@@ -79,7 +52,7 @@ export async function POST(request: NextRequest) {
         // 5. Log to Supabase ---------------------------------------------------
         const insertPayload: Database['public']['Tables']['analysis_results']['Insert'] = {
             analysis_data: finalResult as unknown as Json,
-            image_url: (imageUrls as string[])[0],
+            image_url: images.urls[0],
             model_used: fitmentRes.modelUsed,
         }
 

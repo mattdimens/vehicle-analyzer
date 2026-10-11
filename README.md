@@ -25,14 +25,25 @@ All environment variables are documented in [.env.example](.env.example). Set th
 
 ## Database schema
 
-`supabase/migrations/` holds the schema and RLS policies (a `pg_dump` of the `public` schema; the `auth.users` signup trigger is managed in Supabase). After a schema change, refresh the dump and the generated types:
+`supabase/migrations/` holds the schema and RLS policies (a `pg_dump` of the `public` schema), plus the `auth.users` signup trigger and the `vehicle_images` bucket. After a schema change, refresh the dump and the generated types:
 
 ```bash
 /opt/homebrew/opt/libpq/bin/pg_dump "postgresql://postgres.jktvsbtgwtzsszebzyay@aws-1-us-east-2.pooler.supabase.com:5432/postgres" --schema-only --schema=public --no-owner --no-privileges -f supabase/migrations/<timestamp>_remote_schema.sql
 supabase gen types typescript --project-id jktvsbtgwtzsszebzyay --schema public > types/supabase.ts
 ```
 
-`pg_dump` prompts for the database password (Supabase: Database → Settings). Re-append the convenience types at the bottom of `types/supabase.ts` after regenerating.
+`pg_dump` prompts for the database password (Supabase: Database → Settings). Delete the `\restrict` and `\unrestrict` lines it adds (they are psql commands, and `supabase db push` rejects them). Re-append the convenience types at the bottom of `types/supabase.ts` after regenerating.
+
+### Dev project
+
+`visualfitment-dev` (`svkwgklyyqmwpcrgdjja`) is a separate Supabase project with the same schema and no real data. Cloud sessions use it. To apply new migrations to it:
+
+```bash
+supabase link --project-ref svkwgklyyqmwpcrgdjja
+supabase db push
+```
+
+Check `supabase/.temp/project-ref` before running `db push`, so you know which project it targets.
 
 ## Checks
 

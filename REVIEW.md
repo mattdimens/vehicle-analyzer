@@ -54,7 +54,7 @@ Four problems now matter most:
 | M3, M4, M8, L5 README | Fixed (dead files and assets deleted, `.env.example`, README) |
 | L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
 | L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
-| M10 | **Fixed.** Schema and RLS policies are committed in `supabase/migrations/20261011000000_remote_schema.sql` (pg_dump of `public`). Verified from the dump: RLS is enabled on all 7 tables; `garage_vehicles`, `identified_parts` and `profiles` have SELECT/INSERT/UPDATE/DELETE policies scoped to `auth.uid()`; the other four tables have no policies (service role only). `analyses` has an `updated_at` trigger. The `model_used` constraint now allows any `gemini-%` model. Follow-up: `20261011000100_function_search_path.sql` pins `search_path` on the two trigger functions (run once in the SQL Editor). |
+| M10 | **Fixed.** Schema and RLS policies are committed in `supabase/migrations/20261011000000_remote_schema.sql` (pg_dump of `public`). Verified from the dump: RLS is enabled on all 7 tables; `garage_vehicles`, `identified_parts` and `profiles` have SELECT/INSERT/UPDATE/DELETE policies scoped to `auth.uid()`; the other four tables have no policies (service role only). `analyses` has an `updated_at` trigger. The `model_used` constraint now allows any `gemini-%` model. Follow-up `20261011000100_function_search_path.sql` (pins `search_path` on the two trigger functions) was applied Oct 11. |
 | Still open | M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85), L11 major-version upgrades, garage detail sheets (wire in or delete), blog content |
 
 **Follow-up pass (PR "audit follow-ups"):**
@@ -76,7 +76,7 @@ Four problems now matter most:
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. In Supabase → Storage → `vehicle_images`, restrict allowed MIME types to `image/jpeg, image/png, image/gif, image/webp` and set a file size limit (about 5 MB).
-4. Run `supabase/migrations/20261011000100_function_search_path.sql` in the SQL Editor. After future schema changes, re-run the `pg_dump` command in the README and `supabase gen types` (command at the top of `types/supabase.ts`).
+4. ~~Done Oct 11~~ Run `supabase/migrations/20261011000100_function_search_path.sql` in the SQL Editor. After future schema changes, re-run the `pg_dump` command in the README and `supabase gen types` (command at the top of `types/supabase.ts`).
 
 ---
 

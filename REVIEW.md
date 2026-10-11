@@ -44,7 +44,8 @@ Four problems now matter most:
 | N13 | **Fixed.** `/r` reports completion only for runs it watched, including retries. Category pages fire `analysis_completed` with a new `entry_point` param. |
 | N14 | **Fixed.** The products update is write-once, has a 15 min window, and is schema-validated. PATCH only narrows the AI's own year range. |
 | N15 | **Fixed.** `/api/analyze` logs with the service-role client |
-| N16 | Open (planned refactor: one server endpoint for the category flow) |
+| N16 | **Fixed (PR "analysis API routes").** Category pages and the part identifier now call `/api/analyze`, `/api/analyze/products` (detect + parallel refine in one request, images fetched once) and `/api/analyze/part`. The only remaining Server Action is the upload link. A category analysis is now 2 Gemini-triggering POSTs (was up to 10). Measured: fitment 10.7 s, products 19.3 s (4 products), part 9.1 s. |
+| **New: analysis log writes all fail** | Found while testing N16: `analysis_results` has a check constraint `analysis_results_model_used_check` that rejects the current model names (`gemini-3.6-flash`, `gemini-3.1-pro-preview`), so every insert since the model update has failed (errors are logged and swallowed). Needs a one-time SQL change in Supabase (see manual steps). |
 | **New: selector logging was broken** | Found during the smoke test: `vehicle_selector_events` rejects anon inserts (RLS 42501), so `/api/log-vehicle-selector` has logged nothing. **Fixed:** it now uses the service-role client and validates input. |
 | **New: CSP blocked GA4 Google Signals** | `stats.g.doubleclick.net` was blocked. **Fixed:** `img-src`/`connect-src` now follow Google's GA4 CSP list (also closes M9). Google Fonts hosts were removed. |
 | M1 | **Fixed (Oct 11, follow-up PR).** `types/supabase.ts` is now generated from the live schema with `supabase gen types`. Regenerating found three real bugs, all fixed in the same PR: (1) the pipeline's `logDemand` inserted a nonexistent `generation` column and no required `year`/`supported`, so photo-analysis demand was never logged; (2) `identified_parts.vehicle_year` is an integer, so saving a part whose estimated vehicle began with a year range failed; (3) `identified_parts.confidence` is text, so the garage now coerces it before comparing. |
@@ -67,6 +68,10 @@ Four problems now matter most:
 - Dependencies updated within ranges (`@supabase/supabase-js` 2.117, `@google/genai` 1.52); major upgrades skipped.
 
 **Your manual steps:**
+0. In Supabase, open SQL Editor and run:
+   `alter table public.analysis_results drop constraint analysis_results_model_used_check;`
+   `alter table public.analysis_results add constraint analysis_results_model_used_check check (model_used is null or model_used like 'gemini-%');`
+   This lets analysis logging work again and survives future model upgrades.
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. In Supabase → Storage → `vehicle_images`, restrict allowed MIME types to `image/jpeg, image/png, image/gif, image/webp` and set a file size limit (about 5 MB).

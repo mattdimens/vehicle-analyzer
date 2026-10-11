@@ -23,11 +23,23 @@ All environment variables are documented in [.env.example](.env.example). Set th
 - **Vehicle catalog:** `data/vehicles/` drives `/vehicles/*` and the sitemap.
 - **Blog:** MDX in `content/blog/`, rendered by `app/blog/[slug]/page.tsx`.
 
+## Database schema
+
+`supabase/migrations/` holds the schema and RLS policies (a `pg_dump` of the `public` schema; the `auth.users` signup trigger is managed in Supabase). After a schema change, refresh the dump and the generated types:
+
+```bash
+/opt/homebrew/opt/libpq/bin/pg_dump "postgresql://postgres.jktvsbtgwtzsszebzyay@aws-1-us-east-2.pooler.supabase.com:5432/postgres" --schema-only --schema=public --no-owner --no-privileges -f supabase/migrations/<timestamp>_remote_schema.sql
+supabase gen types typescript --project-id jktvsbtgwtzsszebzyay --schema public > types/supabase.ts
+```
+
+`pg_dump` prompts for the database password (Supabase: Database → Settings). Re-append the convenience types at the bottom of `types/supabase.ts` after regenerating.
+
 ## Checks
 
 ```bash
 npx tsc --noEmit
 npm run lint
+npm test
 npm run build
 ```
 

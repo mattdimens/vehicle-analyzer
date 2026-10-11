@@ -54,7 +54,8 @@ Four problems now matter most:
 | M3, M4, M8, L5 README | Fixed (dead files and assets deleted, `.env.example`, README) |
 | L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
 | L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
-| Still open | N16, M7 leftovers, M10, M11, L1, L8 (selector `sessionId`: no client-readable session id exists), L11 |
+| M10 | **Fixed.** Schema and RLS policies are committed in `supabase/migrations/20261011000000_remote_schema.sql` (pg_dump of `public`). Verified from the dump: RLS is enabled on all 7 tables; `garage_vehicles`, `identified_parts` and `profiles` have SELECT/INSERT/UPDATE/DELETE policies scoped to `auth.uid()`; the other four tables have no policies (service role only). `analyses` has an `updated_at` trigger. The `model_used` constraint now allows any `gemini-%` model. Follow-up: `20261011000100_function_search_path.sql` pins `search_path` on the two trigger functions (run once in the SQL Editor). |
+| Still open | M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85), L11 major-version upgrades, garage detail sheets (wire in or delete), blog content |
 
 **Follow-up pass (PR "audit follow-ups"):**
 - Lint: **0 errors** (was 49). Two warnings remain: unused update handlers for the garage detail sheets (see below).
@@ -68,14 +69,14 @@ Four problems now matter most:
 - Dependencies updated within ranges (`@supabase/supabase-js` 2.117, `@google/genai` 1.52); major upgrades skipped.
 
 **Your manual steps:**
-0. In Supabase, open SQL Editor and run:
+0. ~~Done Oct 11~~ In Supabase, open SQL Editor and run:
    `alter table public.analysis_results drop constraint analysis_results_model_used_check;`
    `alter table public.analysis_results add constraint analysis_results_model_used_check check (model_used is null or model_used like 'gemini-%');`
    This lets analysis logging work again and survives future model upgrades.
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. In Supabase → Storage → `vehicle_images`, restrict allowed MIME types to `image/jpeg, image/png, image/gif, image/webp` and set a file size limit (about 5 MB).
-4. Commit your RLS policies and migrations (types are now generated; rerun the command at the top of `types/supabase.ts` after schema changes).
+4. Run `supabase/migrations/20261011000100_function_search_path.sql` in the SQL Editor. After future schema changes, re-run the `pg_dump` command in the README and `supabase gen types` (command at the top of `types/supabase.ts`).
 
 ---
 

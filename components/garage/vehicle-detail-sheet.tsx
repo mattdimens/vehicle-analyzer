@@ -28,7 +28,7 @@ export function VehicleDetailSheet({ isOpen, onClose, vehicle, onUpdated }: Vehi
 
     const [isEditingVehicle, setIsEditingVehicle] = useState(false)
     const [nicknameInput, setNicknameInput] = useState(vehicle.nickname || "")
-    const [yearInput, setYearInput] = useState(vehicle.year.toString())
+    const [yearInput, setYearInput] = useState(vehicle.year?.toString() ?? "")
     const [makeInput, setMakeInput] = useState(vehicle.make)
     const [modelInput, setModelInput] = useState(vehicle.model)
     const [trimInput, setTrimInput] = useState(vehicle.trim || "")

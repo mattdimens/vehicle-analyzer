@@ -66,10 +66,12 @@ export function PartDetailSheet({ isOpen, onClose, part, onUpdated }: PartDetail
         }
     }
 
-    const isLowConfidence = part.confidence && part.confidence < 30
+    // identified_parts.confidence is a text column; coerce before comparing
+    const confidenceValue = Number(part.confidence) || 0
+    const isLowConfidence = confidenceValue > 0 && confidenceValue < 30
 
     // Calculate progress ring colors and values
-    const progressValue = part.confidence || 0
+    const progressValue = confidenceValue
     let progressColorClass = "text-emerald-500"
     let progressBgClass = "text-emerald-500/20"
     if (progressValue < 50) {

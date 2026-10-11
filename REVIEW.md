@@ -47,7 +47,8 @@ Four problems now matter most:
 | N16 | Open (planned refactor: one server endpoint for the category flow) |
 | **New: selector logging was broken** | Found during the smoke test: `vehicle_selector_events` rejects anon inserts (RLS 42501), so `/api/log-vehicle-selector` has logged nothing. **Fixed:** it now uses the service-role client and validates input. |
 | **New: CSP blocked GA4 Google Signals** | `stats.g.doubleclick.net` was blocked. **Fixed:** `img-src`/`connect-src` now follow Google's GA4 CSP list (also closes M9). Google Fonts hosts were removed. |
-| M1 | Partly: added `affiliate_clicks` and the real `vehicle_selector_events` columns by hand, typed the service client, and removed `as any` in `/go`. Still run `supabase gen types`. |
+| M1 | **Fixed (Oct 11, follow-up PR).** `types/supabase.ts` is now generated from the live schema with `supabase gen types`. Regenerating found three real bugs, all fixed in the same PR: (1) the pipeline's `logDemand` inserted a nonexistent `generation` column and no required `year`/`supported`, so photo-analysis demand was never logged; (2) `identified_parts.vehicle_year` is an integer, so saving a part whose estimated vehicle began with a year range failed; (3) `identified_parts.confidence` is text, so the garage now coerces it before comparing. |
+| New (open) | `identified_parts` has a `notes` column the app never uses. The garage's "Notes & Description" editor overwrites the AI's `description` instead. |
 | M2 | Partly: the fitment prompt now lives only in `lib/analysis-stages.ts` |
 | M3, M4, M8, L5 README | Fixed (dead files and assets deleted, `.env.example`, README) |
 | L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
@@ -58,7 +59,7 @@ Four problems now matter most:
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. In Supabase → Storage → `vehicle_images`, restrict allowed MIME types to `image/jpeg, image/png, image/gif, image/webp` and set a file size limit (about 5 MB).
-4. Run `supabase gen types typescript --project-id <id> > types/supabase.ts` and commit your RLS policies and migrations.
+4. Commit your RLS policies and migrations (types are now generated; rerun the command at the top of `types/supabase.ts` after schema changes).
 
 ---
 

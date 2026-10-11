@@ -5,6 +5,7 @@ import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
 import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { PartIdentification } from "@/app/actions"
+import { normalizeYear } from "@/lib/normalize-year"
 
 interface SaveToPartsButtonProps {
     partImageUrl: string
@@ -23,12 +24,14 @@ export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPa
 
     const handleSave = () => {
         // Extract vehicle info if available in estimatedVehicle string (e.g. "2019 Ford F-150")
-        let year, make, model
+        // vehicle_year is an integer column: "2019-2021" must become 2019
+        let year: number | null = null
+        let make, model
         const trim = null
         if (partIdentification.estimatedVehicle) {
             const parts = partIdentification.estimatedVehicle.split(' ')
-            if (parts.length >= 3 && !isNaN(parseInt(parts[0]))) {
-                year = parts[0]
+            if (parts.length >= 3 && normalizeYear(parts[0]) !== null) {
+                year = normalizeYear(parts[0])
                 make = parts[1]
                 model = parts.slice(2).join(' ')
             }

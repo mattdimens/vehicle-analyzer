@@ -18,7 +18,7 @@ export const merchants: Record<string, MerchantBuilder> = {
     const words = parts.join(" ").split(/\s+/);
     const dedupedQuery = Array.from(new Set(words)).join(" ");
     
-    const tag = process.env.AMAZON_ASSOCIATE_TAG || "visualfitment-20";
+    const tag = process.env.AMAZON_ASSOCIATE_TAG || "visualfitme0b-20";
     const url = new URL("https://www.amazon.com/s");
     url.searchParams.set("k", dedupedQuery);
     url.searchParams.set("tag", tag);

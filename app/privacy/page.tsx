@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             <div className="flex-1 bg-white">
                 <div className="container max-w-3xl mx-auto px-4 py-16 md:py-24">
                     <h1 className="text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-                    <p className="text-sm text-muted-foreground mb-12">Last updated: October 11, 2026</p>
+                    <p className="text-sm text-muted-foreground mb-12">Last updated: October 20, 2026</p>
 
                     <div className="space-y-10 text-[15px] leading-relaxed text-foreground/80">
 
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
                                 Product links on this site (e.g., &quot;Find on Amazon&quot; buttons) are <strong>Amazon Associates affiliate links</strong>. As an Amazon Associate we earn from qualifying purchases, at no extra cost to you. This is how we keep the site free. Clicking these links is entirely optional and does not affect your analysis results.
                             </p>
                             <p>
-                                Product links pass through our own redirect, which records the search terms, the vehicle, and the page the click came from before sending you to Amazon. Once you are on Amazon, Amazon may set its own cookies to attribute purchases, and{" "}
+                                Product links pass through our own redirect, which records the search terms, the vehicle, the page the click came from, and your browser type before sending you to Amazon. We use the browser type to filter out automated traffic. Once you are on Amazon, Amazon may set its own cookies to attribute purchases, and{" "}
                                 <a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=GX7NJQ4ZB8MHFRNJ" target="_blank" rel="noopener noreferrer" className={linkClass}>Amazon&apos;s Privacy Notice</a> applies.
                             </p>
                         </section>

@@ -7,6 +7,8 @@ import { normalizeYear } from '../lib/normalize-year'
 import { sanitizePromptText } from '../lib/gemini'
 import { AnalysisResultsSchema } from '../lib/schemas'
 import { apiErrorMessage, RATE_LIMIT_MESSAGE, thrownErrorMessage } from '../lib/api-errors'
+import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/click-filter'
+import { merchants } from '../lib/affiliate/merchants'
 
 let passed = 0
 let failed = 0
@@ -58,6 +60,35 @@ assert(apiErrorMessage(429, {}, 'x') === RATE_LIMIT_MESSAGE, '429 -> rate-limit 
 assert(apiErrorMessage(400, { error: 'Bad URL' }, 'x') === 'Bad URL', 'string error passes through')
 assert(apiErrorMessage(500, { error: { nested: true } }, 'fallback') === 'fallback', 'object error -> fallback')
 assert(thrownErrorMessage(new Error('An unexpected response was received from the server.'), 'x').startsWith("We couldn't reach"), 'blocked Server Action -> friendly text')
+
+console.log('\nclick-filter')
+const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+const chrome = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+const page = 'https://visualfitment.com/vehicles/toyota/tacoma/3rd-gen'
+assert(!isBotUserAgent(iphone), 'iPhone Safari is not a bot')
+assert(!isBotUserAgent(chrome), 'desktop Chrome is not a bot')
+assert(isBotUserAgent('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'), 'Googlebot is a bot')
+assert(isBotUserAgent('Mozilla/5.0 (compatible; AhrefsBot/7.0)'), 'AhrefsBot is a bot')
+assert(isBotUserAgent('python-requests/2.32.3'), 'python-requests is a bot')
+assert(isBotUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 HeadlessChrome/141.0.0.0 Safari/537.36'), 'HeadlessChrome is a bot')
+assert(isBotUserAgent(''), 'empty user agent is a bot')
+assert(isBotUserAgent(null), 'missing user agent is a bot')
+assert(classifyClick({ userAgent: iphone, referer: page, requestHost: 'visualfitment.com' }) === null, 'real click from our page is kept')
+assert(classifyClick({ userAgent: iphone, referer: 'https://www.visualfitment.com/part-identifier', requestHost: 'visualfitment.com' }) === null, 'www referer is ours')
+assert(classifyClick({ userAgent: chrome, referer: 'https://vehicle-analyzer-git-x.vercel.app/part-identifier', requestHost: 'vehicle-analyzer-git-x.vercel.app' }) === null, 'preview deploy referer matches its own host')
+assert(classifyClick({ userAgent: chrome, referer: 'http://localhost:3000/', requestHost: 'localhost:3000' }) === null, 'localhost referer matches its own host')
+assert(classifyClick({ userAgent: chrome, referer: null, requestHost: 'visualfitment.com' }) === 'no_referer', 'no referer is filtered')
+assert(classifyClick({ userAgent: chrome, referer: 'https://example.com/', requestHost: 'visualfitment.com' }) === 'external_referer', 'other site is filtered')
+assert(classifyClick({ userAgent: chrome, referer: 'https://visualfitment.com.evil.example/', requestHost: 'visualfitment.com' }) === 'external_referer', 'look-alike host is filtered')
+assert(classifyClick({ userAgent: chrome, referer: 'not a url', requestHost: 'visualfitment.com' }) === 'external_referer', 'garbage referer is filtered')
+assert(classifyClick({ userAgent: 'curl/8.7.1', referer: page, requestHost: 'visualfitment.com' }) === 'bot_user_agent', 'bot is filtered even with our referer')
+assert(truncateHeader('x'.repeat(900))?.length === 500, 'long header is truncated')
+assert(truncateHeader(null) === null, 'missing header stays null')
+const tagged = new URL(merchants.amazon({ product: 'tonneau cover' }))
+const untagged = new URL(merchants.amazon({ product: 'tonneau cover', tagged: false }))
+assert(tagged.searchParams.has('tag'), 'Amazon link is tagged by default')
+assert(!untagged.searchParams.has('tag'), 'filtered Amazon link has no tag')
+assert(untagged.searchParams.get('k') === 'tonneau cover', 'filtered Amazon link keeps the search')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

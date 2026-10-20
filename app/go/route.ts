@@ -4,6 +4,10 @@ import { merchants } from "@/lib/affiliate/merchants";
 import { affiliateRouting, defaultMerchant } from "@/lib/affiliate/routing";
 import { getServiceRoleClient } from "@/lib/supabase-server";
 import { resolveSessionId, setSessionCookie } from "@/lib/session-cookie";
+import { classifyClick, truncateHeader } from "@/lib/affiliate/click-filter";
+
+/** PostgREST / Postgres codes for "that column doesn't exist yet". */
+const MISSING_COLUMN_CODES = new Set(["PGRST204", "42703"]);
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -22,19 +26,29 @@ export async function GET(req: NextRequest) {
     merchantKey = merchantQuery;
   }
 
-  // 2. Build destination URL
+  // 2. Is this a real click on one of our pages? Bots and off-site requests
+  //    still redirect, but untagged, and are logged with a filter_reason.
+  const userAgent = req.headers.get("user-agent");
+  const referer = req.headers.get("referer");
+  const filterReason = classifyClick({
+    userAgent,
+    referer,
+    requestHost: req.headers.get("host"),
+  });
+
+  // 3. Build destination URL
   const builder = merchants[merchantKey];
-  const destinationUrl = builder({ cat, vehicle, brand, product });
+  const destinationUrl = builder({ cat, vehicle, brand, product, tagged: filterReason === null });
 
   const composedQuery = Array.from(new Set([vehicle, brand, product]
     .filter(Boolean)
     .join(" ")
     .split(/\s+/))).join(" ");
 
-  // 3. Resolve session ID from cookie or generate a new one
+  // 4. Resolve session ID from cookie or generate a new one
   const { sessionId, isNew: isNewSession } = resolveSessionId(req);
 
-  // 4. Log click asynchronously
+  // 5. Log click asynchronously
   const logClick = async () => {
     try {
       if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -46,7 +60,7 @@ export async function GET(req: NextRequest) {
         return;
       }
       const supabase = getServiceRoleClient();
-      const { error } = await supabase.from("affiliate_clicks").insert({
+      const baseRow = {
         merchant: merchantKey,
         category: cat,
         vehicle,
@@ -56,7 +70,21 @@ export async function GET(req: NextRequest) {
         destination_url: destinationUrl,
         source,
         session_id: sessionId,
+      };
+      let { error } = await supabase.from("affiliate_clicks").insert({
+        ...baseRow,
+        user_agent: truncateHeader(userAgent),
+        referer: truncateHeader(referer),
+        filter_reason: filterReason,
       });
+
+      // Until the 20261020000000 migration reaches a database, the new columns
+      // don't exist. Keep logging real clicks the old way, and skip filtered
+      // hits so they don't land in the table looking like real clicks.
+      if (error && MISSING_COLUMN_CODES.has(error.code ?? "")) {
+        if (filterReason !== null) return;
+        ({ error } = await supabase.from("affiliate_clicks").insert(baseRow));
+      }
 
       if (error) {
         console.error("[/go] Failed to insert affiliate click:", error.message, {
@@ -76,7 +104,7 @@ export async function GET(req: NextRequest) {
     logClick().catch(console.error);
   }
 
-  // 5. Redirect (always proceeds regardless of logging)
+  // 6. Redirect (always proceeds regardless of logging)
   const response = NextResponse.redirect(destinationUrl);
 
   // Set session cookie if new

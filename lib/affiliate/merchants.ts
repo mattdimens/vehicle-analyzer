@@ -3,12 +3,14 @@ export type MerchantBuilderParams = {
   brand?: string;
   product?: string;
   cat?: string;
+  /** false sends the visitor to the merchant without our affiliate tag (filtered traffic). Defaults to true. */
+  tagged?: boolean;
 };
 
 export type MerchantBuilder = (params: MerchantBuilderParams) => string;
 
 export const merchants: Record<string, MerchantBuilder> = {
-  amazon: ({ vehicle, brand, product }) => {
+  amazon: ({ vehicle, brand, product, tagged = true }) => {
     // Compose query: trim, dedupe, encode
     const parts = [vehicle, brand, product]
       .filter((p): p is string => Boolean(p && p.trim()))
@@ -21,7 +23,9 @@ export const merchants: Record<string, MerchantBuilder> = {
     const tag = process.env.AMAZON_ASSOCIATE_TAG || "visualfitme0b-20";
     const url = new URL("https://www.amazon.com/s");
     url.searchParams.set("k", dedupedQuery);
-    url.searchParams.set("tag", tag);
+    if (tagged) {
+      url.searchParams.set("tag", tag);
+    }
     
     return url.toString();
   }

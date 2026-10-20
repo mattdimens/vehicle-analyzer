@@ -24,11 +24,14 @@ export type Database = {
           composed_query: string | null
           created_at: string | null
           destination_url: string | null
+          filter_reason: string | null
           id: string
           merchant: string | null
           product: string | null
+          referer: string | null
           session_id: string | null
           source: string | null
+          user_agent: string | null
           user_id: string | null
           vehicle: string | null
         }
@@ -38,11 +41,14 @@ export type Database = {
           composed_query?: string | null
           created_at?: string | null
           destination_url?: string | null
+          filter_reason?: string | null
           id?: string
           merchant?: string | null
           product?: string | null
+          referer?: string | null
           session_id?: string | null
           source?: string | null
+          user_agent?: string | null
           user_id?: string | null
           vehicle?: string | null
         }
@@ -52,11 +58,14 @@ export type Database = {
           composed_query?: string | null
           created_at?: string | null
           destination_url?: string | null
+          filter_reason?: string | null
           id?: string
           merchant?: string | null
           product?: string | null
+          referer?: string | null
           session_id?: string | null
           source?: string | null
+          user_agent?: string | null
           user_id?: string | null
           vehicle?: string | null
         }

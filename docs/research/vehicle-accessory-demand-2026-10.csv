@@ -1,0 +1,395 @@
+vehicle,product_type,monthly_us_searches,accessories_head_searches
+Toyota Tacoma,bed cover,3700,12950
+Toyota Tacoma,bed rack,3700,12950
+Toyota Tacoma,roof rack,3200,12950
+Toyota Tacoma,camper shell,3200,12950
+Toyota Tacoma,front bumper,2500,12950
+Toyota Tacoma,wheels,2200,12950
+Toyota Tacoma,seat covers,1900,12950
+Toyota Tacoma,headlights,1800,12950
+Toyota Tacoma,tonneau cover,1500,12950
+Toyota Tacoma,mods,1500,12950
+Toyota Tacoma,lift kit,1500,12950
+Toyota Tacoma,running boards,1200,12950
+Toyota Tacoma,rims,1100,12950
+Toyota Tacoma,skid plate,900,12950
+Toyota Tacoma,rock sliders,900,12950
+Toyota Tacoma,tires,800,12950
+Toyota Tacoma,tail lights,600,12950
+Toyota Tacoma,grille,600,12950
+Toyota Tacoma,mud flaps,500,12950
+Toyota Tacoma,leveling kit,500,12950
+Toyota Tacoma,floor mats,500,12950
+Toyota Tacoma,light bar,450,12950
+Toyota Tacoma,fender flares,450,12950
+Toyota Tacoma,roof top tent,450,12950
+Toyota Tacoma,phone mount,300,12950
+Toyota Tacoma,bed liner,200,12950
+Toyota Tacoma,wheel spacers,200,12950
+Toyota Tacoma,sun shade,150,12950
+Toyota Tacoma,nerf bars,100,12950
+Toyota 4Runner,roof rack,3500,5750
+Toyota 4Runner,wheels,1500,5750
+Toyota 4Runner,seat covers,700,5750
+Toyota 4Runner,headlights,700,5750
+Toyota 4Runner,lift kit,600,5750
+Toyota 4Runner,rock sliders,600,5750
+Toyota 4Runner,mods,500,5750
+Toyota 4Runner,running boards,500,5750
+Toyota 4Runner,skid plate,450,5750
+Toyota 4Runner,tires,450,5750
+Toyota 4Runner,rims,400,5750
+Toyota 4Runner,front bumper,350,5750
+Toyota 4Runner,tail lights,350,5750
+Toyota 4Runner,floor mats,250,5750
+Toyota 4Runner,leveling kit,250,5750
+Toyota 4Runner,light bar,250,5750
+Toyota 4Runner,phone mount,200,5750
+Toyota 4Runner,fender flares,200,5750
+Toyota 4Runner,roof top tent,150,5750
+Toyota 4Runner,sun shade,150,5750
+Toyota 4Runner,wheel spacers,150,5750
+Ford F-150,bed cover,2400,5050
+Ford F-150,wheels,1700,5050
+Ford F-150,seat covers,1500,5050
+Ford F-150,headlights,1200,5050
+Ford F-150,leveling kit,1200,5050
+Ford F-150,floor mats,1100,5050
+Ford F-150,tonneau cover,1100,5050
+Ford F-150,running boards,1000,5050
+Ford F-150,camper shell,900,5050
+Ford F-150,tires,900,5050
+Ford F-150,rims,800,5050
+Ford F-150,roof rack,800,5050
+Ford F-150,fender flares,700,5050
+Ford F-150,front bumper,600,5050
+Ford F-150,lift kit,600,5050
+Ford F-150,mud flaps,500,5050
+Ford F-150,mods,500,5050
+Ford F-150,tail lights,500,5050
+Ford F-150,bed rack,500,5050
+Ford F-150,bed liner,450,5050
+Ford F-150,phone mount,400,5050
+Ford F-150,wheel spacers,250,5050
+Ford F-150,light bar,250,5050
+Ford F-150,rock sliders,200,5050
+Ford F-150,skid plate,200,5050
+Ford F-150,sun shade,150,5050
+Ford F-150,roof top tent,150,5050
+Ford F-150,floor liners,150,5050
+Ford F-150,grille,100,5050
+Ram 1500,bed cover,1300,2000
+Ram 1500,running boards,900,2000
+Ram 1500,wheels,900,2000
+Ram 1500,tonneau cover,800,2000
+Ram 1500,headlights,700,2000
+Ram 1500,tires,700,2000
+Ram 1500,front bumper,700,2000
+Ram 1500,seat covers,700,2000
+Ram 1500,rims,700,2000
+Ram 1500,lift kit,600,2000
+Ram 1500,fender flares,500,2000
+Ram 1500,leveling kit,450,2000
+Ram 1500,floor mats,450,2000
+Ram 1500,camper shell,400,2000
+Ram 1500,bed liner,400,2000
+Ram 1500,roof rack,350,2000
+Ram 1500,mud flaps,300,2000
+Ram 1500,bed rack,250,2000
+Ram 1500,mods,250,2000
+Ram 1500,light bar,250,2000
+Ram 1500,tail lights,150,2000
+Ram 1500,sun shade,150,2000
+Ram 1500,skid plate,100,2000
+Ram 1500,grille,100,2000
+Ram 1500,nerf bars,100,2000
+Ram 1500,wheel spacers,100,2000
+Ram 1500,phone mount,100,2000
+Ford Bronco,roof rack,1100,7000
+Ford Bronco,wheels,1000,7000
+Ford Bronco,running boards,700,7000
+Ford Bronco,seat covers,700,7000
+Ford Bronco,light bar,600,7000
+Ford Bronco,headlights,600,7000
+Ford Bronco,lift kit,600,7000
+Ford Bronco,tires,600,7000
+Ford Bronco,floor mats,500,7000
+Ford Bronco,fender flares,500,7000
+Ford Bronco,rims,500,7000
+Ford Bronco,front bumper,450,7000
+Ford Bronco,mud flaps,450,7000
+Ford Bronco,tail lights,350,7000
+Ford Bronco,phone mount,350,7000
+Ford Bronco,rock sliders,300,7000
+Ford Bronco,grille,250,7000
+Ford Bronco,mods,250,7000
+Ford Bronco,leveling kit,200,7000
+Ford Bronco,skid plate,200,7000
+Ford Bronco,sun shade,150,7000
+Ford Bronco,tonneau cover,150,7000
+Ford Bronco,wheel spacers,150,7000
+Ford Bronco,floor liners,100,7000
+Ford Bronco,roof top tent,100,7000
+Toyota Tundra,bed cover,900,3240
+Toyota Tundra,wheels,800,3240
+Toyota Tundra,camper shell,700,3240
+Toyota Tundra,seat covers,600,3240
+Toyota Tundra,running boards,600,3240
+Toyota Tundra,roof rack,500,3240
+Toyota Tundra,front bumper,500,3240
+Toyota Tundra,tonneau cover,500,3240
+Toyota Tundra,bed rack,450,3240
+Toyota Tundra,tires,450,3240
+Toyota Tundra,headlights,450,3240
+Toyota Tundra,rims,350,3240
+Toyota Tundra,lift kit,350,3240
+Toyota Tundra,leveling kit,350,3240
+Toyota Tundra,floor mats,300,3240
+Toyota Tundra,fender flares,300,3240
+Toyota Tundra,rock sliders,250,3240
+Toyota Tundra,mods,250,3240
+Toyota Tundra,light bar,250,3240
+Toyota Tundra,mud flaps,200,3240
+Toyota Tundra,skid plate,200,3240
+Toyota Tundra,tail lights,200,3240
+Toyota Tundra,grille,150,3240
+Toyota Tundra,wheel spacers,100,3240
+Toyota Tundra,sun shade,100,3240
+Chevy Silverado 1500,wheels,700,2150
+Chevy Silverado 1500,bed cover,700,2150
+Chevy Silverado 1500,seat covers,600,2150
+Chevy Silverado 1500,rims,500,2150
+Chevy Silverado 1500,running boards,500,2150
+Chevy Silverado 1500,tonneau cover,400,2150
+Chevy Silverado 1500,fender flares,350,2150
+Chevy Silverado 1500,leveling kit,300,2150
+Chevy Silverado 1500,headlights,300,2150
+Chevy Silverado 1500,lift kit,300,2150
+Chevy Silverado 1500,roof rack,300,2150
+Chevy Silverado 1500,floor mats,250,2150
+Chevy Silverado 1500,tail lights,250,2150
+Chevy Silverado 1500,front bumper,250,2150
+Chevy Silverado 1500,bed liner,200,2150
+Chevy Silverado 1500,tires,200,2150
+Chevy Silverado 1500,camper shell,200,2150
+Chevy Silverado 1500,mud flaps,150,2150
+Chevy Silverado 1500,bed rack,150,2150
+Chevy Silverado 1500,sun shade,100,2150
+Chevy Silverado 1500,light bar,100,2150
+Chevy Silverado 1500,floor liners,100,2150
+Chevy Silverado 1500,mods,100,2150
+Chevy Silverado 1500,wheel spacers,100,2150
+Chevy Silverado 1500,rock sliders,100,2150
+Tesla Cybertruck,tires,900,2400
+Tesla Cybertruck,wheels,800,2400
+Tesla Cybertruck,light bar,600,2400
+Tesla Cybertruck,camper shell,600,2400
+Tesla Cybertruck,roof rack,450,2400
+Tesla Cybertruck,rims,400,2400
+Tesla Cybertruck,bed cover,300,2400
+Tesla Cybertruck,mods,300,2400
+Tesla Cybertruck,headlights,250,2400
+Tesla Cybertruck,lift kit,200,2400
+Tesla Cybertruck,tonneau cover,200,2400
+Tesla Model Y,roof rack,1000,6500
+Tesla Model Y,floor mats,600,6500
+Tesla Model Y,wheels,450,6500
+Tesla Model Y,tires,350,6500
+Tesla Model Y,rims,250,6500
+Tesla Model Y,mud flaps,200,6500
+Tesla Model Y,lift kit,200,6500
+Tesla Model Y,seat covers,150,6500
+Tesla Model Y,phone mount,150,6500
+Tesla Model Y,mods,150,6500
+Tesla Model Y,headlights,100,6500
+Tesla Model Y,front bumper,100,6500
+Jeep Gladiator,bed cover,3250,5250
+Jeep Gladiator,wheels,2200,5250
+Jeep Gladiator,camper shell,2200,5250
+Jeep Gladiator,bed rack,1750,5250
+Jeep Gladiator,lift kit,1650,5250
+Jeep Gladiator,front bumper,1000,5250
+Jeep Gladiator,running boards,950,5250
+Jeep Gladiator,tonneau cover,900,5250
+Jeep Gladiator,roof rack,800,5250
+Jeep Gladiator,seat covers,750,5250
+Jeep Gladiator,tail lights,700,5250
+Jeep Gladiator,soft top,600,5250
+Jeep Gladiator,rims,550,5250
+Jeep Gladiator,leveling kit,550,5250
+Jeep Gladiator,light bar,500,5250
+Jeep Gladiator,headlights,450,5250
+Jeep Gladiator,mud flaps,400,5250
+Jeep Gladiator,floor mats,400,5250
+Jeep Gladiator,hard top,400,5250
+Jeep Gladiator,fender flares,350,5250
+Jeep Gladiator,rock sliders,300,5250
+Jeep Gladiator,mods,300,5250
+Jeep Gladiator,bed liner,300,5250
+Jeep Gladiator,wheel spacers,200,5250
+Jeep Gladiator,sun shade,200,5250
+Jeep Gladiator,floor liners,200,5250
+Jeep Gladiator,steps,200,5250
+Jeep Gladiator,phone mount,200,5250
+Jeep Gladiator,doors,150,5250
+Jeep Gladiator,roof top tent,150,5250
+Toyota RAV4,roof rack,1000,2300
+Toyota RAV4,tires,800,2300
+Toyota RAV4,seat covers,600,2300
+Toyota RAV4,wheels,350,2300
+Toyota RAV4,rims,300,2300
+Toyota RAV4,lift kit,250,2300
+Toyota RAV4,floor mats,250,2300
+Toyota RAV4,running boards,200,2300
+Toyota RAV4,mods,150,2300
+Toyota RAV4,headlights,150,2300
+Toyota RAV4,front bumper,150,2300
+Toyota RAV4,cargo liner,100,2300
+Ford Maverick,bed cover,1900,5550
+Ford Maverick,camper shell,1550,5550
+Ford Maverick,tonneau cover,1400,5550
+Ford Maverick,wheels,900,5550
+Ford Maverick,lift kit,900,5550
+Ford Maverick,roof rack,750,5550
+Ford Maverick,bed rack,700,5550
+Ford Maverick,seat covers,550,5550
+Ford Maverick,rims,550,5550
+Ford Maverick,bed liner,400,5550
+Ford Maverick,fender flares,300,5550
+Ford Maverick,mods,300,5550
+Ford Maverick,tires,200,5550
+Ford Maverick,floor mats,200,5550
+Ford Maverick,mud flaps,200,5550
+Ford Maverick,tail lights,150,5550
+Ford Maverick,skid plate,150,5550
+Ford Maverick,leveling kit,150,5550
+Ford Maverick,running boards,150,5550
+Ford Maverick,front bumper,150,5550
+Ford Maverick,headlights,150,5550
+Ford Maverick,light bar,100,5550
+Ford Maverick,sun shade,100,5550
+Ford Bronco Sport,lift kit,600,2700
+Ford Bronco Sport,roof rack,400,2700
+Ford Bronco Sport,wheels,300,2700
+Ford Bronco Sport,floor mats,250,2700
+Ford Bronco Sport,mods,200,2700
+Ford Bronco Sport,tires,200,2700
+Ford Bronco Sport,seat covers,200,2700
+Ford Bronco Sport,rims,150,2700
+Ford Bronco Sport,mud flaps,150,2700
+Ford Bronco Sport,fender flares,100,2700
+Ford Bronco Sport,headlights,100,2700
+Ford Bronco Sport,front bumper,100,2700
+Chevy Tahoe,wheels,350,750
+Chevy Tahoe,rims,350,750
+Chevy Tahoe,seat covers,250,750
+Chevy Tahoe,roof rack,250,750
+Chevy Tahoe,floor mats,200,750
+Chevy Tahoe,tail lights,150,750
+Chevy Tahoe,tires,150,750
+Chevy Tahoe,leveling kit,150,750
+Chevy Tahoe,running boards,150,750
+Chevy Tahoe,front bumper,150,750
+Chevy Tahoe,headlights,150,750
+Chevy Tahoe,lift kit,100,750
+Chevy Tahoe,light bar,100,750
+Jeep Wrangler,seat covers,1450,4500
+Jeep Wrangler,hard top,1400,4500
+Jeep Wrangler,roof rack,1350,4500
+Jeep Wrangler,wheels,1300,4500
+Jeep Wrangler,tires,1300,4500
+Jeep Wrangler,soft top,1000,4500
+Jeep Wrangler,running boards,850,4500
+Jeep Wrangler,headlights,700,4500
+Jeep Wrangler,floor mats,700,4500
+Jeep Wrangler,lift kit,600,4500
+Jeep Wrangler,front bumper,600,4500
+Jeep Wrangler,rims,600,4500
+Jeep Wrangler,light bar,550,4500
+Jeep Wrangler,floor liners,350,4500
+Jeep Wrangler,tail lights,350,4500
+Jeep Wrangler,phone mount,300,4500
+Jeep Wrangler,fender flares,300,4500
+Jeep Wrangler,mods,300,4500
+Jeep Wrangler,mud flaps,200,4500
+Jeep Wrangler,sun shade,200,4500
+Jeep Wrangler,doors,200,4500
+Jeep Wrangler,wheel spacers,150,4500
+Jeep Wrangler,steps,150,4500
+Jeep Wrangler,skid plate,150,4500
+Jeep Wrangler,roof top tent,150,4500
+Jeep Wrangler,rock sliders,150,4500
+Jeep Wrangler,nerf bars,100,4500
+Tesla Model 3,wheels,350,3000
+Tesla Model 3,roof rack,300,3000
+Tesla Model 3,rims,200,3000
+Tesla Model 3,mud flaps,150,3000
+Tesla Model 3,tires,150,3000
+Tesla Model 3,mods,150,3000
+Tesla Model 3,floor mats,100,3000
+Tesla Model 3,front bumper,100,3000
+Honda Ridgeline,tonneau cover,300,1800
+Honda Ridgeline,bed cover,200,1800
+Honda Ridgeline,running boards,150,1800
+Honda Ridgeline,roof rack,100,1800
+Honda Ridgeline,wheels,100,1800
+Honda Ridgeline,camper shell,100,1800
+Chevy Colorado,seat covers,200,1500
+Chevy Colorado,floor liners,150,1500
+Chevy Colorado,running boards,150,1500
+Chevy Colorado,bed cover,150,1500
+Chevy Colorado,tonneau cover,150,1500
+Chevy Colorado,fender flares,100,1500
+Chevy Colorado,roof rack,100,1500
+Chevy Colorado,bed liner,100,1500
+Subaru Crosstrek,roof rack,300,1400
+Subaru Crosstrek,tires,200,1400
+Subaru Crosstrek,lift kit,200,1400
+Subaru Crosstrek,seat covers,150,1400
+Subaru Crosstrek,mods,100,1400
+Subaru Crosstrek,wheels,100,1400
+Jeep Grand Cherokee,headlights,200,1500
+Jeep Grand Cherokee,roof rack,150,1500
+Jeep Grand Cherokee,tires,150,1500
+Jeep Grand Cherokee,front bumper,150,1500
+Jeep Grand Cherokee,running boards,100,1500
+Jeep Grand Cherokee,wheels,100,1500
+Nissan Frontier,running boards,200,1450
+Nissan Frontier,front bumper,150,1450
+Nissan Frontier,bed cover,150,1450
+Nissan Frontier,roof rack,100,1450
+Nissan Frontier,tires,100,1450
+Nissan Frontier,tonneau cover,100,1450
+Ford Ranger,wheels,1200,1200
+Ford Ranger,bed cover,950,1200
+Ford Ranger,lift kit,800,1200
+Ford Ranger,seat covers,750,1200
+Ford Ranger,camper shell,700,1200
+Ford Ranger,running boards,600,1200
+Ford Ranger,roof rack,500,1200
+Ford Ranger,front bumper,500,1200
+Ford Ranger,tonneau cover,500,1200
+Ford Ranger,rims,450,1200
+Ford Ranger,tires,450,1200
+Ford Ranger,fender flares,400,1200
+Ford Ranger,headlights,400,1200
+Ford Ranger,floor mats,300,1200
+Ford Ranger,leveling kit,300,1200
+Ford Ranger,mods,250,1200
+Ford Ranger,bed rack,250,1200
+Ford Ranger,bed liner,250,1200
+Ford Ranger,light bar,200,1200
+Ford Ranger,mud flaps,200,1200
+Ford Ranger,grille,150,1200
+Ford Ranger,skid plate,150,1200
+Ford Ranger,floor liners,150,1200
+Ford Ranger,tail lights,100,1200
+Ford Ranger,wheel spacers,100,1200
+Ford Ranger,rock sliders,100,1200
+GMC Sierra 1500,floor mats,200,750
+GMC Sierra 1500,seat covers,150,750
+GMC Sierra 1500,wheels,100,750
+GMC Sierra 1500,front bumper,100,750
+GMC Sierra 1500,running boards,100,750
+GMC Sierra 1500,fender flares,100,750
+Subaru Outback,roof rack,100,1400

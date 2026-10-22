@@ -197,7 +197,7 @@ export const toyota: VehicleMake = {
       name: "Tacoma",
       h1: "Toyota Tacoma Accessories",
       intro:
-        "The Tacoma is one of the most accessorized trucks on the road, and for good reason. Whether you are outfitting a brand-new 4th Gen for overlanding or refreshing a first-generation trail rig, the right accessories make it yours. Browse fitment-verified picks across every generation below.",
+        "The Tacoma is one of the most accessorized trucks on the road, and for good reason. Whether you are outfitting a brand-new 4th Gen for overlanding or refreshing a first-generation trail rig, the right accessories make it yours. Browse picks for every generation below.",
       generations: [
         // ── 4th Gen ──
         {

@@ -1,6 +1,6 @@
 # Vehicle pages plan: product research, expansion, and Amazon data
 
-Status: draft for Matt's review. Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
+Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built: catalog, product-type pages, ASIN links, `asin` migration. Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
 
 ## Recommendations
 
@@ -208,59 +208,18 @@ Review each vehicle every quarter: check that ASINs are still live and in stock,
 
 ### 6.2 Data shape
 
-Store products once, with fitment rules, and keep the curation (which product plays which role on which page) separate. A product that fits several generations is entered once. This shape maps directly onto future Supabase tables, so moving later is mechanical.
+Store products once, with fitment rules, and keep the curation (which product plays which role on which page) separate. A product that fits several generations is entered once. This shape maps directly onto future Supabase tables, so moving later is mechanical. Built in Phase 0; the types in [data/vehicles/types.ts](../data/vehicles/types.ts) are the source of truth.
 
-```ts
-// data/vehicles/types.ts (sketch)
-export type PriceBand = "budget" | "mid" | "premium"
+- **`CatalogProduct`:** id, ASIN, brand, name, product type, price band, fitment entries, why (1 to 2 sentences specific to the vehicle), an optional catch, source URLs, date checked, and status (active or retired).
+- **`Fitment`:** make and model slugs, years, and optionally cab styles, bed lengths and excluded trims. These three are written the way they display ("Double Cab", "5-ft", "TRD Pro"), so the card can show them as entered. Plus an optional install note ("Drilling required.").
+- **`VehiclePicks`:** the 3 to 5 picks for one product type on one generation page, each with a role (best overall, budget, premium, or "best for" plus a label), and an optional fitment note for that generation.
+- **`ProductTypeGuide`:** the intro and at least 3 vehicle-specific buying notes for a product-type page. A page only exists once it has a guide and at least 6 distinct products across generations.
 
-export interface Fitment {
-  make: string            // "toyota"
-  model: string           // "tacoma"
-  yearStart: number
-  yearEnd: number
-  cab?: string[]          // ["access-cab", "double-cab"]; omitted = all
-  bed?: string[]          // ["5ft", "6ft"]; omitted = all
-  excludeTrims?: string[] // ["trd-pro", "hybrid"]
-  notes?: string          // "Drilling required on 2016-2017 trucks"
-}
-
-export interface CatalogProduct {
-  id: string              // stable slug
-  asin: string            // 10 characters, A-Z and 0-9
-  brand: string
-  name: string
-  category: string        // product-type slug, e.g. "bed-racks"
-  priceBand: PriceBand
-  fitment: Fitment[]
-  why: string             // vehicle-specific, 1-2 sentences
-  gotcha?: string
-  sources: string[]       // fitment guide and owner-source URLs
-  verifiedAt: string      // "2026-10-21"
-  status: "active" | "retired"
-  searchFallback: string  // used by /go if the ASIN is retired
-}
-
-export interface Pick {
-  productId: string
-  role: "best-overall" | "budget" | "premium" | "best-for"
-  label?: string          // "Best for the 6-ft bed"
-}
-
-export interface VehiclePicks {
-  make: string
-  model: string
-  generation: string      // generation slug
-  category: string
-  picks: Pick[]
-}
-```
-
-Files: `data/vehicles/products/{make}-{model}.ts` for products and `data/vehicles/picks/{make}-{model}.ts` for picks. Selectors in [data/vehicles/index.ts](../data/vehicles/index.ts). Tests in `test/unit-test.ts`.
+Files: one per model, `data/vehicles/catalog/{make}-{model}.ts`, holding that model's products, picks and guides. Queries are in [data/vehicles/catalog/index.ts](../data/vehicles/catalog/index.ts), kept out of `data/vehicles/index.ts` because a client component imports that module. The rules in [data/vehicles/catalog/validate.ts](../data/vehicles/catalog/validate.ts) run on every build and in `npm test`, so data that breaks one can't deploy.
 
 ### 6.3 Supabase now: product-level click logging
 
-Add `asin text` (and `product_id text`) to `affiliate_clicks` in a new migration, so clicks and later revenue can be traced to a product. Per CLAUDE.md, apply it to the dev project, then to production after merge, and regenerate `types/supabase.ts`. A cloud session can't apply it, so a local session or you will need to.
+Add `asin text` to `affiliate_clicks` in a new migration (`20261022000000`), so clicks and later revenue can be traced to a product. The catalog id isn't logged separately: the ASIN finds the product. Per CLAUDE.md, apply it to the dev project, then to production after merge, and regenerate `types/supabase.ts`. A cloud session can't apply it, so a local session or you will need to.
 
 ### 6.4 Supabase later: the Amazon data cache
 
@@ -289,7 +248,7 @@ Move when any of these is true:
 ## 7. Amazon links before the API
 
 - **Product links.** Add an `asin` parameter to `/go`. In `merchants.amazon`, when the ASIN matches `^[A-Z0-9]{10}$`, link to `https://www.amazon.com/dp/{ASIN}?tag={tag}`. Otherwise keep today's search link. Log the ASIN. Every link still goes through `/go` with `target="_blank" rel="nofollow sponsored noopener"`.
-- **Retired products.** When a product is marked `retired`, `/go` sends the click to its `searchFallback` search, so no link dead-ends.
+- **Retired products.** When a product is marked `retired`, it drops off the pages, and `/go` sends old links for its ASIN to an Amazon search for the vehicle, brand and product name, so no link dead-ends.
 - **Tracking IDs per page type** ([section 2.1](#21-diagnose-week-1)). Consider tracking IDs per vehicle once there's revenue to split.
 - **No prices, star ratings or Amazon images without the API.** As third-party summaries of Amazon's program policies describe them, price and availability may only come from Amazon links or its APIs, and product images may not be stored. Confirm against the current Associates Program Policies text before launch. Keep the brand and category placeholders, and show a price band ($, $$, $$$) instead of a price. Original photos are fine if we take them or have written permission.
 - **Commission.** Most sources put the automotive category at about 4.5%. Check the current fee schedule in Associates Central. Amazon's cookie lasts 24 hours and credits the whole cart, so high-priced items convert to the most commission. Bed covers ($300 to $1,200) and running boards are worth prioritizing for that reason.

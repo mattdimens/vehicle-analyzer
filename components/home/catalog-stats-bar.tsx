@@ -71,10 +71,8 @@ function AnimatedStat({
  * Replacement for the old StatsBar. Shows only verifiable claims
  * computed from real catalog data. Counts are passed in as props
  * from the server-rendered parent so they stay accurate as the
- * catalog grows.
- *
- * The "vetted by enthusiasts" statement appears only in TrustStrip
- * to avoid repetition on the page.
+ * catalog grows. A stat that is zero (no researched products yet)
+ * is left out rather than shown as 0.
  */
 export function CatalogStatsBar({
   totalProducts,
@@ -101,7 +99,7 @@ export function CatalogStatsBar({
     return () => observer.disconnect()
   }, [hasAnimated])
 
-  const stats: StatDisplay[] = [
+  const allStats: StatDisplay[] = [
     {
       icon: Package,
       value: totalProducts,
@@ -118,6 +116,10 @@ export function CatalogStatsBar({
       label: "Vehicle Generations Covered",
     },
   ]
+  const stats = allStats.filter((stat) => stat.value > 0)
+  const columns = ["", "md:grid-cols-1", "md:grid-cols-2", "md:grid-cols-3"][stats.length]
+
+  if (stats.length === 0) return null
 
   return (
     <section ref={ref} className="w-full bg-[#003223] py-16">
@@ -125,7 +127,7 @@ export function CatalogStatsBar({
         <p className="text-[11px] uppercase tracking-[0.08em] text-white/30 font-medium text-center mb-6">
           Our Catalog
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4">
+        <div className={`grid grid-cols-1 ${columns} gap-8 md:gap-4`}>
           {stats.map((stat) => (
             <AnimatedStat
               key={stat.label}

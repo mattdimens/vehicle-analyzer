@@ -1,9 +1,12 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getAllMakes, getModelBySlug } from "@/data/vehicles/index"
+import { getFeaturedPicks, getProductTypePages } from "@/data/vehicles/catalog"
 import { VehicleHero } from "@/components/vehicles/vehicle-hero"
 import { GenerationSelector } from "@/components/vehicles/generation-selector"
 import { CategorySection } from "@/components/vehicles/category-section"
+import { CatalogProductCard } from "@/components/vehicles/catalog-product-card"
+import { ProductTypeLinks } from "@/components/vehicles/product-type-links"
 import { PopularPicks } from "@/components/vehicles/popular-picks"
 import { RelatedGuides } from "@/components/vehicles/related-guides"
 import type { GuideLink } from "@/components/vehicles/related-guides"
@@ -119,6 +122,12 @@ export default async function ModelHubPage({ params }: PageProps) {
   }
   const mergedCategories = Array.from(categoryMap.values())
 
+  // Once a generation has researched picks, the hub shows one lead pick per
+  // product type (from the most researched generation) instead of the
+  // placeholders.
+  const featured = getFeaturedPicks(make.slug, model.slug)
+  const productTypePages = getProductTypePages(make.slug, model.slug)
+
   // JSON-LD: BreadcrumbList
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -142,7 +151,9 @@ export default async function ModelHubPage({ params }: PageProps) {
 
   // JSON-LD: ItemList of product names. No Product/Offer markup: we don't sell
   // these items, and Offers without a price are invalid for Google.
-  const allProducts = mergedCategories.flatMap((cat) => cat.products.map((p) => p.title))
+  const allProducts = featured
+    ? featured.items.map(({ resolved }) => `${resolved.product.brand} ${resolved.product.name}`)
+    : mergedCategories.flatMap((cat) => cat.products.map((p) => p.title))
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -182,28 +193,68 @@ export default async function ModelHubPage({ params }: PageProps) {
         basePath={basePath}
       />
 
+      <ProductTypeLinks
+        title={`Shop ${model.name} accessories by type`}
+        productTypes={productTypePages}
+        basePath={basePath}
+      />
+
       {/* Affiliate disclosure - adjacent to product recommendations */}
       <AffiliateDisclosure />
 
-      {/* Category sections */}
-      <section className="w-full bg-white py-14 md:py-16">
-        <div className="container max-w-5xl space-y-14">
-          {mergedCategories.map((cat) => (
-            <CategorySection
-              key={cat.slug}
-              category={cat}
-              vehicleString={vehicleString}
-            />
-          ))}
-        </div>
-      </section>
+      {featured ? (
+        /* Top pick per product type from the most researched generation */
+        <section className="w-full bg-white py-14 md:py-16">
+          <div className="container max-w-5xl">
+            <h2 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
+              {`Top picks for the ${featured.generation.label} ${model.name} (${featured.generation.displayRange})`}
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Pick your generation above for every product we recommend.
+            </p>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.items.map(({ productType, resolved }) => (
+                <CatalogProductCard
+                  key={productType.slug}
+                  product={resolved.product}
+                  eyebrow={productType.name}
+                  icon={productType.icon}
+                  vehicle={{
+                    make: make.slug,
+                    model: model.slug,
+                    modelName: model.name,
+                    yearStart: featured.generation.yearStart,
+                    yearEnd: featured.generation.yearEnd,
+                    vehicleString: `${featured.generation.displayRange} ${make.name} ${model.name}`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          {/* Category sections */}
+          <section className="w-full bg-white py-14 md:py-16">
+            <div className="container max-w-5xl space-y-14">
+              {mergedCategories.map((cat) => (
+                <CategorySection
+                  key={cat.slug}
+                  category={cat}
+                  vehicleString={vehicleString}
+                />
+              ))}
+            </div>
+          </section>
 
-      {/* Popular picks */}
-      <PopularPicks
-        modelNamePlural={`${model.name}s`}
-        items={allPopular.slice(0, 6)}
-        vehicleString={vehicleString}
-      />
+          {/* Popular picks */}
+          <PopularPicks
+            modelNamePlural={`${model.name}s`}
+            items={allPopular.slice(0, 6)}
+            vehicleString={vehicleString}
+          />
+        </>
+      )}
 
       {/* Related guides */}
       <RelatedGuides guides={tacomaGuides} />

@@ -19,7 +19,7 @@ export function GenerationSelector({
           Shop by <span className="text-[#E8712B]">Generation</span>
         </h2>
         <p className="mt-2 text-muted-foreground">
-          Select your generation to see accessories verified for your year range.
+          Select your generation to see accessories for your year range.
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

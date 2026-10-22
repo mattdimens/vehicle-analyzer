@@ -1,9 +1,12 @@
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
-import { getAllMakes, getGenerationBySlug } from "@/data/vehicles/index"
+import type { VehicleGeneration, VehicleMake, VehicleModel } from "@/data/vehicles/types"
+import { getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
+import { fitmentCheckedLabel } from "@/data/vehicles/catalog/fitment"
 import { VehicleHero } from "@/components/vehicles/vehicle-hero"
 import { CategorySection } from "@/components/vehicles/category-section"
+import { CatalogSection } from "@/components/vehicles/catalog-section"
 import { PopularPicks } from "@/components/vehicles/popular-picks"
+import { ProductTypeLinks } from "@/components/vehicles/product-type-links"
 import { RelatedGuides } from "@/components/vehicles/related-guides"
 import type { GuideLink } from "@/components/vehicles/related-guides"
 import { SiblingGenerations } from "@/components/vehicles/sibling-generations"
@@ -40,39 +43,22 @@ const truckGuides: GuideLink[] = [
   },
 ]
 
-// ── Static generation ──────────────────────────────────────────────────
+interface GenerationPageProps {
+  make: VehicleMake
+  model: VehicleModel
+  generation: VehicleGeneration
+}
 
-export function generateStaticParams() {
-  const params: { make: string; model: string; generation: string }[] = []
-  for (const make of getAllMakes()) {
-    for (const model of make.models) {
-      for (const gen of model.generations) {
-        params.push({
-          make: make.slug,
-          model: model.slug,
-          generation: gen.slug,
-        })
-      }
-    }
-  }
-  return params
+function generationH1({ make, model, generation }: GenerationPageProps) {
+  return `${generation.displayRange} (${generation.label}) ${make.name} ${model.name} Accessories`
 }
 
 // ── Metadata ───────────────────────────────────────────────────────────
 
-interface PageProps {
-  params: Promise<{ make: string; model: string; generation: string }>
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { make: makeSlug, model: modelSlug, generation: genSlug } = await params
-  const result = getGenerationBySlug(makeSlug, modelSlug, genSlug)
-  if (!result) return {}
-
-  const { make, model, generation } = result
-  const h1 = `${generation.displayRange} (${generation.label}) ${make.name} ${model.name} Accessories`
-  const title = `${h1} | Visual Fitment`
-  const description = `${generation.intro.split(".").slice(0, 2).join(".")}. Browse fitment-verified accessories for the ${generation.displayRange} ${make.name} ${model.name}.`
+export function generationMetadata(props: GenerationPageProps): Metadata {
+  const { make, model, generation } = props
+  const title = `${generationH1(props)} | Visual Fitment`
+  const description = `${generation.intro.split(".").slice(0, 2).join(".")}. Browse accessories for the ${generation.displayRange} ${make.name} ${model.name}.`
 
   return {
     title,
@@ -93,15 +79,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // ── Page ───────────────────────────────────────────────────────────────
 
-export default async function GenerationPage({ params }: PageProps) {
-  const { make: makeSlug, model: modelSlug, generation: genSlug } = await params
-  const result = getGenerationBySlug(makeSlug, modelSlug, genSlug)
-  if (!result) notFound()
-
-  const { make, model, generation } = result
-  const h1 = `${generation.displayRange} (${generation.label}) ${make.name} ${model.name} Accessories`
+export function GenerationPage(props: GenerationPageProps) {
+  const { make, model, generation } = props
+  const h1 = generationH1(props)
   const vehicleString = `${generation.displayRange} ${make.name} ${model.name}`
   const basePath = `/vehicles/${make.slug}/${model.slug}`
+
+  // Researched catalog picks replace the placeholder template as soon as
+  // this generation has any.
+  const sections = getGenerationSections(make.slug, model.slug, generation.slug)
+  const hasCatalog = sections.length > 0
+  const productTypePages = getProductTypePages(make.slug, model.slug)
+  const typesWithPages = new Set(productTypePages.map((t) => t.slug))
+  const checkedLabel = fitmentCheckedLabel(sections.flatMap((s) => s.picks.map((r) => r.product)))
 
   const breadcrumbItems = [
     { label: "Home", href: "/" },
@@ -139,7 +129,9 @@ export default async function GenerationPage({ params }: PageProps) {
 
   // JSON-LD: ItemList of product names. No Product/Offer markup: we don't sell
   // these items, and Offers without a price are invalid for Google.
-  const allProducts = generation.categories.flatMap((cat) => cat.products.map((p) => p.title))
+  const allProducts = hasCatalog
+    ? sections.flatMap((s) => s.picks.map((r) => `${r.product.brand} ${r.product.name}`))
+    : generation.categories.flatMap((cat) => cat.products.map((p) => p.title))
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -176,24 +168,62 @@ export default async function GenerationPage({ params }: PageProps) {
       {/* Affiliate disclosure - adjacent to product recommendations */}
       <AffiliateDisclosure />
 
-      {/* Category sections scoped to this generation */}
+      {/* Product sections scoped to this generation */}
       <section className="w-full bg-white py-14 md:py-16">
         <div className="container max-w-5xl space-y-14">
-          {generation.categories.map((cat) => (
-            <CategorySection
-              key={cat.slug}
-              category={cat}
-              vehicleString={vehicleString}
-            />
-          ))}
+          {checkedLabel && (
+            <p className="text-sm text-muted-foreground">Fitment checked {checkedLabel}.</p>
+          )}
+          {hasCatalog
+            ? sections.map((s) => (
+                <CatalogSection
+                  key={s.productType.slug}
+                  id={`cat-${s.productType.slug}`}
+                  title={s.productType.name}
+                  icon={s.productType.icon}
+                  note={s.note}
+                  picks={s.picks}
+                  vehicle={{
+                    make: make.slug,
+                    model: model.slug,
+                    modelName: model.name,
+                    yearStart: generation.yearStart,
+                    yearEnd: generation.yearEnd,
+                    vehicleString,
+                  }}
+                  more={
+                    typesWithPages.has(s.productType.slug)
+                      ? {
+                          href: `${basePath}/${s.productType.slug}`,
+                          label: `${model.name} ${s.productType.name.toLowerCase()} for every generation`,
+                        }
+                      : undefined
+                  }
+                />
+              ))
+            : generation.categories.map((cat) => (
+                <CategorySection
+                  key={cat.slug}
+                  category={cat}
+                  vehicleString={vehicleString}
+                />
+              ))}
         </div>
       </section>
 
-      {/* Popular picks for this generation */}
-      <PopularPicks
-        modelNamePlural={`${model.name}s`}
-        items={generation.popular}
-        vehicleString={vehicleString}
+      {/* Placeholder popular picks, until this generation has catalog picks */}
+      {!hasCatalog && (
+        <PopularPicks
+          modelNamePlural={`${model.name}s`}
+          items={generation.popular}
+          vehicleString={vehicleString}
+        />
+      )}
+
+      <ProductTypeLinks
+        title={`Shop ${model.name} accessories by type`}
+        productTypes={productTypePages}
+        basePath={basePath}
       />
 
       {/* Sibling generations + model hub link */}

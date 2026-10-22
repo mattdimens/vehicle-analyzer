@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
-import { merchants } from "@/lib/affiliate/merchants";
+import { merchants, normalizeAsin } from "@/lib/affiliate/merchants";
 import { affiliateRouting, defaultMerchant } from "@/lib/affiliate/routing";
 import { getServiceRoleClient } from "@/lib/supabase-server";
 import { resolveSessionId, setSessionCookie } from "@/lib/session-cookie";
 import { classifyClick, truncateHeader } from "@/lib/affiliate/click-filter";
+import { getCatalogProductByAsin } from "@/data/vehicles/catalog";
+import type { TablesInsert } from "@/types/supabase";
 
 /** PostgREST / Postgres codes for "that column doesn't exist yet". */
 const MISSING_COLUMN_CODES = new Set(["PGRST204", "42703"]);
@@ -17,6 +19,9 @@ export async function GET(req: NextRequest) {
   const product = searchParams.get("product") || "";
   const merchantQuery = searchParams.get("merchant");
   const source = searchParams.get("source") || "";
+  const asin = normalizeAsin(searchParams.get("asin"));
+  // A retired catalog product's listing may be gone, so old links get a search.
+  const liveAsin = asin && getCatalogProductByAsin(asin)?.status === "retired" ? null : asin;
 
   // 1. Resolve merchant config
   let merchantKey = defaultMerchant;
@@ -38,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   // 3. Build destination URL
   const builder = merchants[merchantKey];
-  const destinationUrl = builder({ cat, vehicle, brand, product, tagged: filterReason === null });
+  const destinationUrl = builder({ cat, vehicle, brand, product, asin: liveAsin, tagged: filterReason === null });
 
   const composedQuery = Array.from(new Set([vehicle, brand, product]
     .filter(Boolean)
@@ -71,16 +76,24 @@ export async function GET(req: NextRequest) {
         source,
         session_id: sessionId,
       };
-      let { error } = await supabase.from("affiliate_clicks").insert({
+      const filteredRow = {
         ...baseRow,
         user_agent: truncateHeader(userAgent),
         referer: truncateHeader(referer),
         filter_reason: filterReason,
-      });
+      };
+      const fullRow: TablesInsert<"affiliate_clicks"> = asin ? { ...filteredRow, asin } : filteredRow;
+      let { error } = await supabase.from("affiliate_clicks").insert(fullRow);
 
-      // Until the 20261020000000 migration reaches a database, the new columns
-      // don't exist. Keep logging real clicks the old way, and skip filtered
-      // hits so they don't land in the table looking like real clicks.
+      // Until the 20261022000000 migration reaches a database, asin doesn't
+      // exist. Log the click without it.
+      if (error && asin && MISSING_COLUMN_CODES.has(error.code ?? "")) {
+        ({ error } = await supabase.from("affiliate_clicks").insert(filteredRow));
+      }
+
+      // Until the 20261020000000 migration reaches a database, the filter
+      // columns don't exist. Keep logging real clicks the old way, and skip
+      // filtered hits so they don't land in the table looking like real clicks.
       if (error && MISSING_COLUMN_CODES.has(error.code ?? "")) {
         if (filterReason !== null) return;
         ({ error } = await supabase.from("affiliate_clicks").insert(baseRow));

@@ -18,6 +18,13 @@ export const MIN_BUYING_NOTES = 3
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const SINGLE_ROLES: PickRole[] = ["best-overall", "budget", "premium"]
 
+/** A real calendar date written as YYYY-MM-DD.  Date.parse turns 2026-02-31 into March 3. */
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 /** Every rule the catalog breaks, as readable messages.  Empty means valid. */
 export function validateCatalog(
   catalog: VehicleCatalog,
@@ -53,8 +60,8 @@ export function validateCatalog(
     if (p.sources.length === 0 || p.sources.some((s) => !/^https?:\/\//.test(s))) {
       errors.push(`${where}: needs at least one source, and every source must be an http(s) URL`)
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.verifiedAt) || Number.isNaN(Date.parse(p.verifiedAt))) {
-      errors.push(`${where}: verifiedAt must be a YYYY-MM-DD date`)
+    if (!isCalendarDate(p.verifiedAt)) {
+      errors.push(`${where}: verifiedAt must be a real YYYY-MM-DD date`)
     } else if (p.verifiedAt > todayIso) {
       errors.push(`${where}: verifiedAt ${p.verifiedAt} is in the future`)
     }

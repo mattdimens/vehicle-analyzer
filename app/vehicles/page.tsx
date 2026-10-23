@@ -10,11 +10,11 @@ const BASE_URL = "https://visualfitment.com"
 export const metadata: Metadata = {
   title: "Vehicle Accessories & Fitment | Visual Fitment",
   description:
-    "Browse fitment-verified accessories by make, model, and generation. Find the right parts for your vehicle with every product link routed through our smart shopping layer.",
+    "Browse accessories by make, model, and generation. Not sure which generation you have? Upload a photo and we'll identify your vehicle.",
   openGraph: {
     title: "Vehicle Accessories & Fitment | Visual Fitment",
     description:
-      "Browse fitment-verified accessories by make, model, and generation.",
+      "Browse accessories by make, model, and generation.",
     url: `${BASE_URL}/vehicles`,
     siteName: "Visual Fitment",
     type: "website",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Vehicle Accessories & Fitment | Visual Fitment",
     description:
-      "Browse fitment-verified accessories by make, model, and generation.",
+      "Browse accessories by make, model, and generation.",
   },
   alternates: { canonical: "/vehicles" },
 }
@@ -58,7 +58,7 @@ export default function VehiclesIndexPage() {
 
       <VehicleHero
         h1="Vehicle Accessories & Fitment"
-        intro="Find accessories matched to your vehicle by make, model, and generation. Every product is routed through our fitment-aware shopping layer so you get the right part the first time."
+        intro="Find accessories for your vehicle by make, model, and generation. Not sure which generation you have? Upload a photo and we'll identify it."
         ctaLabel="Upload a photo to confirm what fits"
         ctaHref="/#upload-zone"
       />
@@ -80,7 +80,7 @@ export default function VehiclesIndexPage() {
                   {make.name}
                 </h3>
                 <p className="mt-2 flex-1 text-sm text-muted-foreground">
-                  {make.models.length} model{make.models.length !== 1 ? "s" : ""} with fitment-verified accessories
+                  {make.models.length} model{make.models.length !== 1 ? "s" : ""} with accessory picks
                 </p>
                 <div className="mt-4 flex items-center text-sm font-medium text-[#E8712B] opacity-0 group-hover:opacity-100 transition-opacity">
                   Browse models

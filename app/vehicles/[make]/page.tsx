@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!make) return {}
 
   const title = `${make.name} Accessories & Fitment | Visual Fitment`
-  const description = `Browse fitment-verified accessories for your ${make.name}. Find the right parts by model and generation, with every product link routed through our smart shopping layer.`
+  const description = `Browse accessories for your ${make.name} by model and generation. Not sure which generation you have? Upload a photo and we'll identify your vehicle.`
 
   return {
     title,
@@ -80,7 +80,7 @@ export default async function MakeHubPage({ params }: PageProps) {
 
       <VehicleHero
         h1={`${make.name} Accessories & Fitment`}
-        intro={`Find accessories matched to your ${make.name} by model and generation. Every product is routed through our fitment-aware shopping layer so you get the right part the first time.`}
+        intro={`Find accessories for your ${make.name} by model and generation. Not sure which generation you have? Upload a photo and we'll identify it.`}
         ctaLabel={`Upload a photo of your ${make.name} to confirm what fits`}
         ctaHref="/#upload-zone"
       />

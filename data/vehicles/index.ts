@@ -97,6 +97,8 @@ export interface GoUrlParams {
   vehicleString: string
   brand?: string
   productTitle: string
+  /** Amazon product ID for catalog products; without it /go links to a search */
+  asin?: string
 }
 
 /**
@@ -109,57 +111,22 @@ export function buildGoUrl({
   vehicleString,
   brand,
   productTitle,
+  asin,
 }: GoUrlParams): string {
   const params = new URLSearchParams()
   params.set("cat", categorySlug)
   params.set("vehicle", vehicleString)
   if (brand) params.set("brand", brand)
   params.set("product", productTitle)
+  if (asin) params.set("asin", asin)
   params.set("source", "vehicle-page")
   return `/go?${params.toString()}`
 }
 
-// ── Catalog stats ──────────────────────────────────────────────────────
+// ── Supported vehicles ─────────────────────────────────────────────────
 
 export { supportedVehicles, getSupportedGenerationCards } from "./supported-vehicles"
 export type { SupportedVehicle, SupportedGeneration } from "./supported-vehicles"
 
-/**
- * Compute verifiable catalog stats from actual registered vehicle data.
- *
- * Counts every product rendered on live generation pages and the set of
- * unique category slugs across all generations.  These numbers appear in
- * the homepage stats bar and must match a manual count.
- *
- * Derivation (current):
- *   4 Tacoma generations x 8 categories x 3 products = 96 products
- *   8 unique category slugs
- *   4 generations
- */
-export function getCatalogStats(): {
-  totalProducts: number
-  totalCategories: number
-  totalGenerations: number
-} {
-  let totalProducts = 0
-  let totalGenerations = 0
-  const categorySet = new Set<string>()
-
-  for (const make of makes) {
-    for (const model of make.models) {
-      for (const gen of model.generations) {
-        totalGenerations++
-        for (const cat of gen.categories) {
-          categorySet.add(cat.slug)
-          totalProducts += cat.products.length
-        }
-      }
-    }
-  }
-
-  return {
-    totalProducts,
-    totalCategories: categorySet.size,
-    totalGenerations,
-  }
-}
+// Catalog queries and getCatalogStats live in ./catalog, which only server
+// code imports (see the note at the top of ./catalog/index.ts).

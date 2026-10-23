@@ -105,3 +105,106 @@ export interface VehicleMake {
   /** All models under this make */
   models: VehicleModel[]
 }
+
+// ── Catalog: researched products ───────────────────────────────────────
+//
+// Real Amazon products live in data/vehicles/catalog/, one file per model.
+// Each product is stored once with its fitment; picks place it on a
+// generation page in a role.  Research flow and rules:
+// docs/vehicle-pages-plan.md, section 4.
+
+/** Rough price tier.  Real prices need the Amazon API (plan section 7). */
+export type PriceBand = "budget" | "mid" | "premium"
+
+export interface Fitment {
+  /** Make slug, e.g. "toyota" */
+  make: string
+  /** Model slug, e.g. "tacoma" */
+  model: string
+  /** First model year (inclusive) */
+  yearStart: number
+  /** Last model year (inclusive) */
+  yearEnd: number
+  /** Cab styles it fits, as displayed, e.g. ["Double Cab"].  Omitted = all. */
+  cab?: string[]
+  /** Bed lengths it fits, as displayed, e.g. ["5-ft"].  Omitted = all. */
+  bed?: string[]
+  /** Trims it does not fit, as displayed, e.g. ["TRD Pro"] */
+  excludeTrims?: string[]
+  /** Install or compatibility note, e.g. "Drilling required." */
+  notes?: string
+}
+
+export interface CatalogProduct {
+  /** Stable lowercase slug, unique across the catalog */
+  id: string
+  /** Amazon ASIN: 10 uppercase letters or digits */
+  asin: string
+  /** Brand, e.g. "BAK" */
+  brand: string
+  /** Product name without the brand, e.g. "BAKFlip MX4" */
+  name: string
+  /** Product type slug from data/vehicles/product-types.ts */
+  category: string
+  priceBand: PriceBand
+  /** Every vehicle and year range the manufacturer confirms */
+  fitment: Fitment[]
+  /** Why we pick it: 1-2 sentences specific to the vehicle */
+  why: string
+  /** A catch owners should know before buying */
+  gotcha?: string
+  /** Fitment guide and owner-source URLs */
+  sources: string[]
+  /** Date the Amazon listing and fitment were last checked, YYYY-MM-DD */
+  verifiedAt: string
+  /** Retired products can't be picked, and /go sends old links to a search. */
+  status: "active" | "retired"
+}
+
+export type PickRole = "best-overall" | "budget" | "premium" | "best-for"
+
+export interface Pick {
+  productId: string
+  role: PickRole
+  /** Required for "best-for", e.g. "Best for the 6-ft bed" */
+  label?: string
+}
+
+/** The 3-5 picks for one product type on one generation page. */
+export interface VehiclePicks {
+  /** Make slug */
+  make: string
+  /** Model slug */
+  model: string
+  /** Generation slug, e.g. "3rd-gen" */
+  generation: string
+  /** Product type slug */
+  category: string
+  picks: Pick[]
+  /** A fitment catch for this generation, shown above the picks */
+  note?: string
+}
+
+/**
+ * Vehicle-specific copy for a product-type page, e.g. Tacoma bed racks.
+ * The page only exists once it has a guide (and enough products).
+ */
+export interface ProductTypeGuide {
+  /** Make slug */
+  make: string
+  /** Model slug */
+  model: string
+  /** Product type slug */
+  category: string
+  /** 1-3 sentences under the H1, also the meta description */
+  intro: string
+  /** At least 3 buying notes specific to this vehicle */
+  buyingNotes: string[]
+}
+
+/** Everything researched for one model. */
+export interface VehicleCatalog {
+  products: CatalogProduct[]
+  picks: VehiclePicks[]
+  guides: ProductTypeGuide[]
+}

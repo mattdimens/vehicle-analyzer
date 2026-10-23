@@ -22,11 +22,11 @@ export function PopularPicks({
         <div className="flex items-center gap-3 mb-2">
           <Star className="h-5 w-5 text-[#E8712B]" />
           <h2 className="font-heading text-2xl font-bold text-white md:text-3xl">
-            Most popular on real {modelNamePlural}
+            Good first upgrades for {modelNamePlural}
           </h2>
         </div>
         <p className="text-sm text-white/50 mb-8">
-          Editorially curated picks based on community trends and owner feedback.
+          Editor&apos;s suggestions for where to start.
         </p>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -45,7 +45,7 @@ export function PopularPicks({
               >
                 <span className="mb-3 inline-flex items-center gap-1.5 w-fit rounded-full bg-[#E8712B]/20 px-2.5 py-1 text-xs font-semibold text-[#E8712B]">
                   <Star className="h-3 w-3" />
-                  Popular pick
+                  Editor&apos;s pick
                 </span>
 
                 <h3 className="font-heading text-lg font-semibold text-white">

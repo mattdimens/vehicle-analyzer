@@ -9,7 +9,7 @@ export function TrustStrip() {
   return (
     <div className="w-full bg-[#003223] pb-4 pt-2">
       <p className="text-center text-sm text-white/60 font-medium tracking-wide max-w-3xl mx-auto px-4">
-        Every pick vetted for fitment by enthusiasts.
+        Identify your vehicle or a part from a photo, then shop accessories for it.
       </p>
     </div>
   )

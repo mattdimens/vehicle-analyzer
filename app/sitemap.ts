@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getAllPosts } from '@/lib/blog'
 import { getAllVehicleRoutes } from '@/data/vehicles/index'
+import { getProductTypeRoutes } from '@/data/vehicles/catalog'
 
 const BASE_URL = 'https://visualfitment.com'
 
@@ -61,5 +62,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         }
     })
 
-    return [...staticPages, ...blogPosts, ...vehiclePages]
+    // Product-type pages, e.g. /vehicles/toyota/tacoma/bed-racks. They only
+    // exist once a model has enough researched products (data/vehicles/catalog).
+    const productTypePages = getProductTypeRoutes().map((route) => ({
+        url: `${BASE_URL}/vehicles/${route.make}/${route.model}/${route.productType}`,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+    }))
+
+    return [...staticPages, ...blogPosts, ...vehiclePages, ...productTypePages]
 }

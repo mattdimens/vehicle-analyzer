@@ -4,7 +4,7 @@ import { RelatedPages } from "@/components/ui/related-pages"
 import { FromTheBlog } from "@/components/home/from-the-blog"
 import type { BlogCardData } from "@/components/home/from-the-blog"
 import { getAllPosts } from "@/lib/blog"
-import { getCatalogStats } from "@/data/vehicles/index"
+import { getCatalogStats } from "@/data/vehicles/catalog"
 
 export const metadata: Metadata = {
   title: "Find Vehicle Fitment, Parts, & Accessories From an Image | Visual Fitment",

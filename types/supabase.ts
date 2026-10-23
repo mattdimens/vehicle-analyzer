@@ -19,6 +19,7 @@ export type Database = {
     Tables: {
       affiliate_clicks: {
         Row: {
+          asin: string | null
           brand: string | null
           category: string | null
           composed_query: string | null
@@ -36,6 +37,7 @@ export type Database = {
           vehicle: string | null
         }
         Insert: {
+          asin?: string | null
           brand?: string | null
           category?: string | null
           composed_query?: string | null
@@ -53,6 +55,7 @@ export type Database = {
           vehicle?: string | null
         }
         Update: {
+          asin?: string | null
           brand?: string | null
           category?: string | null
           composed_query?: string | null

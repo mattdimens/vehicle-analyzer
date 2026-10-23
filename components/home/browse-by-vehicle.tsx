@@ -36,8 +36,7 @@ export function BrowseByVehicle() {
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Shop accessories verified for your exact make, model, and generation.
-            Every product links through our fitment-aware shopping layer.
+            Shop accessories by make, model, and generation.
           </p>
         </div>
 
@@ -67,7 +66,7 @@ export function BrowseByVehicle() {
               {/* Card body */}
               <div className="flex flex-col flex-1 p-5">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Fitment-verified accessories for the {card.displayRange} {card.make} {card.model}.
+                  Accessories for the {card.displayRange} {card.make} {card.model}.
                 </p>
 
                 <div className="mt-auto flex items-center justify-end">

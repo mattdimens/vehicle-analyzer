@@ -1,6 +1,6 @@
 # Vehicle pages plan: product research, expansion, and Amazon data
 
-Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built: catalog, product-type pages, ASIN links, `asin` migration. Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
+Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built and merged (#17), and the `asin` migration is on dev and production. Phase 0 diagnostics are in [section 2.4](#24-what-phase-0-found-2026-10-23). Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
 
 ## Recommendations
 
@@ -31,7 +31,7 @@ The most likely reason the pages don't rank: Google sees four near-duplicate pag
 1. **Index status.** In Search Console, run URL Inspection on each of the 6 vehicle URLs. Record whether each is indexed, or "Crawled, currently not indexed", or "Duplicate without user-selected canonical". The duplicate status would confirm the thin-template theory.
 2. **Per-page queries.** Export the queries for each vehicle URL (Performance, Pages tab, click the URL, Queries tab, Export). Name each file after the page.
 3. **First-party demand.** Run the four read-only queries in [section 9](#9-first-party-data-to-pull) in the production SQL editor and share the results.
-4. **Tracking IDs.** In Associates Central, under Manage Tracking IDs, create one tracking ID each for vehicle pages, photo results and the blog. Amazon's reports then split earnings by page type. Clicks are already logged per vehicle in `affiliate_clicks`. Revenue per vehicle is only possible through tracking IDs.
+4. **Tracking IDs.** Decided 2026-10-23: keep the one tracking ID. Catalog products link to specific ASINs, so matching ordered ASINs in the Associates orders report against the catalog shows which vehicle-page products sold. Revisit only if that matching becomes ambiguous.
 
 ### 2.2 Build (weeks 1 to 4)
 
@@ -61,12 +61,28 @@ Skip as their own pages: camper shells (3,200/mo, but almost never sold on Amazo
 
 Check at 4 weeks and decide at 8. Expand to Wave 1 if all of these hold:
 
-- Every Tacoma vehicle URL is indexed.
-- Tacoma vehicle URLs have at least 3x their baseline impressions, and at least 10 product-type queries ("tacoma bed rack" and so on) rank in the top 20.
+- Every Tacoma vehicle URL is indexed, including the new product-type pages. (The hub and 4 generation pages already are.)
+- Tacoma vehicle URLs together get at least 300 impressions a month, and at least 10 product-type queries ("tacoma bed rack" and so on) rank in the top 20. The baseline is close to zero: about 10 impressions in the last export ([section 2.4](#24-what-phase-0-found-2026-10-23)), so a multiple of it means nothing.
 - `/go` clicks per vehicle-page view are at or above the sitewide rate (GA4 `affiliate_click` event, `affiliate_clicks` table).
-- The vehicle-page tracking ID records at least one Amazon order.
+- The Associates orders report shows at least one order for a catalog ASIN.
 
 If indexing fails, fix duplication and internal links. If pages are indexed but stuck below position 20, the problem is authority: see the link note in [section 11](#11-risks). Don't expand until one of those is fixed. Research for Wave 1 can run during the 8 weeks. Publishing waits for the gate.
+
+### 2.4 What Phase 0 found (2026-10-23)
+
+**Indexing is not the problem; Google just isn't interested yet.**
+
+- All 5 Tacoma URLs are indexed: the hub and the 4 generation pages (Search Console, data through 2026-10-15).
+- Google last crawled all 5 on 2026-07-01 and hasn't come back. When a generation's real products ship, use URL Inspection, then **Request indexing**, on every changed page, plus the new product-type pages.
+- Only the 1st gen page had any query data: 5 queries, 10 impressions, 0 clicks, positions 18 to 63 ("1st gen tacoma roof fairing" was 6 of them). The other 4 showed none, though Search Console hides rare queries, so they may have a handful.
+- 6 of the 21 sitemap URLs aren't indexed: `/truck-bed-covers`, `/blog`, `/vehicles`, `/vehicles/toyota`, `/blog/running-boards-buying-guide` and `/blog/how-ai-vehicle-identification-works`. The reasons are under "Why pages aren't indexed" in the Pages report. Two of these matter for this plan: the bed-cover product-type page sends its photo button to `/truck-bed-covers`, and the running-boards page links the running boards guide.
+
+**First-party data is too thin to steer which vehicles come next.** It's consistent with the Ahrefs ranking, so that ranking stands.
+
+- **Photos (180 days):** about 70 analyses. F-150 is the most identified vehicle (9, plus 5 F-250 and 1 Raptor). There were no Tacomas, and 25 came back unknown. If the F-150 lead holds as volume grows, consider moving F-150 into Wave 1.
+- **Products seen on photos:** no product was seen more than 3 times (top: BAK BAKFlip MX4 on F-150s). The "seen on real trucks" module stays off until something reaches 5.
+- **Selector:** 14 unsupported picks in 180 days, at most 2 for any vehicle (F-150).
+- **Clicks:** the first clicks query in [section 9](#9-first-party-data-to-pull) counted rows from before the bot filter went live on 2026-10-20. Those are mostly crawler traffic: about 400 clicks on every placeholder category alike, SQL-injection probes in the `cat` value, and malformed links with `\u0026` in place of `&`. The query is corrected below. Re-run it in a month.
 
 ## 3. Ahrefs research results
 
@@ -249,7 +265,7 @@ Move when any of these is true:
 
 - **Product links.** Add an `asin` parameter to `/go`. In `merchants.amazon`, when the ASIN matches `^[A-Z0-9]{10}$`, link to `https://www.amazon.com/dp/{ASIN}?tag={tag}`. Otherwise keep today's search link. Log the ASIN. Every link still goes through `/go` with `target="_blank" rel="nofollow sponsored noopener"`.
 - **Retired products.** When a product is marked `retired`, it drops off the pages, and `/go` sends old links for its ASIN to an Amazon search for the vehicle, brand and product name, so no link dead-ends.
-- **Tracking IDs per page type** ([section 2.1](#21-diagnose-week-1)). Consider tracking IDs per vehicle once there's revenue to split.
+- **One tracking ID** ([section 2.1](#21-diagnose-week-1)). Vehicle-page sales are identified by matching ordered ASINs to the catalog. Add tracking IDs per page type or vehicle only if that stops being enough.
 - **No prices, star ratings or Amazon images without the API.** As third-party summaries of Amazon's program policies describe them, price and availability may only come from Amazon links or its APIs, and product images may not be stored. Confirm against the current Associates Program Policies text before launch. Keep the brand and category placeholders, and show a price band ($, $$, $$$) instead of a price. Original photos are fine if we take them or have written permission.
 - **Commission.** Most sources put the automotive category at about 4.5%. Check the current fee schedule in Associates Central. Amazon's cookie lasts 24 hours and credits the whole cart, so high-priced items convert to the most commission. Bed covers ($300 to $1,200) and running boards are worth prioritizing for that reason.
 
@@ -322,12 +338,12 @@ order by seen desc
 limit 50;
 ```
 
-Real affiliate clicks by source and category (if `filter_reason` errors, that migration hasn't reached production yet, so delete that condition):
+Real affiliate clicks by source and category. Only rows since the bot filter went live count: everything before 2026-10-20 has `filter_reason` empty but is mostly crawler traffic.
 
 ```sql
 select source, category, count(*) as clicks
 from affiliate_clicks
-where filter_reason is null and created_at > now() - interval '90 days'
+where filter_reason is null and created_at >= '2026-10-20 07:00+00'
 group by 1, 2
 order by clicks desc;
 ```
@@ -336,7 +352,7 @@ order by clicks desc;
 
 | Phase | When | Work |
 |---|---|---|
-| 0. Diagnose and set up | Week 1 | Index status, per-page exports, SQL pulls, tracking IDs, research Sheet |
+| 0. Diagnose and set up | Week 1 | Done 2026-10-23, except the research Sheet ([section 2.4](#24-what-phase-0-found-2026-10-23)) |
 | 0. Engineering | Weeks 1 and 2 | Catalog types and tests, `[slug]` route with product-type pages, ASIN support in `/go`, `affiliate_clicks.asin` migration, sitemap entries, remove unsupported "fitment-verified" claims |
 | 1. Tacoma pilot | Weeks 2 to 4 | Research 3rd and 4th gen fully, then 2nd gen, light 1st gen. Publish about 9 product-type pages. |
 | 2. Measure | Weeks 5 to 12 | Check at 4 weeks, decide at 8 ([section 2.3](#23-gate-to-expand-8-weeks-after-launch)). Research Wave 1 in parallel. |
@@ -350,7 +366,7 @@ order by clicks desc;
 | Search Console | Indexed pages, impressions, average position for the target searches, click-through rate |
 | GA4 | `affiliate_click` per page view |
 | `affiliate_clicks` | Clicks by vehicle, product type and ASIN |
-| Associates reports by tracking ID | Orders, conversion rate, earnings per 1,000 page views |
+| Associates orders report | Orders for catalog ASINs, conversion rate, earnings per 1,000 page views |
 
 ## 11. Risks
 
@@ -366,4 +382,4 @@ order by clicks desc;
 2. Product data in the repo with the catalog shape above, Supabase only for click logging now and the Amazon cache later?
 3. URL pattern `/vehicles/{make}/{model}/{product-type}` for the new pages?
 4. Waves: Gladiator, 4Runner and Bronco first?
-5. Create the tracking IDs and run the four SQL queries ([section 9](#9-first-party-data-to-pull)).
+5. Create the tracking IDs and run the four SQL queries ([section 9](#9-first-party-data-to-pull)). Done 2026-10-23: queries run, one tracking ID kept.

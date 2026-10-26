@@ -2,8 +2,9 @@
  * Comprehensive US vehicle makes and models for the Year/Make/Model selector.
  *
  * This file provides full dropdown coverage for common US-market vehicles.
- * It is consumed only by the homepage vehicle selector and is intentionally
- * separate from the supported-vehicles config.  Adding a make/model here
+ * It is consumed by the homepage vehicle selector and the part identifier's
+ * vehicle picker, and is intentionally separate from the supported-vehicles
+ * config.  Adding a make/model here
  * does NOT create a vehicle page; it only populates the dropdowns.
  *
  * Year ranges are approximate production years for the US market.
@@ -489,3 +490,21 @@ export const usVehicles: USMake[] = [
     ],
   },
 ]
+
+/** Models for a make, in list order. Empty when the make isn't listed. */
+export function getUsModels(makeName: string): USModel[] {
+  if (!makeName) return []
+  return usVehicles.find((m) => m.name === makeName)?.models ?? []
+}
+
+/** Model years for a make and model, newest first. Empty when either isn't listed. */
+export function getUsModelYears(makeName: string, modelName: string): number[] {
+  if (!makeName || !modelName) return []
+  const model = getUsModels(makeName).find((m) => m.name === modelName)
+  if (!model) return []
+  const years: number[] = []
+  for (let y = model.yearEnd; y >= model.yearStart; y--) {
+    years.push(y)
+  }
+  return years
+}

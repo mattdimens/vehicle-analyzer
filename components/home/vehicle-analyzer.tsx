@@ -132,6 +132,20 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         setAnalysisState("idle")
     }
 
+    // "Add another photo" / "Try another photo" on a part result: the existing
+    // file picker, then back to the upload zone where Identify Part runs it
+    const anotherPhotoInputRef = useRef<HTMLInputElement>(null)
+    const handleRequestPhoto = useCallback(() => {
+        anotherPhotoInputRef.current?.click()
+    }, [])
+    const handleAnotherPhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files ? Array.from(e.target.files) : []
+        e.target.value = ""
+        if (files.length === 0) return
+        await handleFilesSelect(files)
+        document.getElementById("upload-target")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+
     const handleAddImageToItem = async (itemId: string, files: File[]) => {
         const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f).catch(() => f)))
 
@@ -572,7 +586,23 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {!showCategories && batchItems.length > 0 && (
                     <section id="analysis-results" className="bg-white w-full py-12">
                         <div className="container mx-auto px-4">
-                            <BatchResults items={batchItems} detectedProductsTitle={detectedProductsTitle} analysisMode={analysisMode} />
+                            <BatchResults
+                                items={batchItems}
+                                detectedProductsTitle={detectedProductsTitle}
+                                analysisMode={analysisMode}
+                                onRequestPhoto={analysisMode === "part" ? handleRequestPhoto : undefined}
+                            />
+                            {analysisMode === "part" && (
+                                <input
+                                    ref={anotherPhotoInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    className="hidden"
+                                    aria-hidden="true"
+                                    tabIndex={-1}
+                                    onChange={handleAnotherPhotoSelected}
+                                />
+                            )}
                         </div>
                     </section>
                 )}

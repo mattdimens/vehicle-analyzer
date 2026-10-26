@@ -289,7 +289,7 @@ export function UploadZone({
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                {batchItems.map((item) => (
+                                {batchItems.map((item, index) => (
                                     <div
                                         key={item.id}
                                         draggable={item.status === 'pending'} // Only pending items can be moved
@@ -304,7 +304,7 @@ export function UploadZone({
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className="text-xs font-medium text-muted-foreground">Vehicle {item.id}</span>
+                                            <span className="text-xs font-medium text-muted-foreground">{analysisMode === "part" ? "Part" : "Vehicle"} {index + 1}</span>
                                             <div className="flex items-center gap-1">
                                                 {item.images.length > 1 && item.status === "pending" && (
                                                     <Button

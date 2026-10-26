@@ -15,6 +15,8 @@ export function AnalyticsTracker() {
                 let sourcePage = rawSource
                 if (rawSource === 'vehicle-page') sourcePage = 'vehicle_page'
                 else if (rawSource === 'detected-products' || rawSource === 'recommended-accessories' || rawSource === 'part-identification') sourcePage = 'results'
+                // Part identifier links (part-vehicle, part-typed, part-sticky, ...) are all results clicks
+                else if (rawSource.startsWith('part-')) sourcePage = 'results'
                 else if (rawSource === 'category-card' || rawSource === 'category_card') sourcePage = 'category_card'
                 else if (rawSource === 'sample-card' || rawSource === 'sample_card') sourcePage = 'sample_card'
                 
@@ -26,7 +28,9 @@ export function AnalyticsTracker() {
                 trackEvent('affiliate_click', {
                     entry_door: getEntryDoor(),
                     source_page: sourcePage,
-                    ...(catalogMatch !== undefined ? { catalog_match: catalogMatch } : {})
+                    ...(catalogMatch !== undefined ? { catalog_match: catalogMatch } : {}),
+                    // Which part identifier link was clicked
+                    ...(rawSource.startsWith('part-') ? { link_type: rawSource } : {})
                 })
             } catch {
                 // Ignore parse errors

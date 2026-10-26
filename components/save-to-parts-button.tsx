@@ -6,15 +6,19 @@ import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
 import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { PartIdentification } from "@/app/actions"
 import { normalizeYear } from "@/lib/normalize-year"
+import { cn } from "@/lib/utils"
 
 interface SaveToPartsButtonProps {
     partImageUrl: string
     partIdentification: PartIdentification
+    /** Look of the unsaved button. Saving and the save_part event are the same either way. */
+    variant?: "default" | "outline"
+    className?: string
 }
 
 export const PENDING_PARTS_SAVE_KEY = "pending_parts_save"
 
-export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPartsButtonProps) {
+export function SaveToPartsButton({ partImageUrl, partIdentification, variant = "default", className }: SaveToPartsButtonProps) {
     const { save, isSaving, isSaved } = useSaveToSupabase({
         table: "identified_parts",
         pendingStorageKey: PENDING_PARTS_SAVE_KEY,
@@ -57,8 +61,8 @@ export function SaveToPartsButton({ partImageUrl, partIdentification }: SaveToPa
 
     return (
         <Button
-            variant={isSaved ? "secondary" : "default"}
-            className="w-full sm:w-auto mt-4 sm:mt-0"
+            variant={isSaved ? "secondary" : variant}
+            className={cn("w-full sm:w-auto mt-4 sm:mt-0", className)}
             onClick={handleSave}
             disabled={isSaving || isSaved}
         >

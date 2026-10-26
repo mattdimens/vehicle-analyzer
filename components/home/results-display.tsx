@@ -6,16 +6,14 @@ import {
     CardContent,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { ExternalLink, Wrench, Car, Brain, AlertTriangle } from "lucide-react"
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 import { trackEvent, getPlatform } from "@/lib/analytics"
-import { getConfidenceBand, getConfidenceBarColor } from "@/types/analysis"
+import { getConfidenceBand } from "@/types/analysis"
 import { useEffect, useRef } from "react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
-import { SaveToPartsButton } from "@/components/save-to-parts-button"
+import { PartResult } from "@/components/home/part-result"
 import { SaveToGarageCTA } from "@/components/ui/save-to-garage-cta"
 
 interface ResultsDisplayProps {
@@ -32,6 +30,10 @@ interface ResultsDisplayProps {
     isSavedToGarage?: boolean
     isSavedToParts?: boolean
     hideSaveActions?: boolean
+    /** Part mode: opens the photo picker for another photo (not available in My Garage) */
+    onRequestPhoto?: () => void
+    /** Part mode: show the mobile sticky shop bar for this result */
+    showStickyBar?: boolean
 }
 
 export function ResultsDisplay({
@@ -46,6 +48,8 @@ export function ResultsDisplay({
     analysisMode = "vehicle",
     imageUrls = [],
     hideSaveActions,
+    onRequestPhoto,
+    showStickyBar,
 }: ResultsDisplayProps) {
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
@@ -97,115 +101,15 @@ export function ResultsDisplay({
 
         if (!partIdentification) return null
 
-        const isLowConfidence = partIdentification.confidence < 30
-        const partBand = getConfidenceBand(partIdentification.confidence)
-        const confidenceColor =
-            partBand === "High" ? "text-emerald-600"
-                : partBand === "Medium" ? "text-amber-600"
-                    : "text-red-500"
-        const confidenceBarColor = getConfidenceBarColor(partBand)
-
         return (
             <>
-                <div className="space-y-6">
-                    {isLowConfidence && (
-                        <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
-                            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                            <p className="text-sm text-amber-800">
-                                Low confidence: this may not be a recognizable car part, or the image may be unclear.
-                            </p>
-                        </div>
-                    )}
-
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-medium tracking-wider text-primary uppercase">
-                                    {partIdentification.category}
-                                </span>
-                            </div>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <CardTitle className="text-2xl">{partIdentification.partName}</CardTitle>
-                                {!hideSaveActions && (
-                                    <SaveToPartsButton
-                                        partImageUrl={imageUrls[0]}
-                                        partIdentification={partIdentification}
-                                    />
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {/* Confidence Bar */}
-                            <div className="flex items-center gap-3">
-                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Confidence</span>
-                                <div
-                                    className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
-                                    role="progressbar"
-                                    aria-valuenow={partIdentification.confidence}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                    aria-label="Identification confidence"
-                                >
-                                    <div
-                                        className={cn("h-full rounded-full transition-all duration-500", confidenceBarColor)}
-                                        style={{ width: `${partIdentification.confidence}%` }}
-                                    />
-                                </div>
-                                <span className={cn("text-sm font-bold tabular-nums w-12 text-right", confidenceColor)}>
-                                    {partIdentification.confidence}%
-                                </span>
-                            </div>
-
-                            {/* Details Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50">
-                                    <Wrench className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                                    <div>
-                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Function</p>
-                                        <p className="text-sm text-foreground">{partIdentification.function}</p>
-                                    </div>
-                                </div>
-
-                                {partIdentification.estimatedVehicle && (
-                                    <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/50">
-                                        <Car className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                                        <div>
-                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Vehicle Match</p>
-                                            <p className="text-sm text-foreground">{partIdentification.estimatedVehicle}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className={cn("flex items-start gap-3 p-4 rounded-xl bg-muted/50", !partIdentification.estimatedVehicle && "md:col-span-2")}>
-                                    <Brain className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                                    <div>
-                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">How We Identified It</p>
-                                        <p className="text-sm text-muted-foreground">{partIdentification.reasoning}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Amazon CTA */}
-                            <a
-                                href={`/go?cat=${encodeURIComponent(partIdentification.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}&vehicle=${encodeURIComponent(partIdentification.estimatedVehicle || "")}&product=${encodeURIComponent(partIdentification.partName)}&source=part-identification`}
-                                target="_blank"
-                                rel="nofollow sponsored noopener"
-                            >
-                                <Button size="lg" className="w-full sm:w-auto gap-2">
-                                    <Image
-                                        src="/amazon-logo.png"
-                                        alt="Amazon"
-                                        width={70}
-                                        height={21}
-                                        className="h-4 w-auto object-contain"
-                                    />
-                                    <span>Find on Amazon</span>
-                                    <ExternalLink className="h-4 w-4" />
-                                </Button>
-                            </a>
-                        </CardContent>
-                    </Card>
-                </div>
+                <PartResult
+                    part={partIdentification}
+                    imageUrl={imageUrls[0]}
+                    hideSaveActions={hideSaveActions}
+                    onRequestPhoto={onRequestPhoto}
+                    showStickyBar={showStickyBar}
+                />
                 {!hideSaveActions && (
                     <SaveToGarageCTA placement="results" />
                 )}

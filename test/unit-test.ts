@@ -15,6 +15,8 @@ import { catalog, createCatalogQueries } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
 import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles/catalog/fitment'
 import type { CatalogProduct, VehicleCatalog } from '../data/vehicles/types'
+import { buildPartGoUrl, buildPartSearch, buildTypedPartSearch, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
+import { getPartDisplayBand } from '../config/analysis'
 
 let passed = 0
 let failed = 0
@@ -202,6 +204,29 @@ const d = fixture.products[3]
 assert(formatFitment(fitmentFor(d, 'toyota', 'tacoma', { yearStart: 2024, yearEnd: 2026 }), 'Tacoma') === 'Fits 2024-2026 Tacoma, Double Cab, 5-ft bed. Not for TRD Pro. Drilling required.', 'fitment line lists years, cab, bed, exclusions and notes')
 assert(fitmentFor(d, 'toyota', 'tacoma', { yearStart: 2016, yearEnd: 2023 }).length === 0, 'fitment outside the years is ignored')
 assert(fitmentCheckedLabel(fixture.products.slice(0, 3)) === 'September 2026', 'fitment checked uses the oldest check date')
+
+console.log('\nbuildPartSearch')
+const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }
+assert(buildPartSearch(injector) === 'Audi VW 2.0 TFSI fuel injector', 'vehicle known: uses amazonSearchTerm')
+assert(buildPartSearch({ ...injector, estimatedVehicle: null, amazonSearchTerm: '2019 Ford F-150 fuel injector' }) === 'Fuel Injector', 'vehicle null: part name alone, model term ignored')
+assert(buildPartSearch({ ...injector, estimatedVehicle: '  ' }) === 'Fuel Injector', 'blank vehicle counts as null')
+assert(buildPartSearch({ ...injector, amazonSearchTerm: '' }) === 'Fuel Injector', 'empty search term falls back to part name')
+assert(buildPartSearch({ ...injector, amazonSearchTerm: 'Audi / Volkswagen (FSI/TFSI) "injector" [OEM] driver\'s \\ side' }) === 'Audi Volkswagen FSI TFSI injector OEM drivers side', 'messy characters removed, words kept apart')
+assert(buildPartSearch({ ...injector, estimatedVehicle: null, partName: '  Brake   Caliper\n' }) === 'Brake Caliper', 'whitespace collapsed and trimmed')
+const longQuery = buildPartSearch({ ...injector, amazonSearchTerm: 'word '.repeat(40) })
+assert(longQuery.length <= 100 && !longQuery.endsWith(' '), 'long input capped at 100 characters with no trailing space')
+assert(sanitizePartQuery('x'.repeat(150)).length === 100, 'sanitizePartQuery caps at 100')
+
+console.log('\ntyped part number search')
+assert(sanitizeTypedPartNumber('06H 906-036.P<script>') === '06H 906-036.Pscript', 'keeps letters, digits, spaces, - and .')
+assert(sanitizeTypedPartNumber('A'.repeat(60)).length === 40, 'caps at 40 characters')
+assert(buildTypedPartSearch(' 06H906036P ', 'Fuel Injector') === '06H906036P Fuel Injector', 'number then part name')
+assert(buildPartGoUrl('Engine / Fuel', 'Audi VW injector', 'part-vehicle') === '/go?cat=engine-fuel&product=Audi%20VW%20injector&source=part-vehicle', 'go link puts the whole query in product')
+
+console.log('\ngetPartDisplayBand')
+assert(getPartDisplayBand(98) === 'strong' && getPartDisplayBand(80) === 'strong', '80 and up is strong')
+assert(getPartDisplayBand(79) === 'medium' && getPartDisplayBand(30) === 'medium', '30 to 79 is medium')
+assert(getPartDisplayBand(29) === 'low' && getPartDisplayBand(0) === 'low', 'under 30 is low')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type RefObject } from "react"
 import { AlertTriangle, Camera, ChevronDown, ExternalLink, SquareCheckBig } from "lucide-react"
 import type { PartIdentification } from "@/app/actions"
 import { SaveToPartsButton } from "@/components/save-to-parts-button"
+import { PartVehiclePicker } from "@/components/home/part-vehicle-picker"
 import { AFFILIATE_DISCLOSURE_HREF, AI_DISCLAIMER_TEXT, COMMISSION_NOTE_TEXT } from "@/components/home/result-notices"
 import { getPartDisplayBand, type PartDisplayBand } from "@/config/analysis"
 import {
@@ -17,6 +18,15 @@ import {
     TYPED_PART_NUMBER_MAX_LENGTH,
     TYPED_PART_NUMBER_MIN_LENGTH,
 } from "@/lib/part-search"
+import {
+    detectedVehicleLabel,
+    initialPartVehicle,
+    partForVehicle,
+    readPartVehicleChoice,
+    savePartVehicleChoice,
+    type PartVehicleChoice,
+} from "@/lib/part-vehicle"
+import { getEntryDoor, trackEvent } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 
 interface PartResultProps {
@@ -55,10 +65,24 @@ const outlineButtonClass =
 export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, showStickyBar }: PartResultProps) {
     const band = getPartDisplayBand(part.confidence)
     const isLow = band === "low"
+    // Strong and medium: the visitor confirms the vehicle (chips in the shop
+    // block). A garage or Year/Make/Model choice carries over this session.
+    const detectedVehicle = detectedVehicleLabel(part)
+    const [chosenVehicle, setChosenVehicle] = useState<PartVehicleChoice | null>(() =>
+        initialPartVehicle(readPartVehicleChoice(), detectedVehicle)
+    )
+    const handleVehicleSelect = (choice: PartVehicleChoice) => {
+        setChosenVehicle(choice)
+        savePartVehicleChoice(choice)
+        trackEvent("part_vehicle_selected", { method: choice.method, entry_door: getEntryDoor() })
+    }
+    // The low band has no chips, so its searches keep the part's own vehicle
+    const searchPart = isLow ? part : partForVehicle(part, chosenVehicle)
+
     // The vehicle the searches are for, and the (often longer) vehicle the details row shows
-    const vehicle = partSearchVehicle(part)
+    const vehicle = isLow ? partSearchVehicle(part) : chosenVehicle?.label ?? null
     const foundOn = part.estimatedVehicle?.trim() || null
-    const vehicleQuery = buildPartSearch(part)
+    const vehicleQuery = buildPartSearch(searchPart)
     const vehicleHref = buildPartGoUrl(part.category, vehicleQuery, isLow ? "part-vehicle-low" : "part-vehicle")
     // Exact part: strong band only, and only when a number was legible in the photo
     const partNumber = band === "strong" ? part.partNumber?.trim() || null : null
@@ -80,7 +104,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
     const leftColumn = "@2xl:col-start-1"
 
     return (
-        <div className="@container">
+        <div className="@container/result">
             <div className="grid gap-3 @2xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] @2xl:grid-rows-[auto_auto_auto_auto_auto_1fr] @2xl:gap-x-5 @2xl:gap-y-4">
                 {isLow ? (
                     <LowMatchHeader part={part} imageUrl={imageUrl} onRequestPhoto={onRequestPhoto} className={leftColumn} />
@@ -108,7 +132,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                 <section
                     aria-label={isLow ? "Shop our best guess" : "Shop this part"}
                     className={cn(
-                        "flex flex-col gap-3.5 rounded-2xl bg-white p-4 @2xl:p-5",
+                        "@container/shop flex flex-col gap-3.5 rounded-2xl bg-white p-4 @2xl:p-5",
                         isLow ? "border-[1.5px] border-[#E7A6A6]" : "border-2 border-[#C8460F]",
                         "@2xl:sticky @2xl:top-20 @2xl:col-start-2 @2xl:row-span-6 @2xl:row-start-1 @2xl:self-start"
                     )}
@@ -134,9 +158,10 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                         </>
                     ) : (
                         <>
-                            <p className={cn(sectionTitleClass, "@2xl:text-xl")}>
+                            <p className={cn(sectionTitleClass, "@2xl/result:text-xl")}>
                                 {showCloserMatch ? "Or compare and shop now" : "Get the right replacement"}
                             </p>
+                            <PartVehiclePicker detected={detectedVehicle} selected={chosenVehicle} onSelect={handleVehicleSelect} />
                             {partNumber ? (
                                 <>
                                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[10px] bg-[#F4F7F9] px-3 py-2.5">
@@ -184,7 +209,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                                     items={alternatives.map(alt => ({
                                         label: alt.partName,
                                         detail: `${alt.confidence}% match`,
-                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(part, alt.partName), "part-alt"),
+                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(searchPart, alt.partName), "part-alt"),
                                     }))}
                                 />
                             )}
@@ -204,7 +229,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                                     title="Often replaced at the same time"
                                     items={relatedParts.map(item => ({
                                         label: item,
-                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(part, item), "part-related"),
+                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(searchPart, item), "part-related"),
                                     }))}
                                 />
                             )}

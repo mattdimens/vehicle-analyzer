@@ -17,6 +17,8 @@ import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles
 import type { CatalogProduct, VehicleCatalog } from '../data/vehicles/types'
 import { buildExactPartSearch, buildPartGoUrl, buildPartSearch, buildTypedPartSearch, buildVehicleItemSearch, partSearchVehicle, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
 import { getPartDisplayBand } from '../config/analysis'
+import { detectedVehicleLabel, formatVehicleLabel, initialPartVehicle, parsePartVehicleChoice, partForVehicle } from '../lib/part-vehicle'
+import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 
 let passed = 0
 let failed = 0
@@ -290,6 +292,30 @@ assert(partSearchVehicle({ estimatedVehicle: null }) === null, 'no vehicle at al
 assert(buildExactPartSearch('06H906036P', 'Fuel Injector') === '06H906036P Fuel Injector', 'exact part: number then part name')
 assert(buildVehicleItemSearch({ estimatedVehicle: null, searchVehicle: 'Audi VW 2.0 TFSI' }, 'Injector seal kit') === 'Audi VW 2.0 TFSI Injector seal kit', 'related item: vehicle then item')
 assert(buildVehicleItemSearch({ estimatedVehicle: null }, 'Injector seal kit') === 'Injector seal kit', 'related item without a vehicle: item alone')
+
+console.log('\npart vehicle choice')
+assert(detectedVehicleLabel({ estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', searchVehicle: 'Audi VW 2.0 TFSI' }) === 'Audi VW 2.0 TFSI', 'detected chip prefers searchVehicle')
+assert(detectedVehicleLabel({ estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', searchVehicle: null }) === 'Audi / Volkswagen', 'detected chip drops parenthetical notes')
+assert(detectedVehicleLabel({ estimatedVehicle: null }) === null, 'no detected vehicle is null')
+assert(parsePartVehicleChoice('{"method":"ymm","label":" 2019 Toyota Tacoma "}')?.label === '2019 Toyota Tacoma', 'stored choice parses and trims')
+assert(parsePartVehicleChoice('{"method":"other","label":"x"}') === null, 'unknown method rejected')
+assert(parsePartVehicleChoice('not json') === null && parsePartVehicleChoice(null) === null, 'bad or missing storage is null')
+const ymmChoice = { method: 'ymm' as const, label: '2019 Toyota Tacoma' }
+assert(initialPartVehicle(ymmChoice, 'Audi VW')?.label === '2019 Toyota Tacoma', 'a picked vehicle carries over to the next part')
+assert(initialPartVehicle({ method: 'garage', label: '2020 Ford F-150' }, null)?.method === 'garage', 'a garage vehicle carries over even with nothing detected')
+assert(initialPartVehicle({ method: 'detected', label: 'Audi VW' }, 'Honda Civic')?.label === 'Honda Civic', 'an earlier detected vehicle does not carry over')
+assert(initialPartVehicle(null, null) === null, 'nothing stored or detected starts empty')
+const tacomaPart = partForVehicle({ ...corePart, searchVehicle: 'Audi VW 2.0 TFSI' }, ymmChoice)
+assert(buildPartSearch(tacomaPart) === '2019 Toyota Tacoma Fuel Injector', 'chosen vehicle replaces the vehicle in the main search')
+assert(buildVehicleItemSearch(tacomaPart, 'Injector seal kit') === '2019 Toyota Tacoma Injector seal kit', 'chosen vehicle replaces the vehicle in related searches')
+assert(buildPartSearch(partForVehicle(corePart, { method: 'detected', label: 'Audi / VW' })) === 'Audi VW fuel injector', 'detected choice keeps the part\'s own search')
+assert(formatVehicleLabel(2019, 'Toyota', 'Tacoma') === '2019 Toyota Tacoma' && formatVehicleLabel(null, 'Toyota', 'Tacoma') === 'Toyota Tacoma', 'vehicle label skips a missing year')
+
+console.log('\nus vehicle lists')
+assert(getUsModels('Acura').some(m => m.name === 'MDX') && getUsModels('').length === 0 && getUsModels('Nope').length === 0, 'models for a make')
+const ilxYears = getUsModelYears('Acura', 'ILX')
+assert(ilxYears[0] === 2022 && ilxYears[ilxYears.length - 1] === 2013, 'years newest first')
+assert(getUsModelYears('Acura', '').length === 0 && getUsModelYears('', 'ILX').length === 0, 'years need make and model')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

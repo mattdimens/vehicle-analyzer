@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { usVehicles } from "@/data/vehicles/us-vehicles"
+import { usVehicles, getUsModels, getUsModelYears } from "@/data/vehicles/us-vehicles"
 import { resolveVehicleUrl, isVehicleSupported } from "@/data/vehicles/supported-vehicles"
 import { ChevronRight, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,24 +32,10 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
   } | null>(null)
 
   // Models for selected make
-  const availableModels = useMemo(() => {
-    if (!selectedMake) return []
-    const make = usVehicles.find((m) => m.name === selectedMake)
-    return make?.models ?? []
-  }, [selectedMake])
+  const availableModels = useMemo(() => getUsModels(selectedMake), [selectedMake])
 
   // Year range for selected model
-  const availableYears = useMemo(() => {
-    if (!selectedModel || !selectedMake) return []
-    const make = usVehicles.find((m) => m.name === selectedMake)
-    const model = make?.models.find((m) => m.name === selectedModel)
-    if (!model) return []
-    const years: number[] = []
-    for (let y = model.yearEnd; y >= model.yearStart; y--) {
-      years.push(y)
-    }
-    return years
-  }, [selectedMake, selectedModel])
+  const availableYears = useMemo(() => getUsModelYears(selectedMake, selectedModel), [selectedMake, selectedModel])
 
   const handleMakeChange = useCallback((value: string) => {
     setSelectedMake(value)

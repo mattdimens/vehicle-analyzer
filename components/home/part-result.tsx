@@ -1,15 +1,18 @@
 "use client"
 
 import { useEffect, useId, useRef, useState, type RefObject } from "react"
-import { AlertTriangle, Camera, ChevronDown, ExternalLink } from "lucide-react"
+import { AlertTriangle, Camera, ChevronDown, ExternalLink, SquareCheckBig } from "lucide-react"
 import type { PartIdentification } from "@/app/actions"
 import { SaveToPartsButton } from "@/components/save-to-parts-button"
 import { AFFILIATE_DISCLOSURE_HREF, AI_DISCLAIMER_TEXT, COMMISSION_NOTE_TEXT } from "@/components/home/result-notices"
 import { getPartDisplayBand, type PartDisplayBand } from "@/config/analysis"
 import {
+    buildExactPartSearch,
     buildPartGoUrl,
     buildPartSearch,
     buildTypedPartSearch,
+    buildVehicleItemSearch,
+    partSearchVehicle,
     sanitizeTypedPartNumber,
     TYPED_PART_NUMBER_MAX_LENGTH,
     TYPED_PART_NUMBER_MIN_LENGTH,
@@ -52,11 +55,25 @@ const outlineButtonClass =
 export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, showStickyBar }: PartResultProps) {
     const band = getPartDisplayBand(part.confidence)
     const isLow = band === "low"
-    const vehicle = part.estimatedVehicle?.trim() || null
-    const query = buildPartSearch(part)
-    const primaryHref = buildPartGoUrl(part.category, query, isLow ? "part-vehicle-low" : "part-vehicle")
+    // The vehicle the searches are for, and the (often longer) vehicle the details row shows
+    const vehicle = partSearchVehicle(part)
+    const foundOn = part.estimatedVehicle?.trim() || null
+    const vehicleQuery = buildPartSearch(part)
+    const vehicleHref = buildPartGoUrl(part.category, vehicleQuery, isLow ? "part-vehicle-low" : "part-vehicle")
+    // Exact part: strong band only, and only when a number was legible in the photo
+    const partNumber = band === "strong" ? part.partNumber?.trim() || null : null
+    const primaryQuery = partNumber ? buildExactPartSearch(partNumber, part.partName) : vehicleQuery
     const primaryRef = useRef<HTMLAnchorElement>(null)
     const showCloserMatch = band === "medium" && Boolean(onRequestPhoto)
+
+    // Model extras. Saved parts from before these existed don't have them.
+    const buyingCheck = !isLow ? part.buyingCheck?.trim() || null : null
+    const relatedParts = !isLow && Array.isArray(part.relatedParts)
+        ? part.relatedParts.filter((item): item is string => typeof item === "string" && item.trim() !== "")
+        : []
+    const alternatives = band === "medium" && Array.isArray(part.alternatives)
+        ? part.alternatives.filter(alt => typeof alt?.partName === "string" && typeof alt.confidence === "number")
+        : []
 
     // Desktop: two columns. The shop panel spans every row of the right
     // column so it can stay sticky; the trailing 1fr row absorbs its extra height.
@@ -104,7 +121,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                                     <strong>Low match.</strong> This is a guess. Compare listings against your part before you buy.
                                 </p>
                             </div>
-                            <a ref={primaryRef} href={primaryHref} {...AFFILIATE_LINK_PROPS} className={outlineButtonClass}>
+                            <a ref={primaryRef} href={vehicleHref} {...AFFILIATE_LINK_PROPS} className={outlineButtonClass}>
                                 Browse {part.partName} on Amazon
                                 <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
                             </a>
@@ -120,21 +137,77 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                             <p className={cn(sectionTitleClass, "@2xl:text-xl")}>
                                 {showCloserMatch ? "Or compare and shop now" : "Get the right replacement"}
                             </p>
-                            <a ref={primaryRef} href={primaryHref} {...AFFILIATE_LINK_PROPS} className={primaryButtonClass}>
-                                <span className="flex min-w-0 flex-col items-center">
-                                    <span>Shop {part.partName} on Amazon</span>
-                                    {vehicle && (
-                                        <span className="line-clamp-1 text-xs font-medium text-white/90">For {vehicle}</span>
-                                    )}
-                                </span>
-                                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-                            </a>
-                            <TypedPartNumberBox
-                                part={part}
-                                source="part-typed"
-                                label="Have the old part? Search the number stamped on it"
-                                placeholder="e.g. 06H906036P"
-                            />
+                            {partNumber ? (
+                                <>
+                                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[10px] bg-[#F4F7F9] px-3 py-2.5">
+                                        <span className="text-[13px] text-[#5A6672]">Part number on your photo</span>
+                                        <span className="break-all font-mono text-[15px] font-semibold tracking-wide text-[#17212B]">{partNumber}</span>
+                                    </div>
+                                    <a
+                                        ref={primaryRef}
+                                        href={buildPartGoUrl(part.category, primaryQuery, "part-exact")}
+                                        {...AFFILIATE_LINK_PROPS}
+                                        className={primaryButtonClass}
+                                    >
+                                        Shop this exact part on Amazon
+                                        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                    </a>
+                                    <a href={vehicleHref} {...AFFILIATE_LINK_PROPS} className={outlineButtonClass}>
+                                        {vehicle ? `Shop ${part.partName} for ${vehicle}` : `Shop ${part.partName} on Amazon`}
+                                        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                    </a>
+                                </>
+                            ) : (
+                                <>
+                                    <a ref={primaryRef} href={vehicleHref} {...AFFILIATE_LINK_PROPS} className={primaryButtonClass}>
+                                        <span className="flex min-w-0 flex-col items-center">
+                                            <span>Shop {part.partName} on Amazon</span>
+                                            {vehicle && (
+                                                <span className="line-clamp-1 text-xs font-medium text-white/90">For {vehicle}</span>
+                                            )}
+                                        </span>
+                                        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                    </a>
+                                    {/* The number is already known in the exact-part state, so the box only shows here */}
+                                    <TypedPartNumberBox
+                                        part={part}
+                                        source="part-typed"
+                                        label="Have the old part? Search the number stamped on it"
+                                        placeholder="e.g. 06H906036P"
+                                    />
+                                </>
+                            )}
+
+                            {alternatives.length > 0 && (
+                                <ShopList
+                                    title="It could also be"
+                                    items={alternatives.map(alt => ({
+                                        label: alt.partName,
+                                        detail: `${alt.confidence}% match`,
+                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(part, alt.partName), "part-alt"),
+                                    }))}
+                                />
+                            )}
+
+                            {buyingCheck && (
+                                <div className="flex gap-2.5 rounded-[10px] bg-[#FFF8E6] p-3">
+                                    <SquareCheckBig className="mt-px h-[18px] w-[18px] shrink-0 text-[#7A4B00]" aria-hidden="true" />
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[13px] font-semibold text-[#7A4B00]">Before you buy</span>
+                                        <span className="text-[13px] leading-snug text-[#5C3A00]">{buyingCheck}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {relatedParts.length > 0 && (
+                                <ShopList
+                                    title="Often replaced at the same time"
+                                    items={relatedParts.map(item => ({
+                                        label: item,
+                                        href: buildPartGoUrl(part.category, buildVehicleItemSearch(part, item), "part-related"),
+                                    }))}
+                                />
+                            )}
                         </>
                     )}
                     <p className="text-xs leading-snug text-[#5A6672]">
@@ -145,7 +218,7 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                     </p>
                 </section>
 
-                <PartDetails part={part} vehicle={vehicle} className={leftColumn} />
+                <PartDetails part={part} vehicle={foundOn} className={leftColumn} />
 
                 {!hideSaveActions && (
                     <div className={leftColumn}>
@@ -168,10 +241,36 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
                     part={part}
                     vehicle={vehicle}
                     imageUrl={imageUrl}
-                    href={buildPartGoUrl(part.category, query, isLow ? "part-sticky-low" : "part-sticky")}
+                    href={buildPartGoUrl(part.category, primaryQuery, isLow ? "part-sticky-low" : "part-sticky")}
                     watchRef={primaryRef}
                 />
             )}
+        </div>
+    )
+}
+
+/** A short list of extra searches, each a row with a "Shop" link. */
+function ShopList({ title, items }: { title: string; items: { label: string; detail?: string; href: string }[] }) {
+    return (
+        <div className="flex flex-col gap-2">
+            <p className={fieldLabelClass}>{title}</p>
+            <ul className="flex flex-col gap-1.5">
+                {items.map(item => (
+                    <li key={item.label}>
+                        <a
+                            href={item.href}
+                            {...AFFILIATE_LINK_PROPS}
+                            className="flex min-h-11 items-center justify-between gap-3 rounded-[10px] border border-[#D5DEE5] px-3 py-1.5 text-[#17212B] transition-colors hover:bg-[#F4F7F9]"
+                        >
+                            <span className="flex min-w-0 flex-col">
+                                <span className="text-sm font-medium">{item.label}</span>
+                                {item.detail && <span className="text-xs text-[#5A6672]">{item.detail}</span>}
+                            </span>
+                            <span className="shrink-0 text-[13px] font-semibold text-[#9A3412]">Shop</span>
+                        </a>
+                    </li>
+                ))}
+            </ul>
         </div>
     )
 }

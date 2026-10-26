@@ -78,6 +78,17 @@ export interface PartIdentification {
   confidence: number
   amazonSearchTerm: string
   reasoning: string
+  // Added Oct 2026. Optional: saved parts from before then don't have them.
+  /** Part or OEM number legible in the photo, copied exactly. */
+  partNumber?: string | null
+  /** Short, search-friendly vehicle phrase, e.g. "Audi VW 2.0 TFSI". */
+  searchVehicle?: string | null
+  /** Other parts this could be (at most 2). */
+  alternatives?: { partName: string; confidence: number }[]
+  /** Generic items commonly replaced at the same time (at most 3). */
+  relatedParts?: string[]
+  /** One sentence on what to verify before ordering. */
+  buyingCheck?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -307,11 +318,16 @@ const PART_PROMPT =
   '3. `function` (string): A concise 1-2 sentence description of what this part does ' +
   '4. `estimatedVehicle` (string | null): If you can identify the make/model/year from the part\'s design, OEM number, or branding, include it. Otherwise null. ' +
   '5. `confidence` (number, 0-100): How certain you are about this identification ' +
-  '6. `amazonSearchTerm` (string): A good Amazon search query to find this part (e.g., "2019 Ford F-150 brake caliper front") ' +
+  '6. `amazonSearchTerm` (string): A good Amazon search query to find this part. Include a year, make or model only if you actually identified it; never invent one (e.g., "front brake caliper", or "Toyota Tacoma front brake caliper" when the vehicle is known) ' +
   '7. `reasoning` (string): Brief explanation of how you identified this part (visual cues, logos, shape, etc.) ' +
+  '8. `partNumber` (string | null): Only if a part or OEM number is clearly legible in the photo, copy it exactly as printed or stamped. Never infer, complete or guess a number. Otherwise null. ' +
+  '9. `searchVehicle` (string | null): A short, search-friendly vehicle phrase (e.g., "Audi VW 2.0 TFSI", "2015-2020 Ford F-150"), no slashes or parentheses. Null if the vehicle cannot be determined from the part. ' +
+  '10. `alternatives` (array, at most 2, of {"partName": string, "confidence": number}): Other parts this could plausibly be, with confidence 0-100. Empty array when you are confident. ' +
+  '11. `relatedParts` (array of strings, at most 3): Items commonly replaced or needed at the same time as this part (seals, gaskets, hardware, a specific tool). Generic item names only, no brands. ' +
+  '12. `buyingCheck` (string): One sentence on what the buyer should verify before ordering (e.g., match the number stamped on the old part, check the engine code label). General guidance only; do not invent specifications. ' +
   'If the image does NOT appear to be a car/vehicle part, still respond with your best guess but set confidence below 30 and explain in reasoning why it may not be a car part. ' +
   'Respond ONLY with a valid, minified JSON object: ' +
-  '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string}'
+  '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string, "partNumber": string | null, "searchVehicle": string | null, "alternatives": [{"partName": string, "confidence": number}], "relatedParts": string[], "buyingCheck": string}'
 
 export async function runPartIdentification(
   imageParts: ImagePart[]

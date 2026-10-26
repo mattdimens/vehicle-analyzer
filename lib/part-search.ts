@@ -27,19 +27,40 @@ export function sanitizeTypedPartNumber(value: string): string {
     return value.replace(/[^A-Za-z0-9 .-]/g, "").slice(0, TYPED_PART_NUMBER_MAX_LENGTH)
 }
 
-type PartSearchInput = Pick<PartIdentification, "partName" | "estimatedVehicle" | "amazonSearchTerm">
+type PartSearchInput = Pick<PartIdentification, "partName" | "estimatedVehicle" | "amazonSearchTerm" | "searchVehicle">
 
 /**
- * The Amazon query for a part's main shop button. The model's
- * amazonSearchTerm is only trusted when it also identified a vehicle;
- * without one, the term tends to carry an invented vehicle, so the part
- * name is searched alone.
+ * The vehicle a part's searches are for: the model's short searchVehicle
+ * when it gave one, else estimatedVehicle. Null when neither is known.
+ */
+export function partSearchVehicle(part: Pick<PartIdentification, "estimatedVehicle" | "searchVehicle">): string | null {
+    return part.searchVehicle?.trim() || part.estimatedVehicle?.trim() || null
+}
+
+/**
+ * The Amazon query for a part's main shop button. A searchVehicle from the
+ * model comes first. Otherwise the model's amazonSearchTerm is only trusted
+ * when it also identified a vehicle; without one, the term tends to carry an
+ * invented vehicle, so the part name is searched alone.
  */
 export function buildPartSearch(part: PartSearchInput): string {
+    const searchVehicle = part.searchVehicle?.trim()
+    if (searchVehicle) return sanitizePartQuery(`${searchVehicle} ${part.partName}`)
+
     const hasVehicle = Boolean(part.estimatedVehicle?.trim())
     const searchTerm = part.amazonSearchTerm?.trim()
     const query = hasVehicle && searchTerm ? searchTerm : part.partName
     return sanitizePartQuery(query ?? "")
+}
+
+/** The query for the part number read off the photo: the number, then the part name. */
+export function buildExactPartSearch(partNumber: string, partName: string): string {
+    return sanitizePartQuery(`${partNumber} ${partName}`)
+}
+
+/** The query for a related item or an alternative part: the vehicle (when known), then the item. */
+export function buildVehicleItemSearch(part: Pick<PartIdentification, "estimatedVehicle" | "searchVehicle">, item: string): string {
+    return sanitizePartQuery(`${partSearchVehicle(part) ?? ""} ${item}`)
 }
 
 /** The query for a part number the visitor typed: the number, then the part name. */

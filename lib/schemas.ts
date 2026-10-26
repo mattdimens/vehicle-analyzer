@@ -48,6 +48,28 @@ export const DetectedProductSchema = z.object({
     reasoning: z.string(),
 })
 
+/** A trimmed string, null when blank or longer than `max` (likely garbage). */
+const optionalText = (max: number) =>
+    z.string().nullish().catch(undefined).transform(value => {
+        const text = value?.trim()
+        return text && text.length <= max ? text : null
+    })
+
+/** Strings only, trimmed, blanks and over-long items dropped, at most `limit` kept. */
+const clampedStringList = (limit: number, maxLength: number) =>
+    z.array(z.unknown()).optional().catch(undefined).transform(items =>
+        (items ?? [])
+            .filter((item): item is string => typeof item === 'string')
+            .map(item => item.trim())
+            .filter(item => item.length > 0 && item.length <= maxLength)
+            .slice(0, limit)
+    )
+
+const PartAlternativeSchema = z.object({
+    partName: z.string().trim().min(1).max(80),
+    confidence: z.number().finite(),
+})
+
 export const PartIdentificationSchema = z.object({
     partName: z.string(),
     category: z.string(),
@@ -56,4 +78,16 @@ export const PartIdentificationSchema = z.object({
     confidence: z.number(),
     amazonSearchTerm: z.string(),
     reasoning: z.string(),
+    // Optional extras: a bad value is dropped or clamped, never fails the result.
+    partNumber: optionalText(40),
+    searchVehicle: optionalText(60),
+    alternatives: z.array(z.unknown()).optional().catch(undefined).transform(items =>
+        (items ?? [])
+            .map(item => PartAlternativeSchema.safeParse(item))
+            .filter(result => result.success)
+            .map(({ data }) => ({ partName: data.partName, confidence: Math.round(Math.min(100, Math.max(0, data.confidence))) }))
+            .slice(0, 2)
+    ),
+    relatedParts: clampedStringList(3, 60),
+    buyingCheck: optionalText(300),
 })

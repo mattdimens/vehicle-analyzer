@@ -5,7 +5,7 @@
  */
 import { normalizeYear } from '../lib/normalize-year'
 import { sanitizePromptText } from '../lib/gemini'
-import { AnalysisResultsSchema } from '../lib/schemas'
+import { AnalysisResultsSchema, PartIdentificationSchema } from '../lib/schemas'
 import { apiErrorMessage, RATE_LIMIT_MESSAGE, thrownErrorMessage } from '../lib/api-errors'
 import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/click-filter'
 import { merchants, normalizeAsin } from '../lib/affiliate/merchants'
@@ -15,7 +15,7 @@ import { catalog, createCatalogQueries } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
 import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles/catalog/fitment'
 import type { CatalogProduct, VehicleCatalog } from '../data/vehicles/types'
-import { buildPartGoUrl, buildPartSearch, buildTypedPartSearch, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
+import { buildExactPartSearch, buildPartGoUrl, buildPartSearch, buildTypedPartSearch, buildVehicleItemSearch, partSearchVehicle, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
 import { getPartDisplayBand } from '../config/analysis'
 
 let passed = 0
@@ -227,6 +227,69 @@ console.log('\ngetPartDisplayBand')
 assert(getPartDisplayBand(98) === 'strong' && getPartDisplayBand(80) === 'strong', '80 and up is strong')
 assert(getPartDisplayBand(79) === 'medium' && getPartDisplayBand(30) === 'medium', '30 to 79 is medium')
 assert(getPartDisplayBand(29) === 'low' && getPartDisplayBand(0) === 'low', 'under 30 is low')
+
+console.log('\nPartIdentificationSchema')
+const corePart = { partName: 'Fuel Injector', category: 'Engine', function: 'Sprays fuel.', estimatedVehicle: 'Audi / VW', confidence: 92, amazonSearchTerm: 'Audi VW fuel injector', reasoning: 'Blue O-ring.' }
+const fullPart = PartIdentificationSchema.safeParse({
+    ...corePart,
+    partNumber: ' 06H906036P ',
+    searchVehicle: 'Audi VW 2.0 TFSI',
+    alternatives: [{ partName: 'Fuel Pressure Sensor', confidence: 6 }],
+    relatedParts: ['Injector seal kit', 'Injector removal tool'],
+    buyingCheck: 'Match the number stamped on the old injector.',
+})
+assert(fullPart.success, 'all new fields: parses')
+assert(fullPart.success && fullPart.data.partNumber === '06H906036P', 'all new fields: part number trimmed')
+assert(fullPart.success && fullPart.data.searchVehicle === 'Audi VW 2.0 TFSI', 'all new fields: searchVehicle kept')
+assert(fullPart.success && fullPart.data.alternatives.length === 1 && fullPart.data.alternatives[0].confidence === 6, 'all new fields: alternatives kept')
+assert(fullPart.success && fullPart.data.relatedParts.length === 2, 'all new fields: relatedParts kept')
+assert(fullPart.success && fullPart.data.buyingCheck === 'Match the number stamped on the old injector.', 'all new fields: buyingCheck kept')
+
+const oldPart = PartIdentificationSchema.safeParse(corePart)
+assert(oldPart.success, 'old shape (no new fields): parses')
+assert(oldPart.success && oldPart.data.partNumber === null && oldPart.data.searchVehicle === null && oldPart.data.buyingCheck === null, 'old shape: missing text fields are null')
+assert(oldPart.success && oldPart.data.alternatives.length === 0 && oldPart.data.relatedParts.length === 0, 'old shape: missing lists are empty')
+
+const wrongTypes = PartIdentificationSchema.safeParse({
+    ...corePart,
+    partNumber: 6123,
+    searchVehicle: { make: 'Audi' },
+    alternatives: 'Fuel Pressure Sensor',
+    relatedParts: { a: 1 },
+    buyingCheck: ['check it'],
+})
+assert(wrongTypes.success, 'wrong types on every new field: still parses')
+assert(wrongTypes.success && wrongTypes.data.partNumber === null && wrongTypes.data.searchVehicle === null && wrongTypes.data.buyingCheck === null, 'wrong types: text fields dropped')
+assert(wrongTypes.success && wrongTypes.data.alternatives.length === 0 && wrongTypes.data.relatedParts.length === 0, 'wrong types: lists dropped')
+assert(wrongTypes.success && wrongTypes.data.partName === 'Fuel Injector' && wrongTypes.data.confidence === 92 && wrongTypes.data.amazonSearchTerm === 'Audi VW fuel injector', 'wrong types: core fields intact')
+
+const tooMany = PartIdentificationSchema.safeParse({
+    ...corePart,
+    partNumber: '   ',
+    searchVehicle: 'x'.repeat(200),
+    alternatives: [
+        { partName: 'A', confidence: 140 }, { partName: '', confidence: 10 }, { name: 'B', confidence: 5 },
+        { partName: 'C', confidence: -3 }, { partName: 'D', confidence: 2 }, { partName: 'E', confidence: 1 },
+    ],
+    relatedParts: ['Seal', 42, ' ', 'Gasket', 'Bolts', 'Tool', 'Cleaner'],
+})
+assert(tooMany.success, 'malformed values and 6-item arrays: still parses')
+assert(tooMany.success && tooMany.data.partNumber === null, 'blank part number becomes null')
+assert(tooMany.success && tooMany.data.searchVehicle === null, 'over-long searchVehicle dropped')
+assert(tooMany.success && tooMany.data.alternatives.map(a => a.partName).join() === 'A,C', 'bad alternatives skipped, clamped to 2')
+assert(tooMany.success && tooMany.data.alternatives[0].confidence === 100 && tooMany.data.alternatives[1].confidence === 0, 'alternative confidence clamped to 0-100')
+assert(tooMany.success && tooMany.data.relatedParts.join() === 'Seal,Gasket,Bolts', 'non-strings and blanks skipped, clamped to 3')
+assert(!PartIdentificationSchema.safeParse({ ...corePart, partName: undefined }).success, 'a missing core field still fails')
+
+console.log('\nPhase B part searches')
+assert(buildPartSearch({ ...injector, searchVehicle: 'Audi VW 2.0 TFSI' }) === 'Audi VW 2.0 TFSI Fuel Injector', 'searchVehicle + part name comes first')
+assert(buildPartSearch({ ...injector, searchVehicle: null }) === 'Audi VW 2.0 TFSI fuel injector', 'no searchVehicle: Phase A rules')
+assert(buildPartSearch({ ...injector, estimatedVehicle: null, searchVehicle: 'Ford F-150' }) === 'Ford F-150 Fuel Injector', 'searchVehicle used even when estimatedVehicle is null')
+assert(partSearchVehicle({ estimatedVehicle: 'Audi / VW', searchVehicle: null }) === 'Audi / VW', 'search vehicle falls back to estimatedVehicle')
+assert(partSearchVehicle({ estimatedVehicle: null }) === null, 'no vehicle at all is null')
+assert(buildExactPartSearch('06H906036P', 'Fuel Injector') === '06H906036P Fuel Injector', 'exact part: number then part name')
+assert(buildVehicleItemSearch({ estimatedVehicle: null, searchVehicle: 'Audi VW 2.0 TFSI' }, 'Injector seal kit') === 'Audi VW 2.0 TFSI Injector seal kit', 'related item: vehicle then item')
+assert(buildVehicleItemSearch({ estimatedVehicle: null }, 'Injector seal kit') === 'Injector seal kit', 'related item without a vehicle: item alone')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

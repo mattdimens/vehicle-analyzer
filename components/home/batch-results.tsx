@@ -7,20 +7,18 @@ import { Button } from "@/components/ui/button"
 import { ResultsDisplay } from "@/components/home/results-display"
 import { AFFILIATE_DISCLOSURE_HREF, AI_DISCLAIMER_TEXT, COMMISSION_NOTE_TEXT } from "@/components/home/result-notices"
 import type { BatchItem } from "@/lib/types"
-import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
 
 interface BatchResultsProps {
     items: BatchItem[]
     detectedProductsTitle?: string
-    analysisMode?: AnalysisMode
-    /** Part mode: opens the photo picker so the visitor can add another photo */
-    onRequestPhoto?: () => void
 }
 
 /**
- * BatchResults component displays analysis results for multiple uploaded images
+ * Inline results for category-page vehicle analyses (/wheels-rims,
+ * /truck-bed-covers, /nerf-bars-running-boards). The homepage photo tool and
+ * the part identifier show their results on /r/[id] instead.
  */
-export function BatchResults({ items, detectedProductsTitle, analysisMode = "vehicle", onRequestPhoto }: BatchResultsProps) {
+export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps) {
     // Track expanded items by ID
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
@@ -36,45 +34,19 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
         })
     }
 
-    // Part mode with a single part: no filename row or toggle, the result
-    // shows expanded so the answer and shop links come first.
-    const isPartMode = analysisMode === "part"
-    const isSinglePart = isPartMode && items.length === 1
-
-    // One sticky shop bar per page: the first completed part that is on screen
-    const stickyItemId = isPartMode
-        ? items.find(i => i.status === "complete" && i.partIdentification && (isSinglePart || expandedItems.has(i.id)))?.id
-        : undefined
-
     const renderResult = (item: BatchItem) => (
         <ResultsDisplay
             results={item.result}
             detectedProducts={item.detectedProducts}
-            partIdentification={item.partIdentification}
             error={item.error}
             productError={null}
             loadingMessage={null}
             progress={100}
             detectedProductsTitle={detectedProductsTitle}
-            analysisMode={analysisMode}
+            analysisMode="vehicle"
             imageUrls={item.images.map(img => img.publicUrl as string).filter(Boolean)}
-            onRequestPhoto={onRequestPhoto}
-            showStickyBar={item.id === stickyItemId}
         />
     )
-
-    const singleItem = isSinglePart ? items[0] : null
-    if (singleItem && singleItem.status === "complete" && singleItem.partIdentification) {
-        return (
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Analysis Results</h2>
-                    <div className="text-sm text-muted-foreground">1 of 1 completed</div>
-                </div>
-                {renderResult(singleItem)}
-            </div>
-        )
-    }
 
     return (
         <div className="space-y-6">
@@ -85,18 +57,15 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                 </div>
             </div>
 
-            {/* AI Disclaimer (part mode shows it under the result instead) */}
-            {!isPartMode && (
+            {/* AI Disclaimer */}
             <div className="mx-2 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-900 leading-relaxed">
                     <span className="font-semibold">Disclaimer:</span> {AI_DISCLAIMER_TEXT}
                 </p>
             </div>
-            )}
 
-            {/* Inline Affiliate Disclosure (part mode shows it in the shop block) */}
-            {!isPartMode && (
+            {/* Inline Affiliate Disclosure */}
             <div className="mx-2 flex items-center gap-1.5 text-xs text-muted-foreground/70">
                 <Info className="h-3 w-3 flex-shrink-0" />
                 <p>
@@ -106,13 +75,11 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                     </a>
                 </p>
             </div>
-            )}
 
-            {/* overflow-clip in part mode so the desktop shop panel can stay sticky */}
-            <div className={`rounded-[2rem] border border-border/40 bg-white shadow-sm ${isPartMode ? "overflow-clip" : "overflow-hidden"}`}>
+            <div className="rounded-[2rem] border border-border/40 bg-white shadow-sm overflow-hidden">
                 {/* Table Header */}
-                <div className={`${isSinglePart ? "hidden" : "hidden md:grid"} grid-cols-12 gap-6 px-8 py-4 border-b border-border/40 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider`}>
-                    <div className="col-span-5 pl-2">{analysisMode === "part" ? "Part" : "Vehicle"}</div>
+                <div className={`hidden md:grid grid-cols-12 gap-6 px-8 py-4 border-b border-border/40 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider`}>
+                    <div className="col-span-5 pl-2">Vehicle</div>
                     <div className="col-span-2">Status</div>
                     <div className="col-span-4">Progress</div>
                     <div className="col-span-1"></div>
@@ -120,7 +87,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
 
                 <div className="divide-y divide-border/40">
                     {items.map((item) => {
-                        const isExpanded = isSinglePart || expandedItems.has(item.id)
+                        const isExpanded = expandedItems.has(item.id)
                         const isComplete = item.status === "complete"
                         const isError = item.status === "error"
                         const isProcessing = ["uploading", "quality_check", "analyzing"].includes(item.status)
@@ -133,8 +100,8 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                         return (
                             <div key={item.id} className="bg-white group transition-all">
                                 <div
-                                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-center px-6 md:px-8 py-5 ${isSinglePart ? "" : "cursor-pointer hover:bg-muted/20"} transition-colors`}
-                                    onClick={isSinglePart ? undefined : () => toggleExpand(item.id)}
+                                    className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-center px-6 md:px-8 py-5 cursor-pointer hover:bg-muted/20 transition-colors"
+                                    onClick={() => toggleExpand(item.id)}
                                 >
                                     {/* Col 1: Thumbnail + Name */}
                                     <div className="col-span-1 md:col-span-5 flex items-center gap-5">
@@ -152,14 +119,10 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                                 </div>
                                             )}
                                         </div>
-                                        {isSinglePart ? (
-                                            <div className="font-semibold text-foreground/90">Part 1</div>
-                                        ) : (
                                         <div className="min-w-0">
                                             <div className="font-semibold text-foreground/90 truncate">{title}</div>
                                             <div className="text-xs text-muted-foreground">{size}</div>
                                         </div>
-                                        )}
                                     </div>
 
                                     {/* Col 2: Status */}
@@ -204,10 +167,7 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                         ) : isComplete ? (
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium text-foreground/90 truncate">
-                                                    {analysisMode === "part"
-                                                        ? (item.partIdentification ? item.partIdentification.partName : "Identification Ready")
-                                                        : (item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Ready")
-                                                    }
+                                                    {item.result?.primary ? `${item.result.primary.year} ${item.result.primary.make} ${item.result.primary.model}` : "Analysis Ready"}
                                                 </span>
                                                 <div className="h-2 w-24 rounded-full bg-emerald-100 mt-1.5 overflow-hidden">
                                                     <div className="h-full w-full bg-emerald-500 rounded-full" />
@@ -221,7 +181,6 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                     </div>
 
                                     {/* Col 4: Action */}
-                                    {!isSinglePart && (
                                     <div className="col-span-1 md:col-span-1 flex justify-end w-full md:w-auto mt-4 md:mt-0">
                                         <Button
                                             className="w-full md:w-auto bg-transparent text-[#003223] border border-[#003223] hover:bg-[#003223] hover:text-white"
@@ -233,7 +192,6 @@ export function BatchResults({ items, detectedProductsTitle, analysisMode = "veh
                                             {isExpanded ? "Hide Results" : "See Results"}
                                         </Button>
                                     </div>
-                                    )}
                                 </div>
 
                                 {isExpanded && (

@@ -374,7 +374,7 @@ export function UploadZone({
                                                         Split
                                                     </Button>
                                                 )}
-                                                {item.status === "pending" && (
+                                                {(item.status === "pending" || (isPart && item.status === "error")) && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -475,10 +475,15 @@ export function UploadZone({
                                                     <span className="text-destructive font-medium">Error</span>
                                                 )}
                                                 {item.status === "pending" && (
-                                                    <span className="text-muted-foreground">{item.images.length} images</span>
+                                                    <span className="text-muted-foreground">
+                                                        {isPart ? "Photo ready" : `${item.images.length} image${item.images.length !== 1 ? "s" : ""}`}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
+                                        {isPart && item.status === "error" && item.error && (
+                                            <p role="alert" className="mt-2 text-xs text-destructive">{item.error}</p>
+                                        )}
                                     </div>
                                 ))}
 
@@ -735,7 +740,7 @@ export function UploadZone({
                         ) : (
                             <div className="flex items-center gap-2">
                                 <Loader className="w-4 h-4 animate-spin" />
-                                {batchItems.length >= 2 ? "Processing Batch..." : "Processing..."}
+                                {isPart ? "Starting Identification..." : batchItems.length >= 2 ? "Processing Batch..." : "Processing..."}
                             </div>
                         )}
                     </Button>
@@ -835,6 +840,8 @@ function PartPhotoRow({ item, onReplace, onCrop, onRemove }: {
     const image = item.images[0]
     if (!image) return null
     const pending = item.status === "pending"
+    // After a failed start the visitor can retry ("Identify Part") or swap the photo
+    const editable = pending || item.status === "error"
     const outlineClass = "h-11 px-3.5 border-[#C9D6D1] bg-white text-sm text-foreground hover:bg-muted hover:text-foreground"
 
     return (
@@ -862,11 +869,14 @@ function PartPhotoRow({ item, onReplace, onCrop, onRemove }: {
                     <span className="text-[13px] font-semibold text-green-600">Complete</span>
                 )}
                 {item.status === "error" && (
-                    <span className="text-[13px] font-semibold text-destructive">Error</span>
+                    <span role="alert" className="flex items-start gap-1.5 text-[13px] font-semibold text-destructive">
+                        <CircleAlert className="mt-px h-4 w-4 shrink-0" aria-hidden="true" />
+                        {item.error || "That didn't go through. Please try again."}
+                    </span>
                 )}
                 <span className="truncate font-heading text-lg font-semibold text-foreground">{image.file.name}</span>
                 <span className="text-[13px] text-muted-foreground">{formatFileSize(image.file.size)}</span>
-                {pending && (
+                {editable && (
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                         <Button type="button" variant="outline" className={outlineClass} onClick={onReplace}>
                             Replace photo

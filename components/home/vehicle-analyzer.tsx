@@ -526,13 +526,17 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         trackEvent('photo_analysis_started', { platform: getPlatform(), entry_point: entryPoint })
 
-        // Scroll to results
-        setTimeout(() => {
-            const resultsElement = document.getElementById("analysis-results")
-            if (resultsElement) {
-                resultsElement.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-        }, 100)
+        // Category pages show results inline below the card. The part
+        // identifier stays on the card and goes straight to /r/{id}, like the
+        // homepage photo tool.
+        if (analysisMode !== "part") {
+            setTimeout(() => {
+                const resultsElement = document.getElementById("analysis-results")
+                if (resultsElement) {
+                    resultsElement.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+            }, 100)
+        }
 
         // Process sequentially to avoid rate limits? Or parallel?
         // Let's do sequential for now to be safe with API limits.
@@ -543,8 +547,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             await processItem(item, selectedAnalysis)
         }
 
-        // Part identifier: keep "Processing..." while /r/{id} loads
-        if (!navigatingRef.current) setAnalysisState("complete")
+        // Part identifier: keep the spinner while /r/{id} loads. If the
+        // upload or record creation failed, the card shows the error and
+        // "Identify Part" retries it.
+        if (navigatingRef.current) return
+        setAnalysisState(analysisMode === "part" ? "idle" : "complete")
     }
 
     return (
@@ -620,14 +627,14 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                     )}
                 </div>
 
-                {/* Batch Results Display */}
-                {!showCategories && batchItems.length > 0 && (
+                {/* Inline results on category pages. The part identifier shows
+                    its result on /r/{id} instead. */}
+                {!showCategories && analysisMode !== "part" && batchItems.length > 0 && (
                     <section id="analysis-results" className="bg-white w-full py-12">
                         <div className="container mx-auto px-4">
                             <BatchResults
                                 items={batchItems}
                                 detectedProductsTitle={detectedProductsTitle}
-                                analysisMode={analysisMode}
                             />
                         </div>
                     </section>

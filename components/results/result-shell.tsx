@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode, type RefObject } from "react"
+import Image from "next/image"
 import { AFFILIATE_DISCLOSURE_HREF, AI_DISCLAIMER_TEXT, COMMISSION_NOTE_TEXT } from "@/components/home/result-notices"
 import { cn } from "@/lib/utils"
 
@@ -15,6 +16,8 @@ import { cn } from "@/lib/utils"
 export const AFFILIATE_LINK_PROPS = { target: "_blank", rel: "nofollow sponsored noopener" } as const
 
 export const cardClass = "rounded-2xl border border-[#D5DEE5] bg-white p-4"
+/** Category label above a result title ("Engine", "Pickup truck"). */
+export const eyebrowClass = "text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]"
 export const sectionTitleClass = "font-heading text-lg font-bold text-[#17212B]"
 export const fieldLabelClass = "text-[13px] font-semibold text-[#5A6672]"
 export const primaryButtonClass =
@@ -65,7 +68,19 @@ export function MatchPill({ tone, size = "md", children }: { tone: MatchTone; si
     )
 }
 
-export function ResultPhoto({ imageUrl, alt, className }: { imageUrl?: string; alt: string; className?: string }) {
+/**
+ * The analysed photo. Visitors' photos load as-is (no image optimization
+ * quota spent on them); pass `sizes` for our own static images (the samples)
+ * to get resized, lazily loaded copies.
+ */
+export function ResultPhoto({ imageUrl, alt, sizes, className }: { imageUrl?: string; alt: string; sizes?: string; className?: string }) {
+    if (sizes && imageUrl) {
+        return (
+            <div className={cn("relative shrink-0 overflow-hidden rounded-xl border border-[#D5DEE5] bg-[#E4EBF0]", className)}>
+                <Image src={imageUrl} alt={alt} fill sizes={sizes} className="object-cover" />
+            </div>
+        )
+    }
     return (
         <div className={cn("shrink-0 overflow-hidden rounded-xl border border-[#D5DEE5] bg-[#E4EBF0]", className)}>
             {imageUrl && (
@@ -120,7 +135,7 @@ export function ResultHeaderCard({
                         className="h-[190px] w-full rounded-none border-0 @xl/header:h-[180px] @xl/header:w-[260px] @xl/header:rounded-[14px]"
                     />
                     <div className="@container/header-body flex min-w-0 flex-1 flex-col gap-2.5 p-4 @xl/header:p-0">
-                        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]">{eyebrow}</span>
+                        <span className={eyebrowClass}>{eyebrow}</span>
                         <Title className="font-heading text-[26px] font-bold leading-[1.15] text-[#17212B] @xl/header:text-[32px] @xl/header:leading-[1.1]">
                             {title}
                         </Title>
@@ -144,7 +159,7 @@ export function ResultHeaderCard({
         >
             <ResultPhoto imageUrl={imageUrl} alt={imageAlt} className="h-[72px] w-[72px] @2xl:row-span-2 @2xl:h-40 @2xl:w-40" />
             <div className="flex min-w-0 flex-col gap-1 @2xl:gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]">{eyebrow}</span>
+                <span className={eyebrowClass}>{eyebrow}</span>
                 <Title className="font-heading text-[26px] font-bold leading-[1.1] text-[#17212B] @2xl:text-[34px]">{title}</Title>
                 {pill}
             </div>

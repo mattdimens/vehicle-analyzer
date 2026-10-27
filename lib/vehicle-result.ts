@@ -30,9 +30,30 @@ export function formatVehicleType(vehicleType: string | null | undefined): strin
         .join(" ")
 }
 
+/**
+ * Parse "Product Name (e.g. Example 1, Example 2)" into name + description.
+ */
+export function parseRecommendation(text: string): { name: string; description: string | null } {
+    const match = text.match(/^(.*?)\s*\(([^)]+)\)$/)
+    if (match) return { name: match[1].trim(), description: match[2].trim() }
+    return { name: text, description: null }
+}
+
 /** Trucks get "truck" in the copy; everything else gets "vehicle". */
 export function vehicleNoun(vehicleType: string | null | undefined): "truck" | "vehicle" {
     return /truck|pickup/i.test(vehicleType ?? "") ? "truck" : "vehicle"
+}
+
+/** "SuperCrew · 67.0" (Short) bed · 6.2L V8": cab, bed and engine, skipping blanks. Null when there are none. */
+export function vehicleSpecLine(
+    primary: { cabStyle?: string | null; bedLength?: string | null },
+    engineDetails?: string | null
+): string | null {
+    const specParts: string[] = []
+    if (primary.cabStyle) specParts.push(primary.cabStyle)
+    if (primary.bedLength) specParts.push(`${primary.bedLength} bed`)
+    if (engineDetails) specParts.push(engineDetails)
+    return specParts.length > 0 ? specParts.join(" · ") : null
 }
 
 /** "{year} {make} {model} {trim}", skipping blanks. Also the vehicle every /go link searches for. */

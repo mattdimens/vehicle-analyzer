@@ -21,18 +21,9 @@ import {
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
 import type { AnalysisDetectedProduct, AnalysisRecord } from "@/types/analysis"
 import { getConfidence, getConfidenceBand, type ConfidenceBand } from "@/types/analysis"
-import { formatVehicleType, vehicleNoun, vehicleTitle } from "@/lib/vehicle-result"
+import { formatVehicleType, parseRecommendation, vehicleNoun, vehicleSpecLine, vehicleTitle } from "@/lib/vehicle-result"
 import { getEntryDoor, getPlatform, trackEvent } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
-
-/**
- * Parse "Product Name (e.g. Example 1, Example 2)" into name + description.
- */
-function parseRecommendation(text: string) {
-    const match = text.match(/^(.*?)\s*\(([^)]+)\)$/)
-    if (match) return { name: match[1].trim(), description: match[2].trim() }
-    return { name: text, description: null }
-}
 
 const BAND_TONE: Record<ConfidenceBand, MatchTone> = { High: "high", Medium: "medium", Low: "low" }
 const BAND_TEXT_CLASS: Record<ConfidenceBand, string> = {
@@ -84,12 +75,7 @@ export function AnalysisResultsView({ record, yearChoice, catalog, verify, onPic
     // Vehicle string for /go links, and the title
     const vehicleString = vehicleTitle(primary)
 
-    // Spec line
-    const specParts: string[] = []
-    if (primary.cabStyle) specParts.push(primary.cabStyle)
-    if (primary.bedLength) specParts.push(`${primary.bedLength} bed`)
-    if (engineDetails) specParts.push(engineDetails)
-    const specLine = specParts.length > 0 ? specParts.join(" · ") : null
+    const specLine = vehicleSpecLine(primary, engineDetails)
 
     const fields = [
         { label: "Year", value: primary.year },

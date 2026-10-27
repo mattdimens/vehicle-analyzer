@@ -21,6 +21,7 @@ import { detectedVehicleLabel, formatVehicleLabel, initialPartVehicle, parsePart
 import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
 import { formatVehicleType, parseRecommendation, parseYearRange, vehicleNoun, vehicleSpecLine, vehicleTitle } from '../lib/vehicle-result'
+import { isAnalysisInProgress } from '../types/analysis'
 
 let passed = 0
 let failed = 0
@@ -335,6 +336,14 @@ assert(vehicleSpecLine({ cabStyle: 'SuperCrew', bedLength: '67.0" (Short)' }, '6
 assert(vehicleSpecLine({ cabStyle: null, bedLength: null }, null) === null, 'no spec parts is null')
 assert(parseRecommendation('Tonneau Cover (e.g. BAKFlip MX4)').name === 'Tonneau Cover' && parseRecommendation('Tonneau Cover (e.g. BAKFlip MX4)').description === 'e.g. BAKFlip MX4', 'recommendation name and e.g. line')
 assert(parseRecommendation('Floor Liners').description === null, 'recommendation without e.g. line')
+
+console.log('\nisAnalysisInProgress')
+assert(isAnalysisInProgress('identifying'), 'identifying is in progress')
+assert(isAnalysisInProgress('verifying'), 'verifying is in progress')
+assert(isAnalysisInProgress('detecting_products'), 'detecting_products is in progress')
+assert(!isAnalysisInProgress('complete'), 'complete is not in progress')
+assert(!isAnalysisInProgress('error'), 'error is not in progress')
+assert(!isAnalysisInProgress('') && !isAnalysisInProgress(null) && !isAnalysisInProgress(undefined), 'blank or missing status is not in progress')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

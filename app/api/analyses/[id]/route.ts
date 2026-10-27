@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
+import { isAnalysisInProgress } from '@/types/analysis'
 
 function getSupabase() {
     return createClient<Database>(
@@ -30,7 +31,7 @@ export async function GET(
     }
 
     // Stale-record handling
-    if (record.status === 'identifying' || record.status === 'detecting_products') {
+    if (isAnalysisInProgress(record.status)) {
         const updatedTime = new Date(record.updated_at).getTime()
         const now = Date.now()
         

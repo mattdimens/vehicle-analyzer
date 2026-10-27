@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdmin, runPartPipeline, runPipeline } from '@/lib/pipeline'
+import { isAnalysisInProgress } from '@/types/analysis'
 
 export const maxDuration = 60
 
@@ -30,7 +31,7 @@ export async function POST(
     }
 
     // Concurrency guard
-    if (record.status === 'identifying' || record.status === 'detecting_products') {
+    if (isAnalysisInProgress(record.status)) {
         const updatedTime = new Date(record.updated_at).getTime()
         const now = Date.now()
         if (now - updatedTime < 120_000) {

@@ -65,12 +65,25 @@ export interface AnalysisDetectedProduct {
 /** Vehicle analysis (homepage photo flow) or part identification (/part-identifier). */
 export type AnalysisKind = 'vehicle' | 'part'
 
+/**
+ * Statuses of a run that is still going. `verifying` is a part run on its
+ * second, slower check (the scout pass was not confident enough).
+ */
+export const IN_PROGRESS_STATUSES = ['identifying', 'verifying', 'detecting_products'] as const
+export type InProgressStatus = (typeof IN_PROGRESS_STATUSES)[number]
+export type AnalysisStatus = InProgressStatus | 'complete' | 'error'
+
+/** True while the pipeline is still working on the row. Takes any string: the column is plain text. */
+export function isAnalysisInProgress(status: string | null | undefined): status is InProgressStatus {
+    return (IN_PROGRESS_STATUSES as readonly string[]).includes(status ?? '')
+}
+
 export interface AnalysisRecord {
     id: string
     /** Rows from before the column existed are vehicles. */
     kind?: AnalysisKind
     image_url: string
-    status: 'identifying' | 'detecting_products' | 'complete' | 'error'
+    status: AnalysisStatus
     /** Vehicle rows: the fitment result. Part rows: the part identification (read it with getPartIdentification). */
     result_data: AnalysisResultData | null
     detected_products: AnalysisDetectedProduct[] | null

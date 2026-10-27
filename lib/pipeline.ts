@@ -110,7 +110,14 @@ export async function runPartPipeline(id: string, imageUrl: string) {
         await supabase.from('analyses').update({ status: 'identifying', error_details: null, updated_at: now() }).eq('id', id)
 
         const imageParts = [await fetchImageForGemini(imageUrl)]
-        const { identification, modelUsed } = await runPartIdentification(imageParts)
+        // The second, slower check gets its own status so /r/[id] can say so.
+        // It also restamps updated_at, so the stale check sees the run is alive.
+        const { identification, modelUsed } = await runPartIdentification(imageParts, {
+            onEscalate: async () => {
+                const { error } = await supabase.from('analyses').update({ status: 'verifying', updated_at: now() }).eq('id', id)
+                if (error) throw new Error(error.message)
+            },
+        })
 
         const { error: logError } = await supabase.from('analysis_results').insert({
             analysis_data: { ...identification },

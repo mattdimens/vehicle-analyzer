@@ -330,7 +330,11 @@ const PART_PROMPT =
   '{"partName": string, "category": string, "function": string, "estimatedVehicle": string | null, "confidence": number, "amazonSearchTerm": string, "reasoning": string, "partNumber": string | null, "searchVehicle": string | null, "alternatives": [{"partName": string, "confidence": number}], "relatedParts": string[], "buyingCheck": string}'
 
 export async function runPartIdentification(
-  imageParts: ImagePart[]
+  imageParts: ImagePart[],
+  options: {
+    /** Awaited right before the Sniper call. A failure here is logged and never fails the identification. */
+    onEscalate?: () => Promise<void>
+  } = {}
 ): Promise<{ identification: PartIdentification; modelUsed: string }> {
   // --- Cascading Model: Scout pass (Flash) ---
   const scoutParse = PartIdentificationSchema.safeParse(tryParseJson(await callGemini(SCOUT_MODEL, PART_PROMPT, imageParts)))
@@ -344,6 +348,13 @@ export async function runPartIdentification(
   // --- Gatekeeper: check Scout confidence ---
   if (identification.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
     console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD}: escalating to Sniper (Pro)`)
+    if (options.onEscalate) {
+      try {
+        await options.onEscalate()
+      } catch (err) {
+        console.error('onEscalate failed, continuing with Sniper:', err)
+      }
+    }
     const sniperParse = PartIdentificationSchema.safeParse(tryParseJson(await callGemini(SNIPER_MODEL, PART_PROMPT, imageParts)))
     if (sniperParse.success) {
       identification = sniperParse.data

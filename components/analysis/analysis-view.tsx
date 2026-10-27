@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { ResultLayout, ResultNoticesFooter } from "./result-layout"
 import { PartResultView } from "./part-result-view"
 import type { AnalysisRecord } from "@/types/analysis"
-import { getConfidenceBand, getPartIdentification, isPartRecord } from "@/types/analysis"
+import { getConfidenceBand, getPartIdentification, isAnalysisInProgress, isPartRecord } from "@/types/analysis"
 import { apiErrorMessage, readJson } from "@/lib/api-errors"
 
 const stateCardClass = cn(cardClass, "flex flex-col items-center gap-2 px-5 py-8 text-center sm:p-8")
@@ -61,7 +61,7 @@ export function AnalysisView({ id }: { id: string }) {
 
     useEffect(() => {
         if (!record) return
-        if (record.status === 'identifying' || record.status === 'detecting_products') {
+        if (isAnalysisInProgress(record.status)) {
             hasSeenInProgress.current = true
             return
         }
@@ -156,7 +156,7 @@ export function AnalysisView({ id }: { id: string }) {
     const { status, image_url } = record
     const isPart = isPartRecord(record)
 
-    if (isPart && (status === 'identifying' || status === 'detecting_products')) {
+    if (isPart && isAnalysisInProgress(status)) {
         return (
             <section aria-label="Identifying your part" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
                 <div className="relative mb-3 aspect-square w-full max-w-[280px] overflow-hidden rounded-xl">
@@ -171,7 +171,7 @@ export function AnalysisView({ id }: { id: string }) {
         )
     }
 
-    if (status === 'identifying' || status === 'detecting_products') {
+    if (isAnalysisInProgress(status)) {
         return (
             <section aria-label="Analyzing your photo" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
                 <div className="relative mb-3 aspect-video w-full max-w-md overflow-hidden rounded-xl">

@@ -30,6 +30,7 @@ import type { BatchItem } from "@/lib/types"
 import { downscaleImage } from "@/lib/image-processing"
 import { apiErrorMessage, readJson, thrownErrorMessage } from "@/lib/api-errors"
 import { takePendingPartPhoto } from "@/lib/pending-part-photo"
+import { cn } from "@/lib/utils"
 
 const ImageCropperDialog = dynamic(
     () => import("@/components/home/image-cropper-dialog").then(mod => ({ default: mod.ImageCropperDialog })),
@@ -64,9 +65,15 @@ interface VehicleAnalyzerProps {
     catalogStats?: { totalProducts: number; totalCategories: number; totalGenerations: number }
     /** Analytics entry_point value for photo_analysis_started (e.g. 'truck_bed_covers') */
     entryPoint?: string
+    /**
+     * Shown with the upload card on sub-pages (the part identifier's sample
+     * result): below it on narrow screens, beside it from lg. The upload
+     * card stays first in reading order.
+     */
+    uploadAside?: React.ReactNode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats, entryPoint = 'homepage' }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats, entryPoint = 'homepage', uploadAside }: VehicleAnalyzerProps) {
     const router = useRouter()
     // Set once a part record exists and we're on our way to /r/{id}
     const navigatingRef = useRef(false)
@@ -555,8 +562,14 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                     {/* Upload zone: on sub-pages, always shown. */}
                     {!showCategories && (
-                        <div id="upload-zone" className="scroll-mt-20">
-                            <div id="upload-target" className="scroll-mt-24">
+                        <div
+                            id="upload-zone"
+                            className={cn(
+                                "scroll-mt-20",
+                                uploadAside && "lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] lg:items-stretch lg:px-4"
+                            )}
+                        >
+                            <div id="upload-target" className={cn("scroll-mt-24", uploadAside && "lg:[&>div]:px-0")}>
                                 <UploadZone
                                     onFilesSelect={handleFilesSelect}
                                     batchItems={batchItems}
@@ -579,6 +592,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                                     onModeSwitch={handleModeSwitch}
                                 />
                             </div>
+                            {uploadAside && (
+                                <div className="mx-auto w-full max-w-4xl px-4 pb-10 lg:max-w-none lg:pb-8 lg:pl-6 lg:pr-0">
+                                    {uploadAside}
+                                </div>
+                            )}
                         </div>
                     )}
 

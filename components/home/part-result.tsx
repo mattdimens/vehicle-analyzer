@@ -59,7 +59,8 @@ interface PartResultProps {
     titleAs?: "h1" | "h3"
 }
 
-const BAND_PILL: Record<PartDisplayBand, { label: string; tone: MatchTone }> = {
+/** Match pill per layout band. The part sample card uses it too. */
+export const PART_BAND_PILL: Record<PartDisplayBand, { label: string; tone: MatchTone }> = {
     strong: { label: "High match", tone: "high" },
     medium: { label: "Medium match", tone: "medium" },
     low: { label: "Low match", tone: "low" },
@@ -309,7 +310,7 @@ function ShopList({ title, items }: { title: string; items: { label: string; det
 }
 
 function MatchPill({ band, confidence }: { band: PartDisplayBand; confidence: number }) {
-    const pill = BAND_PILL[band]
+    const pill = PART_BAND_PILL[band]
     return (
         <ShellMatchPill tone={pill.tone}>
             {pill.label} · {confidence}%

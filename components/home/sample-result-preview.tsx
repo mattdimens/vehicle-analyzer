@@ -1,221 +1,128 @@
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+"use client"
+
 import { sampleAnalysisRecord } from "@/data/sample-analysis"
-import { getConfidenceBand, getConfidenceBandColor, getConfidenceBarColor } from "@/types/analysis"
+import { MatchPill, eyebrowClass, ResultPhoto, type MatchTone } from "@/components/results/result-shell"
+import {
+    SampleCaption,
+    SampleCardLink,
+    SampleChip,
+    SampleEyebrow,
+    SampleItemRow,
+    SampleLabel,
+    SampleSeeFull,
+    SampleTitle,
+} from "@/components/results/sample-result-card"
+import { getConfidenceBand, type ConfidenceBand } from "@/types/analysis"
+import { formatVehicleType, parseRecommendation, vehicleNoun, vehicleSpecLine, vehicleTitle } from "@/lib/vehicle-result"
+import { cn } from "@/lib/utils"
+
+const BAND_TONE: Record<ConfidenceBand, MatchTone> = { High: "high", Medium: "medium", Low: "low" }
+
+/** Rows shown: 3 on narrow screens, 4 from md up. */
+const NARROW_ROWS = 3
+const WIDE_ROWS = 4
+const WIDE_CHIPS = 3
 
 /**
- * Parse "Product Name (e.g. Example 1, Example 2)" into name + description.
+ * Homepage sample: a compact vehicle result built from static data (no
+ * request on load besides the photo). The whole card links to /r/{id}.
  */
-function parseRecommendation(text: string) {
-    const match = text.match(/^(.*?)\s*\(([^)]+)\)$/)
-    if (match) return { name: match[1].trim(), description: match[2].trim() }
-    return { name: text, description: null }
-}
-
 export function SampleResultPreview() {
     const record = sampleAnalysisRecord
-    const primary = record.result_data?.primary
-
+    const resultData = record.result_data
+    const primary = resultData?.primary
     if (!primary) return null
 
-    // Authoritative confidence from primary
-    const confidence = primary.confidence
-    const band = getConfidenceBand(confidence)
-    const bandColor = getConfidenceBandColor(band)
+    const band = getConfidenceBand(primary.confidence)
+    const title = vehicleTitle(primary)
+    const noun = vehicleNoun(primary.vehicleType)
+    const specLine = vehicleSpecLine(primary, resultData.engineDetails)
 
-    const detectedProducts = record.detected_products ?? []
-    
-    // Sort products by confidence desc, cap at 4 for the preview
-    const sortedProducts = [...detectedProducts].sort((a, b) => b.confidence - a.confidence)
-    const previewProducts = sortedProducts.slice(0, 4)
-    const remainingProductCount = sortedProducts.length - 4
+    // Highest confidence first; the sort is stable, so ties keep the data's order
+    const products = [...(record.detected_products ?? [])].sort((a, b) => b.confidence - a.confidence)
+    const recommendations = (resultData.tieredRecommendations?.flatMap(t => t.items) ?? resultData.recommendedAccessories ?? [])
+        .map(text => parseRecommendation(text).name)
 
-    // Prepare capped recommendations for preview (top 3)
-    const allRecs = record.result_data?.tieredRecommendations?.flatMap(t => t.items) ?? record.result_data?.recommendedAccessories ?? []
-    const previewRecs = allRecs.slice(0, 3)
-    const remainingRecCount = allRecs.length - 3
+    const moreNarrow = Math.max(0, products.length - NARROW_ROWS)
+    const moreWide = Math.max(0, products.length - WIDE_ROWS)
+    const moreChips = Math.max(0, recommendations.length - WIDE_CHIPS)
 
-    // Spec line
-    const specParts: string[] = []
-    if (primary.cabStyle) specParts.push(primary.cabStyle)
-    if (primary.bedLength) specParts.push(`${primary.bedLength} bed`)
-    if (record.result_data?.engineDetails) specParts.push(record.result_data.engineDetails)
-    const specLine = specParts.length > 0 ? specParts.join(' · ') : null
-
-    const vehicleString = [primary.year, primary.make, primary.model, primary.trim].filter(Boolean).join(' ')
+    // "+4 more spotted, plus 4 recommended accessories"
+    const narrowSummary = [
+        moreNarrow > 0 ? `+${moreNarrow} more spotted` : null,
+        recommendations.length > 0
+            ? `${moreNarrow > 0 ? "plus" : "Plus"} ${recommendations.length} recommended ${recommendations.length === 1 ? "accessory" : "accessories"}`
+            : null,
+    ].filter(Boolean).join(", ")
 
     return (
-        <div
-            id="sample-result-preview"
-            className="w-full max-w-5xl mx-auto px-4 pb-4"
-        >
-            {/* Eyebrow label directly on hero background */}
-            <p className="text-white/60 text-xs font-medium tracking-wide mb-2 uppercase text-center md:text-left">
-                Sample result
-            </p>
+        <div id="sample-result-preview" className="mx-auto flex w-full max-w-5xl flex-col gap-2.5 px-4 pb-10">
+            <SampleEyebrow className="text-center md:text-left" />
 
-            {/* Light inner card replacing outer wrapper */}
-            <div className="bg-[#FCFBF7] rounded-xl p-3 shadow-lg border border-white/20">
-                <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-3">
-                    {/* Left column: sample image */}
-                    <div>
-                        <Image
-                            src={record.image_url}
-                            alt="Sample analysis vehicle"
-                            width={460}
-                            height={300}
-                            className="rounded-lg object-cover w-full h-[120px]"
-                        />
-                        <p className="text-[11px] text-gray-500 mt-1.5 leading-snug">
-                            Example analysis from a single uploaded photo
-                        </p>
-                    </div>
-
-                    {/* Right column: compact results preview */}
-                    <div className="min-w-0 flex flex-col gap-4">
-                        
-                        {/* Primary Identification */}
-                        <div className="flex flex-col text-left">
-                            <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden p-3 md:p-4">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
-                                    <p className="text-base font-semibold flex items-center gap-2">
-                                        Primary Identification
-                                        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${bandColor}`}>
-                                            {band} Confidence
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-                                    <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Year</div>
-                                        <div className="text-sm font-semibold text-foreground">{primary.year}</div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Make</div>
-                                        <div className="text-sm font-semibold text-foreground">{primary.make}</div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Model</div>
-                                        <div className="text-sm font-semibold text-foreground">{primary.model}</div>
-                                    </div>
-                                    {primary.trim && (
-                                        <div className="space-y-1">
-                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trim</div>
-                                            <div className="text-sm font-semibold text-foreground">{primary.trim}</div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {specLine && (
-                                    <p className="mt-2 text-xs text-muted-foreground">{specLine}</p>
-                                )}
-                            </div>
+            <SampleCardLink
+                href={`/r/${record.id}`}
+                ariaLabel={`See the full sample result for a ${title}`}
+                page="homepage"
+                className="flex flex-col overflow-hidden md:flex-row md:gap-5 md:p-5"
+            >
+                {/* The vehicle */}
+                <div className="flex flex-col md:min-w-0 md:flex-1 md:gap-3">
+                    <ResultPhoto
+                        imageUrl={record.image_url}
+                        alt={`Sample photo of a ${title}`}
+                        sizes="(min-width: 1024px) 480px, (min-width: 768px) 45vw, 100vw"
+                        className="h-[170px] w-full rounded-none border-0 md:h-[200px] md:rounded-xl"
+                    />
+                    <div className="flex flex-col gap-2 px-4 pt-4 md:p-0">
+                        <span className={eyebrowClass}>{formatVehicleType(primary.vehicleType) ?? "Vehicle"}</span>
+                        <SampleTitle className="text-[22px] md:text-[26px]">{title}</SampleTitle>
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                            <MatchPill tone={BAND_TONE[band]}>{band} match</MatchPill>
+                            {specLine && <span className="text-[13px] text-[#2B3742] md:text-sm">{specLine}</span>}
                         </div>
-
-                        {/* Detected Products (capped) */}
-                        {previewProducts.length > 0 && (
-                            <div className="flex flex-col text-left space-y-1.5">
-                                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Detected Products</p>
-                                <div className="rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden">
-                                    {/* Table Header */}
-                                    <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-2 bg-muted/30 text-[11px] font-semibold uppercase text-muted-foreground tracking-wider border-b border-border/40">
-                                        <div className="col-span-3">Product Type</div>
-                                        <div className="col-span-2">Brand</div>
-                                        <div className="col-span-4">Model</div>
-                                        <div className="col-span-3">Confidence</div>
-                                    </div>
-
-                                    <div className="divide-y divide-border/40">
-                                        {previewProducts.map((item, index) => {
-                                            const itemBand = getConfidenceBand(item.confidence)
-                                            const itemBarColor = getConfidenceBarColor(itemBand)
-                                            const isUnknownBrand = !item.brand || item.brand.toLowerCase().includes("unknown")
-                                            const isUnknownModel = !item.model || item.model.toLowerCase().includes("unknown")
-
-                                            return (
-                                                <div 
-                                                    key={index} 
-                                                    className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-2 items-center hover:bg-muted/10 transition-colors"
-                                                >
-                                                    <div className="col-span-1 md:col-span-3 text-sm font-medium text-foreground">
-                                                        {item.type}
-                                                    </div>
-                                                    <div className="col-span-1 md:col-span-2 text-sm text-foreground/80">
-                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Brand:</span>
-                                                        {!isUnknownBrand ? item.brand : <span className="text-muted-foreground italic">Unknown</span>}
-                                                    </div>
-                                                    <div className="col-span-1 md:col-span-4 text-sm text-foreground/80">
-                                                        <span className="md:hidden text-xs text-muted-foreground mr-2 uppercase">Model:</span>
-                                                        {!isUnknownModel ? item.model : <span className="text-muted-foreground italic">Unknown</span>}
-                                                    </div>
-                                                    <div className="col-span-1 md:col-span-3 flex items-center gap-2">
-                                                        <span className="md:hidden text-xs text-muted-foreground uppercase">Confidence:</span>
-                                                        <div
-                                                            className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"
-                                                            role="progressbar"
-                                                            aria-label={`${item.type} confidence`}
-                                                        >
-                                                            <div className={`h-full rounded-full ${itemBarColor}`} style={{ width: `${item.confidence}%` }}></div>
-                                                        </div>
-                                                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                                                            {itemBand}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-
-                                    {remainingProductCount > 0 && (
-                                        <div className="px-4 py-2 border-t border-border/40">
-                                            <p className="text-xs text-muted-foreground">+{remainingProductCount} more parts identified</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Recommended Accessories (compact chip row) */}
-                        {previewRecs.length > 0 && (
-                            <div className="flex flex-col text-left space-y-1">
-                                <p className="text-sm font-semibold text-foreground">
-                                    Recommended for Your {vehicleString}
-                                </p>
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    {previewRecs.map((rec, i) => {
-                                        const { name } = parseRecommendation(rec)
-                                        return (
-                                            <div
-                                                key={i}
-                                                className="border border-border text-foreground/70 text-sm px-2.5 py-1 rounded-lg bg-white"
-                                            >
-                                                {name}
-                                            </div>
-                                        )
-                                    })}
-                                    {remainingRecCount > 0 && (
-                                        <span className="text-sm text-muted-foreground">+{remainingRecCount} more</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Link to full result */}
-                        <div className="flex justify-end mt-2">
-                            <Link 
-                                href={`/r/${record.id}`} 
-                                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                            >
-                                See the full sample result
-                                <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
-
+                        <p className="hidden text-xs text-[#5A6672] md:block">Example from one uploaded photo</p>
                     </div>
                 </div>
-            </div>
+
+                {/* What a result offers */}
+                <div className="mx-4 mt-3 flex flex-col border-t border-[#E4EBF0] pt-2.5 md:m-0 md:min-w-0 md:flex-1 md:rounded-[14px] md:border-2 md:border-[#C8460F] md:p-4">
+                    <SampleLabel className="mb-1 md:font-heading md:text-[17px] md:font-bold md:text-[#17212B]">
+                        What&apos;s on this {noun}
+                    </SampleLabel>
+                    <ul className="flex flex-col">
+                        {products.slice(0, WIDE_ROWS).map((item, index) => {
+                            const known = (value: string) => value && !value.toLowerCase().includes("unknown")
+                            const detail = [item.brand, item.model].filter(known).join(" ") || null
+                            return (
+                                <SampleItemRow
+                                    key={index}
+                                    title={item.type}
+                                    detail={detail}
+                                    className={cn(index >= NARROW_ROWS && "hidden md:flex")}
+                                />
+                            )
+                        })}
+                    </ul>
+                    {narrowSummary && <p className="mt-1.5 text-xs text-[#5A6672] md:hidden">{narrowSummary}</p>}
+                    {moreWide > 0 && <p className="mt-1 hidden text-xs text-[#5A6672] md:block">+{moreWide} more spotted</p>}
+
+                    {recommendations.length > 0 && (
+                        <div className="mt-3 hidden flex-col gap-1.5 md:flex">
+                            <SampleLabel>Recommended for this {noun}</SampleLabel>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {recommendations.slice(0, WIDE_CHIPS).map(name => <SampleChip key={name}>{name}</SampleChip>)}
+                                {moreChips > 0 && <span className="text-xs text-[#5A6672]">+{moreChips} more</span>}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-3 mb-4 flex flex-col md:mb-0 md:mt-auto">
+                        <SampleSeeFull wideFrom="md" />
+                    </div>
+                </div>
+            </SampleCardLink>
+
+            <SampleCaption className="text-center md:hidden" />
         </div>
     )
 }

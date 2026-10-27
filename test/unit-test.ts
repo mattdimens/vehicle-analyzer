@@ -20,7 +20,7 @@ import { getPartDisplayBand } from '../config/analysis'
 import { detectedVehicleLabel, formatVehicleLabel, initialPartVehicle, parsePartVehicleChoice, partForVehicle } from '../lib/part-vehicle'
 import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
-import { formatVehicleType, parseYearRange, vehicleNoun, vehicleTitle } from '../lib/vehicle-result'
+import { formatVehicleType, parseRecommendation, parseYearRange, vehicleNoun, vehicleSpecLine, vehicleTitle } from '../lib/vehicle-result'
 
 let passed = 0
 let failed = 0
@@ -331,6 +331,10 @@ assert(parseYearRange('2019') === null && parseYearRange('2024-2021') === null &
 assert(formatVehicleType('Pickup Truck') === 'Pickup truck' && formatVehicleType('SUV') === 'SUV' && formatVehicleType('  ') === null, 'vehicle type label')
 assert(vehicleNoun('Pickup Truck') === 'truck' && vehicleNoun('SUV') === 'vehicle' && vehicleNoun(null) === 'vehicle', 'truck or vehicle in the copy')
 assert(vehicleTitle({ year: '2019', make: 'Toyota', model: 'Tacoma', trim: null }) === '2019 Toyota Tacoma', 'title skips a missing trim')
+assert(vehicleSpecLine({ cabStyle: 'SuperCrew', bedLength: '67.0" (Short)' }, '6.2L V8') === 'SuperCrew · 67.0" (Short) bed · 6.2L V8', 'spec line: cab, bed, engine')
+assert(vehicleSpecLine({ cabStyle: null, bedLength: null }, null) === null, 'no spec parts is null')
+assert(parseRecommendation('Tonneau Cover (e.g. BAKFlip MX4)').name === 'Tonneau Cover' && parseRecommendation('Tonneau Cover (e.g. BAKFlip MX4)').description === 'e.g. BAKFlip MX4', 'recommendation name and e.g. line')
+assert(parseRecommendation('Floor Liners').description === null, 'recommendation without e.g. line')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

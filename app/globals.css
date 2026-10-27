@@ -66,6 +66,31 @@
   /* 12px */
 }
 
+/* Results loading screen (components/analysis/analysis-progress.tsx).
+   Reduced motion is handled where they are used (motion-reduce: variants). */
+@theme {
+  --animate-vf-scan: vf-scan 2.6s ease-in-out infinite;
+  --animate-vf-shimmer: vf-shimmer 1.6s linear infinite;
+  --animate-vf-spin: vf-spin 0.9s linear infinite;
+  --animate-vf-spin-slow: vf-spin 3s linear infinite;
+
+  @keyframes vf-scan {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: calc(100% - 2px); opacity: 0; }
+  }
+
+  @keyframes vf-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  @keyframes vf-spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
 /* This block defines the actual colors */
 :root {
   /* --- NEW PALETTE --- */

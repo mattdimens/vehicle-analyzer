@@ -7,7 +7,9 @@ import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { cardClass, primaryButtonClass, ResultPhoto } from "@/components/results/result-shell"
 import { cn } from "@/lib/utils"
 import { ResultLayout, ResultNoticesFooter } from "./result-layout"
+import { PartResultView } from "./part-result-view"
 import type { AnalysisRecord } from "@/types/analysis"
+import { getConfidenceBand, getPartIdentification, isPartRecord } from "@/types/analysis"
 import { apiErrorMessage, readJson } from "@/lib/api-errors"
 
 const stateCardClass = cn(cardClass, "flex flex-col items-center gap-2 px-5 py-8 text-center sm:p-8")
@@ -52,7 +54,8 @@ export function AnalysisView({ id }: { id: string }) {
     }, [isPolling, fetchRecord])
 
     // Only report a completion this view actually watched happen. Re-opening or
-    // sharing a finished /r link must not count as a new analysis_completed.
+    // sharing a finished /r link must not count as a new analysis_completed
+    // (or, for a part, part_identification_completed).
     const hasSeenInProgress = useRef(false)
     const hasTrackedCompletion = useRef(false)
 
@@ -64,6 +67,18 @@ export function AnalysisView({ id }: { id: string }) {
         }
         if (!hasSeenInProgress.current || hasTrackedCompletion.current) return
         hasTrackedCompletion.current = true
+
+        if (isPartRecord(record)) {
+            // Same event and parameters the part identifier fired inline; only
+            // for a finished identification, as before
+            const part = getPartIdentification(record)
+            if (!part) return
+            import('@/lib/analytics').then(({ trackEvent, getPlatform }) => {
+                const outcome = getConfidenceBand(part.confidence).toLowerCase()
+                trackEvent('part_identification_completed', { outcome, platform: getPlatform() })
+            })
+            return
+        }
 
         import('@/lib/analytics').then(({ trackEvent, getPlatform }) => {
             let outcome = 'unknown'
@@ -139,6 +154,22 @@ export function AnalysisView({ id }: { id: string }) {
     }
 
     const { status, image_url } = record
+    const isPart = isPartRecord(record)
+
+    if (isPart && (status === 'identifying' || status === 'detecting_products')) {
+        return (
+            <section aria-label="Identifying your part" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
+                <div className="relative mb-3 aspect-square w-full max-w-[280px] overflow-hidden rounded-xl">
+                    <ResultPhoto imageUrl={image_url} alt="Your part photo" className="h-full w-full rounded-xl border-0 opacity-70" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
+                        <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
+                    </div>
+                </div>
+                <h1 className="font-heading text-2xl font-bold text-[#17212B]">Identifying your part...</h1>
+                <p className="max-w-md text-[15px] text-[#2B3742]">This usually takes 10 to 30 seconds. You can leave this page open.</p>
+            </section>
+        )
+    }
 
     if (status === 'identifying' || status === 'detecting_products') {
         return (
@@ -156,6 +187,29 @@ export function AnalysisView({ id }: { id: string }) {
                     Our AI is scanning your photo. This usually takes about 15 to 30 seconds.
                 </p>
             </section>
+        )
+    }
+
+    if (isPart && status === 'error') {
+        return (
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+                <section aria-label="Identification error" className={stateCardClass}>
+                    <ResultPhoto imageUrl={image_url} alt="Your part photo" className="mb-2 h-24 w-24" />
+                    <h1 className="font-heading text-xl font-bold text-[#17212B]">That identification didn&apos;t finish.</h1>
+                    <button type="button" onClick={handleRetry} className={cn(primaryButtonClass, "mt-2 w-auto px-6")}>
+                        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                        Try again
+                    </button>
+                    {retryError && <p className="text-sm text-[#9B1C1C]">{retryError}</p>}
+                    <Link
+                        href="/part-identifier"
+                        className="flex min-h-11 items-center text-sm font-semibold text-[#9A3412] underline-offset-2 hover:text-[#7C2D12] hover:underline"
+                    >
+                        Back to the part identifier
+                    </Link>
+                </section>
+                <ResultNoticesFooter />
+            </div>
         )
     }
 
@@ -180,6 +234,20 @@ export function AnalysisView({ id }: { id: string }) {
                 </section>
                 <ResultNoticesFooter />
             </div>
+        )
+    }
+
+    if (isPart) {
+        const part = getPartIdentification(record)
+        if (part) return <PartResultView part={part} imageUrl={image_url} />
+        // A finished row without a readable identification: nothing to show
+        return (
+            <section aria-label="Identification error" className={cn(stateCardClass, "mx-auto max-w-2xl")}>
+                <h1 className="font-heading text-xl font-bold text-[#17212B]">That identification didn&apos;t finish.</h1>
+                <Link href="/part-identifier" className={cn(primaryButtonClass, "mt-2 w-auto px-6")}>
+                    Back to the part identifier
+                </Link>
+            </section>
         )
     }
 

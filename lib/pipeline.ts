@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
-import { runFitmentAnalysis, detectProductTypes, refineProduct, type DetectedProduct } from '@/lib/analysis-stages'
+import { runFitmentAnalysis, detectProductTypes, refineProduct, runPartIdentification, type DetectedProduct } from '@/lib/analysis-stages'
 import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
 import { normalizeYear } from '@/lib/normalize-year'
 import { fetchImageForGemini } from '@/lib/gemini'
@@ -90,6 +90,45 @@ export async function runPipeline(id: string, imageUrl: string) {
 
     } catch (err) {
         console.error('Pipeline error for', id, err)
+        await supabase.from('analyses').update({
+            status: 'error',
+            error_details: err instanceof Error ? err.message : String(err),
+            updated_at: now(),
+        }).eq('id', id)
+    }
+}
+
+/**
+ * Part identification for an analyses row with kind = 'part'. One Gemini
+ * cascade (same as /api/analyze/part); the identification goes in
+ * result_data and its confidence in confidence. It also writes the
+ * analysis_results log row /api/analyze/part writes.
+ */
+export async function runPartPipeline(id: string, imageUrl: string) {
+    const supabase = getSupabaseAdmin()
+    try {
+        await supabase.from('analyses').update({ status: 'identifying', error_details: null, updated_at: now() }).eq('id', id)
+
+        const imageParts = [await fetchImageForGemini(imageUrl)]
+        const { identification, modelUsed } = await runPartIdentification(imageParts)
+
+        const { error: logError } = await supabase.from('analysis_results').insert({
+            analysis_data: { ...identification },
+            image_url: imageUrl,
+            model_used: modelUsed,
+        })
+        // Don't fail the analysis; the identification still succeeded
+        if (logError) console.error('analysis_results insert failed for part', id, logError.message)
+
+        await supabase.from('analyses').update({
+            status: 'complete',
+            result_data: identification as unknown as Json,
+            // integer column
+            confidence: Math.round(identification.confidence),
+            updated_at: now(),
+        }).eq('id', id)
+    } catch (err) {
+        console.error('Part pipeline error for', id, err)
         await supabase.from('analyses').update({
             status: 'error',
             error_details: err instanceof Error ? err.message : String(err),

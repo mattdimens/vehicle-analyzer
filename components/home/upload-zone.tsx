@@ -422,14 +422,14 @@ export function UploadZone({
                                     </div>
                                 ))}
 
-                                {/* Add more button */}
-                                <div
+                                {/* Add more button (one part per analysis on the part identifier) */}
+                                {analysisMode !== "part" && <div
                                     className="min-h-[160px] rounded-xl border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
                                     // Clicks propagate to the dropzone root, which opens the file picker
                                 >
                                     <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                                    <span className="text-xs text-muted-foreground">{analysisMode === "part" ? "Add another part" : "Add another vehicle"}</span>
-                                </div>
+                                    <span className="text-xs text-muted-foreground">Add another vehicle</span>
+                                </div>}
                             </div>
                         </div>
                     )}

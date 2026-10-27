@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
     createSignedUploadUrl,
     type AnalysisResults,
     type DetectedProduct,
-    type PartIdentification,
 } from "@/app/actions"
 import { HeroSection } from "@/components/home/hero-section"
 import { HeroDualEntry } from "@/components/home/hero-dual-entry"
@@ -29,6 +29,7 @@ import { getConfidenceBand } from "@/types/analysis"
 import type { BatchItem } from "@/lib/types"
 import { downscaleImage } from "@/lib/image-processing"
 import { apiErrorMessage, readJson, thrownErrorMessage } from "@/lib/api-errors"
+import { takePendingPartPhoto } from "@/lib/pending-part-photo"
 
 const ImageCropperDialog = dynamic(
     () => import("@/components/home/image-cropper-dialog").then(mod => ({ default: mod.ImageCropperDialog })),
@@ -66,6 +67,9 @@ interface VehicleAnalyzerProps {
 }
 
 export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats, entryPoint = 'homepage' }: VehicleAnalyzerProps) {
+    const router = useRouter()
+    // Set once a part record exists and we're on our way to /r/{id}
+    const navigatingRef = useRef(false)
     const [batchItems, setBatchItems] = useState<BatchItem[]>([])
     const [analysisState, setAnalysisState] = useState<AnalysisState>("idle")
     const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisSelection>(showCategories || categoryLabel ? "all" : "default")
@@ -128,23 +132,23 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             error: null,
             loadingMessage: null
         }
-        setBatchItems(prev => [...prev, newItem])
+        // One part per analysis: a new part photo replaces the one waiting
+        setBatchItems(prev => analysisMode === "part" ? [newItem] : [...prev, newItem])
         setAnalysisState("idle")
     }
 
-    // "Add another photo" / "Try another photo" on a part result: the existing
-    // file picker, then back to the upload zone where Identify Part runs it
-    const anotherPhotoInputRef = useRef<HTMLInputElement>(null)
-    const handleRequestPhoto = useCallback(() => {
-        anotherPhotoInputRef.current?.click()
+    // "Add another photo" / "Try another photo" on a /r/ part result: the
+    // photo picked there arrives here, ready for Identify Part
+    useEffect(() => {
+        if (analysisMode !== "part") return
+        const photo = takePendingPartPhoto()
+        if (!photo) return
+        handleFilesSelect([photo]).then(() => {
+            document.getElementById("upload-target")?.scrollIntoView({ behavior: "smooth", block: "start" })
+        })
+        // Mount only: the handoff is taken once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-    const handleAnotherPhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files ? Array.from(e.target.files) : []
-        e.target.value = ""
-        if (files.length === 0) return
-        await handleFilesSelect(files)
-        document.getElementById("upload-target")?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
 
     const handleAddImageToItem = async (itemId: string, files: File[]) => {
         const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f).catch(() => f)))
@@ -357,9 +361,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
         updateItem({ status: "uploading", progress: 5 })
 
-        // Issue #12: parallel image uploads
+        // Issue #12: parallel image uploads. A part analysis only ever used
+        // its first photo, so only that one is uploaded.
+        const imagesToUpload = analysisMode === "part" ? item.images.slice(0, 1) : item.images
         const uploadResults = await Promise.allSettled(
-            item.images.map(async (img) => {
+            imagesToUpload.map(async (img) => {
                 if (img.publicUrl) return img // Already uploaded
                 const { url, error: uploadError } = await uploadImageToSupabase(img.file)
                 if (uploadError || !url) throw new Error(`Failed to upload ${img.file.name}`)
@@ -403,23 +409,22 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
         try {
             if (analysisMode === "part") {
                 // --- Part Identification Mode ---
+                // Save a record and follow it on /r/{id}: the server runs the
+                // identification, so a locked phone or a trip to the Amazon
+                // app doesn't lose the result
                 updateItem({ loadingMessage: "Identifying your part...", progress: 50 })
-                const partResponse = await fetch('/api/analyze/part', {
+                const createResponse = await fetch('/api/analyses', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageUrl: publicUrls[0] }),
+                    body: JSON.stringify({ imageUrl: publicUrls[0], kind: 'part' }),
                 })
-                const partRes = await readJson(partResponse)
-                if (!partResponse.ok || !partRes.success) {
-                    throw new Error(apiErrorMessage(partResponse.status, partRes, "Part identification failed. Please try again."))
+                const created = await readJson(createResponse)
+                if (!createResponse.ok || !created.success || typeof created.id !== 'string') {
+                    throw new Error(apiErrorMessage(createResponse.status, created, "Part identification failed. Please try again."))
                 }
-
-                updateItem({
-                    status: "complete",
-                    progress: 100,
-                    partIdentification: partRes.data as PartIdentification,
-                    loadingMessage: null
-                })
+                navigatingRef.current = true
+                updateItem({ loadingMessage: "Opening your result...", progress: 90 })
+                router.push(`/r/${created.id}`)
             } else {
                 // --- Vehicle Analysis Mode ---
                 let result: AnalysisResults | null = null
@@ -527,7 +532,8 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
             await processItem(item, selectedAnalysis)
         }
 
-        setAnalysisState("complete")
+        // Part identifier: keep "Processing..." while /r/{id} loads
+        if (!navigatingRef.current) setAnalysisState("complete")
     }
 
     return (
@@ -590,19 +596,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                                 items={batchItems}
                                 detectedProductsTitle={detectedProductsTitle}
                                 analysisMode={analysisMode}
-                                onRequestPhoto={analysisMode === "part" ? handleRequestPhoto : undefined}
                             />
-                            {analysisMode === "part" && (
-                                <input
-                                    ref={anotherPhotoInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/gif,image/webp"
-                                    className="hidden"
-                                    aria-hidden="true"
-                                    tabIndex={-1}
-                                    onChange={handleAnotherPhotoSelected}
-                                />
-                            )}
                         </div>
                     </section>
                 )}

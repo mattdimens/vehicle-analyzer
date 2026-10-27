@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
-import { getSupabaseAdmin, runPipeline } from '@/lib/pipeline'
+import { getSupabaseAdmin, runPartPipeline, runPipeline } from '@/lib/pipeline'
 import { assertSupabaseStorageUrl, UrlValidationError } from '@/lib/url-validation'
 
 export const maxDuration = 60
@@ -13,9 +13,14 @@ function generateId() {
 export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const { imageUrl } = body
+    // 'vehicle' (the homepage photo flow) unless the part identifier asks for 'part'
+    const kind = body.kind ?? 'vehicle'
 
     if (!imageUrl || typeof imageUrl !== 'string') {
         return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 })
+    }
+    if (kind !== 'vehicle' && kind !== 'part') {
+        return NextResponse.json({ error: 'Invalid kind' }, { status: 400 })
     }
 
     // Security: validate that the URL points to our own Supabase storage
@@ -32,6 +37,9 @@ export async function POST(request: NextRequest) {
     const record = {
         id,
         image_url: imageUrl,
+        // Vehicle rows rely on the column default, so the homepage keeps
+        // working on a database that doesn't have the kind column yet
+        ...(kind === 'part' ? { kind } : {}),
         status: 'identifying'
     }
 
@@ -41,7 +49,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to create record' }, { status: 500 })
     }
 
-    waitUntil(runPipeline(id, imageUrl))
+    waitUntil(kind === 'part' ? runPartPipeline(id, imageUrl) : runPipeline(id, imageUrl))
 
     return NextResponse.json({ success: true, id }, { status: 201 })
 }

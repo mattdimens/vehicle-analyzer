@@ -8,9 +8,6 @@ import {
 import { Progress } from "@/components/ui/progress"
 import type { AnalysisResults, DetectedProduct, PartIdentification } from "@/app/actions"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
-import { trackEvent, getPlatform } from "@/lib/analytics"
-import { getConfidenceBand } from "@/types/analysis"
-import { useEffect, useRef } from "react"
 import Image from "next/image"
 import { SaveToGarageButton } from "@/components/save-to-garage-button"
 import { PartResult } from "@/components/home/part-result"
@@ -53,15 +50,8 @@ export function ResultsDisplay({
 }: ResultsDisplayProps) {
     const isLoading = loadingMessage !== null && loadingMessage !== ""
 
-    // Fire part_identification_completed exactly once per result (ref guard)
-    const partEventFiredRef = useRef(false)
-    useEffect(() => {
-        if (analysisMode !== "part" || !partIdentification || partEventFiredRef.current) return
-        partEventFiredRef.current = true
-
-        const outcome = getConfidenceBand(partIdentification.confidence).toLowerCase()
-        trackEvent('part_identification_completed', { outcome, platform: getPlatform() })
-    }, [analysisMode, partIdentification])
+    // part_identification_completed fires on /r/[id], where the part
+    // identifier's results now live (components/analysis/analysis-view.tsx)
 
     // --- Part Identification Mode ---
     if (analysisMode === "part") {

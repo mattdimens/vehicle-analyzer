@@ -17,13 +17,18 @@ import { cn } from "@/lib/utils"
 
 export type SamplePage = "homepage" | "part_identifier"
 
-/** "Sample result", on the green hero above the card. */
-export function SampleEyebrow({ className }: { className?: string }) {
+/** A small uppercase label on the green hero, above a card. */
+export function HeroEyebrow({ children, className }: { children: ReactNode; className?: string }) {
     return (
         <p className={cn("text-xs font-semibold uppercase tracking-[0.08em] text-white/80", className)}>
-            Sample result
+            {children}
         </p>
     )
+}
+
+/** "Sample result", above the sample card. */
+export function SampleEyebrow({ className }: { className?: string }) {
+    return <HeroEyebrow className={className}>Sample result</HeroEyebrow>
 }
 
 /** Under the card, on the green hero, so nobody takes the sample for their own result. */

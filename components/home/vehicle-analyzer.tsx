@@ -13,6 +13,7 @@ import { HeroSection } from "@/components/home/hero-section"
 import { HeroDualEntry } from "@/components/home/hero-dual-entry"
 import { SampleResultPreview } from "@/components/home/sample-result-preview"
 import { UploadZone } from "@/components/home/upload-zone"
+import { HeroEyebrow } from "@/components/results/sample-result-card"
 
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
@@ -119,8 +120,11 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     }, []) // Run once on unmount
 
     const handleFilesSelect = async (files: File[]) => {
+        // A part analysis uses one photo, so only one is kept: the card shows
+        // exactly the photo that gets sent
+        const picked = analysisMode === "part" ? files.slice(0, 1) : files
         // Downscale files before uploading
-        const downscaledFiles = await Promise.all(files.map(f => downscaleImage(f).catch(() => f)))
+        const downscaledFiles = await Promise.all(picked.map(f => downscaleImage(f).catch(() => f)))
 
         // Create ONE item for all the dropped files (User intention: 1 Drop = 1 Vehicle)
         const previews = downscaledFiles.map(file => {
@@ -566,10 +570,18 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                             id="upload-zone"
                             className={cn(
                                 "scroll-mt-20",
-                                uploadAside && "lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] lg:items-stretch lg:px-4"
+                                // From lg: label, card and caption rows shared by both
+                                // columns, so the two cards' tops and bottoms line up
+                                uploadAside && "lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] lg:grid-rows-[auto_1fr_auto] lg:items-stretch lg:gap-y-2.5 lg:px-4 lg:pb-8"
                             )}
                         >
-                            <div id="upload-target" className={cn("scroll-mt-24", uploadAside && "lg:[&>div]:px-0")}>
+                            <div
+                                id="upload-target"
+                                className={cn("scroll-mt-24", uploadAside && "lg:row-span-3 lg:grid lg:grid-rows-subgrid lg:[&>div]:px-0 lg:[&>div]:pb-0")}
+                            >
+                                {uploadAside && analysisMode === "part" && (
+                                    <HeroEyebrow className="hidden lg:block">Identify your part</HeroEyebrow>
+                                )}
                                 <UploadZone
                                     onFilesSelect={handleFilesSelect}
                                     batchItems={batchItems}
@@ -593,7 +605,9 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                                 />
                             </div>
                             {uploadAside && (
-                                <div className="mx-auto w-full max-w-4xl px-4 pb-10 lg:max-w-none lg:pb-8 lg:pl-6 lg:pr-0">
+                                // From lg the aside's own wrapper steps aside (contents),
+                                // so its label, card and caption take the three rows
+                                <div className="mx-auto w-full max-w-4xl px-4 pb-10 lg:row-span-3 lg:grid lg:max-w-none lg:grid-rows-subgrid lg:pb-0 lg:pl-6 lg:pr-0 lg:[&>div]:contents">
                                     {uploadAside}
                                 </div>
                             )}

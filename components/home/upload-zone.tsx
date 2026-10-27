@@ -1,10 +1,11 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { useDropzone } from "react-dropzone"
+import Link from "next/link"
+import { useDropzone, type FileRejection } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 
-import { Upload, Loader, X, Send, Crop as CropIcon, Search, Tag, Zap, Layers, ChevronDown, ChevronUp, Camera, Maximize, RotateCw, XCircle, Eye, CheckCircle2 } from "lucide-react"
+import { Upload, Loader, X, Send, Crop as CropIcon, Search, Tag, Zap, Layers, ChevronDown, ChevronUp, Camera, Maximize, RotateCw, XCircle, Eye, CheckCircle2, Scan, Hash, Sun, Download, Check, CircleAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { BatchItem } from "@/lib/types"
 import type { AnalysisMode } from "@/components/home/vehicle-analyzer"
@@ -59,26 +60,18 @@ export function UploadZone({
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [showExampleModal, setShowExampleModal] = useState(false)
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+    // Part identifier: several photos were dropped and only the first was kept
+    const [keptFirstOnly, setKeptFirstOnly] = useState(false)
     const cameraInputRef = useRef<HTMLInputElement>(null)
+    const isPart = analysisMode === "part"
 
     const handleCameraSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
+            setKeptFirstOnly(false)
             onFilesSelect(Array.from(e.target.files))
         }
         e.target.value = ""
     }
-
-    // ... (rest of the component logic remains unchanged until the button)
-
-    // Helper to keep the replacement concise, we assume the middle part is unchanged.
-    // I will target the end of component to update the button.
-    // WAIT, I need to inject onReset into props destructuring at the top.
-    // This tool call only allows contiguous replacement.
-    // I will do two separate edits or one large edit if I can target correctly.
-    // Let's do a multi_replace if I need to touch top and bottom.
-    // Actually, I can use multi_replace_file_content.
-
-    // Changing strategy to multi_replace.
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData("application/vehicle-item-id", id)
@@ -107,15 +100,29 @@ export function UploadZone({
     }
 
     const [dropError, setDropError] = useState<string | null>(null)
+    const hasItems = batchItems.length > 0
 
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-        onDrop: (acceptedFiles) => {
+        onDrop: (acceptedFiles, fileRejections) => {
             setDropError(null)
+            if (isPart) {
+                // One photo per part analysis. The picker takes one file; a
+                // drop of several keeps the first image (multiple: false
+                // would reject the whole drop instead)
+                if (acceptedFiles.length > 0) {
+                    setKeptFirstOnly(acceptedFiles.length + fileRejections.length > 1)
+                    onFilesSelect(acceptedFiles.slice(0, 1))
+                } else if (fileRejections.length > 0) {
+                    setDropError(partRejectionMessage(fileRejections[0]))
+                }
+                return
+            }
             if (acceptedFiles.length > 0) {
                 onFilesSelect(acceptedFiles)
             }
         },
         onDropRejected: (rejections) => {
+            if (isPart) return // handled in onDrop
             const errors = rejections.flatMap(r => r.errors.map(e => e.message))
             const unique = [...new Set(errors)]
             if (unique.some(e => e.includes('larger'))) {
@@ -130,16 +137,20 @@ export function UploadZone({
             "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
         },
         maxSize: 10 * 1024 * 1024, // 10MB
-        maxFiles: 10,
+        maxFiles: isPart ? 0 : 10,
         multiple: true,
+        // Part identifier with a photo added: its own controls replace or
+        // remove it, so the zone only takes drops
+        noClick: isPart && hasItems,
+        noKeyboard: isPart && hasItems,
         disabled: analysisState === "processing",
     })
 
-    const hasItems = batchItems.length > 0
+    const partItem = isPart ? batchItems[0] : undefined
 
     return (
-        <div className="w-full px-4 pb-8">
-            <div className="w-full max-w-4xl mx-auto rounded-2xl border bg-card shadow-lg">
+        <div className={cn("w-full px-4 pb-8", isPart && "lg:flex lg:flex-col")}>
+            <div className={cn("w-full max-w-4xl mx-auto rounded-2xl border bg-card shadow-lg", isPart && "lg:flex lg:flex-1 lg:flex-col")}>
                 {/* Homepage Mode Tabs */}
                 {isHomepage && onModeSwitch && (
                     <div className="flex rounded-t-2xl overflow-hidden border-b border-border" role="radiogroup" aria-label="Analysis mode">
@@ -175,11 +186,23 @@ export function UploadZone({
                         </button>
                     </div>
                 )}
+                {/* Part identifier from md: the drop zone sits inset in the card, with an error row above it and the tips below it */}
+                <div className={isPart ? "flex flex-col md:gap-3.5 md:p-5 md:pb-3.5 lg:flex-1" : undefined}>
+                {isPart && dropError && (
+                    <div role="alert" className="hidden md:flex items-center gap-2.5 rounded-[10px] bg-[#FDECEC] px-3.5 py-2.5 text-sm text-[#991B1B]">
+                        <CircleAlert className="h-[18px] w-[18px] shrink-0 text-[#B91C1C]" aria-hidden="true" />
+                        {dropError}
+                    </div>
+                )}
                 {/* Dropzone Area */}
                 <div
                     {...getRootProps()}
-                    role="button"
-                    aria-label="Upload vehicle images: drag and drop or click to select"
+                    role={isPart && hasItems ? undefined : "button"}
+                    aria-label={
+                        isPart
+                            ? (hasItems ? undefined : "Upload a photo of your part: drag and drop or browse your files")
+                            : "Upload vehicle images: drag and drop or click to select"
+                    }
                     className={cn(
                         "min-h-48 w-full p-6 flex flex-col justify-center items-center transition-colors",
                         !(isHomepage && onModeSwitch) && "rounded-t-2xl",
@@ -187,15 +210,44 @@ export function UploadZone({
                         (isDragActive
                             ? "bg-primary/5 cursor-pointer"
                             : "hover:bg-muted/50 cursor-pointer"),
-                        hasItems && "border-b border-border bg-muted/10"
+                        hasItems && "border-b border-border bg-muted/10",
+                        isPart && cn(
+                            "md:min-h-60 md:flex-1 md:rounded-xl md:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                            isDragActive
+                                ? "md:border-2 md:border-dashed md:border-primary md:bg-[#FFF2EB]"
+                                : hasItems
+                                    ? "md:items-stretch md:border md:border-[#D4DFDB] md:bg-white md:p-5"
+                                    : "md:border-2 md:border-dashed md:border-[#BFD0CA] md:bg-[#F6FAF8] md:hover:bg-[#EEF5F2]"
+                        )
                     )}
                 >
-                    <input {...getInputProps()} />
+                    <input {...getInputProps(isPart ? { multiple: false } : undefined)} />
+
+                    {/* Part identifier from md: drag, photo added and empty states */}
+                    {isPart && (
+                        <div className="hidden md:flex w-full flex-1 flex-col justify-center">
+                            {isDragActive ? (
+                                <PartDropPrompt dragging />
+                            ) : partItem ? (
+                                <PartPhotoRow
+                                    item={partItem}
+                                    onReplace={open}
+                                    onCrop={onCrop}
+                                    onRemove={(id) => {
+                                        setKeptFirstOnly(false)
+                                        onRemove(id)
+                                    }}
+                                />
+                            ) : (
+                                <PartDropPrompt />
+                            )}
+                        </div>
+                    )}
 
                     {!hasItems && (
                         <>
                             {/* Desktop: Drag & Drop UI */}
-                            <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
+                            {!isPart && <div className="hidden md:flex flex-col items-center justify-center gap-4 text-center">
                                 <Upload className="h-10 w-10 text-muted-foreground" />
                                 <p className="text-sm text-muted-foreground text-center max-w-[500px] mx-auto">
                                     {activeMode === "part"
@@ -215,7 +267,7 @@ export function UploadZone({
                                         {dropError}
                                     </p>
                                 )}
-                            </div>
+                            </div>}
 
                             {/* Mobile: Buttons UI */}
                             <div className="flex md:hidden flex-col w-full gap-4 py-4">
@@ -247,9 +299,11 @@ export function UploadZone({
                                     <Upload className="mr-2 h-5 w-5" />
                                     Upload from Gallery
                                 </Button>
-                                <p className="text-xs text-center text-muted-foreground/80">
-                                    Upload multiple angles for better accuracy
-                                </p>
+                                {!isPart && (
+                                    <p className="text-xs text-center text-muted-foreground/80">
+                                        Upload multiple angles for better accuracy
+                                    </p>
+                                )}
                                 {dropError && (
                                     <p className="text-sm text-center text-destructive font-medium" role="alert">
                                         {dropError}
@@ -270,16 +324,19 @@ export function UploadZone({
                     )}
 
                     {hasItems && (
-                        <div className="w-full">
+                        <div className={cn("w-full", isPart && "md:hidden")}>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-sm font-medium text-muted-foreground">
-                                    {batchItems.length} vehicle{batchItems.length !== 1 ? "s" : ""} selected
+                                    {isPart
+                                        ? "Your photo"
+                                        : `${batchItems.length} vehicle${batchItems.length !== 1 ? "s" : ""} selected`}
                                 </h3>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={(e) => {
                                         e.stopPropagation()
+                                        setKeptFirstOnly(false)
                                         onClearAll(e)
                                     }}
                                     className="text-muted-foreground hover:text-destructive"
@@ -306,7 +363,7 @@ export function UploadZone({
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-medium text-muted-foreground">{analysisMode === "part" ? "Part" : "Vehicle"} {index + 1}</span>
                                             <div className="flex items-center gap-1">
-                                                {item.images.length > 1 && item.status === "pending" && (
+                                                {!isPart && item.images.length > 1 && item.status === "pending" && (
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -322,7 +379,10 @@ export function UploadZone({
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                                        onClick={() => onRemove(item.id)}
+                                                        onClick={() => {
+                                                            setKeptFirstOnly(false)
+                                                            onRemove(item.id)
+                                                        }}
                                                         title="Remove Vehicle"
                                                     >
                                                         <X className="w-3 h-3" />
@@ -371,8 +431,8 @@ export function UploadZone({
                                                 </div>
                                             ))}
 
-                                            {/* Add Image Button (Mini) */}
-                                            {item.status === "pending" && (
+                                            {/* Add Image Button (Mini): one photo per part analysis */}
+                                            {!isPart && item.status === "pending" && (
                                                 <label className="shrink-0 w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/50 hover:bg-muted/50 flex flex-col items-center justify-center cursor-pointer transition-colors">
                                                     <input
                                                         type="file"
@@ -433,9 +493,33 @@ export function UploadZone({
                             </div>
                         </div>
                     )}
+
+                    {isPart && hasItems && keptFirstOnly && (
+                        <p role="status" className="mt-3 text-center text-xs text-muted-foreground">
+                            We used the first photo. The Part Identifier works with one photo at a time.
+                        </p>
+                    )}
                 </div>
 
                 {/* Tips for Best Results */}
+                {isPart ? (
+                    <div className="px-4 py-3 border-t border-border/50 md:border-t-0 md:p-0">
+                        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Scan className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                                Fill the frame with the part
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Hash className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                                Show any stamped part number
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Sun className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                                Good light, no filters
+                            </span>
+                        </div>
+                    </div>
+                ) : (
                 <div className="px-4 py-3 border-t border-border/50">
                     <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -463,6 +547,8 @@ export function UploadZone({
                             See example
                         </button>
                     </div>
+                </div>
+                )}
                 </div>
 
                 {/* Example Photo Modal */}
@@ -540,7 +626,7 @@ export function UploadZone({
                 )}
 
                 {/* Control Bar */}
-                <div className="flex flex-col items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl">
+                <div className={cn("flex flex-col items-center gap-4 p-4 border-t bg-muted/50 rounded-b-2xl", isPart && "gap-3")}>
                     {/* Homepage: collapsible advanced radio buttons */}
                     {isHomepage && analysisMode !== "part" && (
                         <div className="w-full">
@@ -622,7 +708,7 @@ export function UploadZone({
                         </div>
                     )}
 
-                    <div className="hidden sm:block flex-1"></div>
+                    {!isPart && <div className="hidden sm:block flex-1"></div>}
 
                     <Button
                         onClick={analysisState === "complete" ? onReset : onStart}
@@ -653,32 +739,24 @@ export function UploadZone({
                             </div>
                         )}
                     </Button>
+
+                    {isPart && (
+                        <p className="text-xs text-muted-foreground text-center">
+                            Identifying a whole vehicle instead?{" "}
+                            <Link
+                                href="/"
+                                className="text-primary hover:text-primary/80 font-medium underline underline-offset-2"
+                            >
+                                Use the Vehicle Analyzer
+                            </Link>
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* Pills */}
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-                {analysisMode === "part" ? (
-                    <>
-                        <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-                            <Search className="h-4 w-4" />
-                            Part Identification
-                        </div>
-                        <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1.5 text-sm font-medium text-purple-700">
-                            <Tag className="h-4 w-4" />
-                            Confidence Score
-                        </div>
-                        <div className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-1.5 text-sm font-medium text-green-700">
-                            <Zap className="h-4 w-4" />
-                            Instant Results
-                        </div>
-                        <div className="flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
-                            <Layers className="h-4 w-4" />
-                            Amazon Search
-                        </div>
-                    </>
-                ) : (
-                    <>
+            {/* Pills (not on the part identifier, where the sample result sits next to the card) */}
+            {!isPart && (
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
                         <div className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
                             <Search className="h-4 w-4" />
                             Fitment Identification
@@ -695,7 +773,115 @@ export function UploadZone({
                             <Layers className="h-4 w-4" />
                             Multi-Image Processing
                         </div>
-                    </>
+                </div>
+            )}
+        </div>
+    )
+}
+
+/** Part identifier rejection messages, from the first rejected file. */
+function partRejectionMessage(rejection: FileRejection) {
+    const codes = rejection.errors.map(e => e.code)
+    if (codes.includes("file-too-large") && !codes.includes("file-invalid-type")) {
+        return "That file is over 10MB. Try a smaller photo."
+    }
+    return "That file type isn't supported. Use a JPG, PNG, WebP or GIF."
+}
+
+/** "2.4 MB", "640 KB" */
+function formatFileSize(bytes: number) {
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+/** Part identifier drop zone, empty or with a file dragged over it (from md). */
+function PartDropPrompt({ dragging = false }: { dragging?: boolean }) {
+    return (
+        <div className="flex flex-col items-center gap-1.5 text-center">
+            {dragging ? (
+                <span className="mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
+                    <Download className="h-7 w-7 text-white" aria-hidden="true" />
+                </span>
+            ) : (
+                <span className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <Upload className="h-[26px] w-[26px] text-primary" aria-hidden="true" />
+                </span>
+            )}
+            <span className={cn("font-heading text-[22px] font-semibold", dragging ? "text-[#9A3412]" : "text-foreground")}>
+                {dragging ? "Drop it here" : "Drag a photo of your part here"}
+            </span>
+            {dragging ? (
+                <span className="text-[15px] text-[#7C2D12]">Release to add your photo</span>
+            ) : (
+                <>
+                    <span className="text-[15px] text-muted-foreground">
+                        or{" "}
+                        <span className="font-semibold text-[#C2410C] underline underline-offset-[3px]">browse your files</span>
+                    </span>
+                    <span className="mt-1.5 text-[13px] text-muted-foreground">JPG, PNG, WebP or GIF, up to 10MB</span>
+                </>
+            )}
+        </div>
+    )
+}
+
+/** Part identifier with a photo added (from md): the photo, its details and its controls. */
+function PartPhotoRow({ item, onReplace, onCrop, onRemove }: {
+    item: BatchItem
+    onReplace: () => void
+    onCrop: (itemId: string, imageId: string) => void
+    onRemove: (itemId: string) => void
+}) {
+    const image = item.images[0]
+    if (!image) return null
+    const pending = item.status === "pending"
+    const outlineClass = "h-11 px-3.5 border-[#C9D6D1] bg-white text-sm text-foreground hover:bg-muted hover:text-foreground"
+
+    return (
+        <div className="flex items-center gap-5">
+            {/* eslint-disable-next-line @next/next/no-img-element -- user photo (blob URL); skip Vercel image optimization quota */}
+            <img
+                src={image.preview}
+                alt="Your part photo"
+                className="h-40 w-40 shrink-0 rounded-[10px] object-cover"
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                {pending && (
+                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#166534]">
+                        <Check className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />
+                        Photo ready
+                    </span>
+                )}
+                {(item.status === "uploading" || item.status === "analyzing") && (
+                    <span className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
+                        <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        {item.status === "uploading" ? "Uploading..." : "Analyzing..."}
+                    </span>
+                )}
+                {item.status === "complete" && (
+                    <span className="text-[13px] font-semibold text-green-600">Complete</span>
+                )}
+                {item.status === "error" && (
+                    <span className="text-[13px] font-semibold text-destructive">Error</span>
+                )}
+                <span className="truncate font-heading text-lg font-semibold text-foreground">{image.file.name}</span>
+                <span className="text-[13px] text-muted-foreground">{formatFileSize(image.file.size)}</span>
+                {pending && (
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <Button type="button" variant="outline" className={outlineClass} onClick={onReplace}>
+                            Replace photo
+                        </Button>
+                        <Button type="button" variant="outline" className={outlineClass} onClick={() => onCrop(item.id, image.id)}>
+                            Crop
+                        </Button>
+                        <button
+                            type="button"
+                            onClick={() => onRemove(item.id)}
+                            className="h-11 px-1.5 text-sm font-medium text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                        >
+                            Remove
+                        </button>
+                    </div>
                 )}
             </div>
         </div>

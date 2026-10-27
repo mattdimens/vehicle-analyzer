@@ -5,6 +5,8 @@ import type { HowItWorksStep } from "@/components/home/how-it-works"
 import type { UseCaseCard } from "@/components/home/use-cases"
 import { RelatedPages } from "@/components/ui/related-pages"
 import { Wrench, Warehouse, Package } from "lucide-react"
+import { PartSampleCard } from "@/components/home/part-sample-card"
+import { samplePartAnalysis } from "@/data/sample-part-analysis"
 
 const steps: HowItWorksStep[] = [
     {
@@ -49,6 +51,7 @@ export default function PartIdentifierClient() {
             description="Upload a photo of any car part and instantly identify it: name, function, vehicle compatibility, and where to buy it."
             analysisMode="part"
             entryPoint="part_identifier"
+            uploadAside={<PartSampleCard sample={samplePartAnalysis} />}
             howItWorksSteps={steps}
             howItWorksHeading={<>How the <span className="italic text-primary">Part Identifier</span> Works</>}
             useCaseCards={useCaseCards}

@@ -25,6 +25,12 @@ export interface PartSample {
 
 const MAX_RELATED = 3
 
+/** "an engine piston", "a fuel injector" */
+function withArticle(name: string) {
+    const lower = name.toLowerCase()
+    return `${/^[aeiou]/.test(lower) ? "an" : "a"} ${lower}`
+}
+
 /**
  * /part-identifier sample: a compact part result built from static data.
  * The whole card links to /r/{id}. Side by side with the upload card from
@@ -44,14 +50,14 @@ export function PartSampleCard({ sample }: { sample: PartSample }) {
 
             <SampleCardLink
                 href={`/r/${sample.id}`}
-                ariaLabel={`See the full sample result for a ${part.partName.toLowerCase()}`}
+                ariaLabel={`See the full sample result for ${withArticle(part.partName)}`}
                 page="part_identifier"
                 className="flex flex-col gap-3 p-4 lg:p-5"
             >
                 <div className="flex items-start gap-3 lg:gap-3.5">
                     <ResultPhoto
                         imageUrl={sample.imageUrl}
-                        alt={`Sample photo of a ${part.partName.toLowerCase()}`}
+                        alt={`Sample photo of ${withArticle(part.partName)}`}
                         sizes="96px"
                         className="h-[76px] w-[76px] lg:h-24 lg:w-24"
                     />

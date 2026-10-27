@@ -399,7 +399,7 @@ export function UploadZone({
                                                     <img
                                                         src={img.preview}
                                                         alt={img.file.name}
-                                                        className="w-full h-full object-cover"
+                                                        className={cn("w-full h-full", isPart ? "bg-white object-contain" : "object-cover")}
                                                     />
 
                                                     {/* Image Actions */}
@@ -850,7 +850,7 @@ function PartPhotoRow({ item, onReplace, onCrop, onRemove }: {
             <img
                 src={image.preview}
                 alt="Your part photo"
-                className="h-40 w-40 shrink-0 rounded-[10px] object-cover"
+                className="h-40 w-40 shrink-0 rounded-[10px] border border-[#D5DEE5] bg-white object-contain"
             />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 {pending && (

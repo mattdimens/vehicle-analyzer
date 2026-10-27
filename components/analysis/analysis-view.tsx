@@ -160,7 +160,7 @@ export function AnalysisView({ id }: { id: string }) {
         return (
             <section aria-label="Identifying your part" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
                 <div className="relative mb-3 aspect-square w-full max-w-[280px] overflow-hidden rounded-xl">
-                    <ResultPhoto imageUrl={image_url} alt="Your part photo" className="h-full w-full rounded-xl border-0 opacity-70" />
+                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Your part photo" className="h-full w-full rounded-xl border-0 opacity-70" />
                     <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
                         <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
                     </div>
@@ -175,7 +175,7 @@ export function AnalysisView({ id }: { id: string }) {
         return (
             <section aria-label="Analyzing your photo" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
                 <div className="relative mb-3 aspect-video w-full max-w-md overflow-hidden rounded-xl">
-                    <ResultPhoto imageUrl={image_url} alt="Analyzing" className="h-full w-full rounded-xl border-0 opacity-70" />
+                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Analyzing" className="h-full w-full rounded-xl border-0 opacity-70" />
                     <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
                         <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
                     </div>
@@ -194,7 +194,7 @@ export function AnalysisView({ id }: { id: string }) {
         return (
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
                 <section aria-label="Identification error" className={stateCardClass}>
-                    <ResultPhoto imageUrl={image_url} alt="Your part photo" className="mb-2 h-24 w-24" />
+                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Your part photo" className="mb-2 h-24 w-24" />
                     <h1 className="font-heading text-xl font-bold text-[#17212B]">That identification didn&apos;t finish.</h1>
                     <button type="button" onClick={handleRetry} className={cn(primaryButtonClass, "mt-2 w-auto px-6")}>
                         <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -259,7 +259,7 @@ export function AnalysisView({ id }: { id: string }) {
         return (
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
                 <section aria-label="No vehicle found" className={stateCardClass}>
-                    <ResultPhoto imageUrl={image_url} alt="Uploaded photo" className="mb-3 aspect-video h-auto w-full max-w-md opacity-75" />
+                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Uploaded photo" className="mb-3 aspect-video h-auto w-full max-w-md opacity-75" />
                     <h1 className="font-heading text-xl font-bold text-[#17212B]">That&apos;s a great photo, but we don&apos;t see a vehicle in it.</h1>
                     <p className="max-w-md text-[15px] text-[#2B3742]">
                         Upload a clear shot of a car or truck and we&apos;ll break down what&apos;s on it.

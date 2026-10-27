@@ -19,6 +19,8 @@ import { buildExactPartSearch, buildPartGoUrl, buildPartSearch, buildTypedPartSe
 import { getPartDisplayBand } from '../config/analysis'
 import { detectedVehicleLabel, formatVehicleLabel, initialPartVehicle, parsePartVehicleChoice, partForVehicle } from '../lib/part-vehicle'
 import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
+import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
+import { formatVehicleType, parseYearRange, vehicleNoun, vehicleTitle } from '../lib/vehicle-result'
 
 let passed = 0
 let failed = 0
@@ -316,6 +318,19 @@ assert(getUsModels('Acura').some(m => m.name === 'MDX') && getUsModels('').lengt
 const ilxYears = getUsModelYears('Acura', 'ILX')
 assert(ilxYears[0] === 2022 && ilxYears[ilxYears.length - 1] === 2013, 'years newest first')
 assert(getUsModelYears('Acura', '').length === 0 && getUsModelYears('', 'ILX').length === 0, 'years need make and model')
+
+console.log('\nvehicle result helpers')
+assert(resolveCatalogGeneration('Toyota', 'Tacoma', 2016, 2023)?.href === '/vehicles/toyota/tacoma/3rd-gen', 'range inside one generation resolves')
+assert(resolveCatalogGeneration('toyota', ' tacoma ', 2019, 2019)?.label === '3rd Gen', 'single year resolves, case-insensitive')
+assert(resolveCatalogGeneration('Toyota', 'Tacoma', 2015, 2017) === null, 'range across a generation boundary is null')
+assert(resolveCatalogGeneration('Ford', 'F-150', 2015, 2017) === null, 'vehicle without a catalog is null')
+assert(resolveCatalogGeneration('Toyota', 'Tacoma', 2020, 2018) === null, 'backwards range is null')
+assert(resolveVehicleUrl('Toyota', 'Tacoma', 2019) === '/vehicles/toyota/tacoma/3rd-gen', 'resolveVehicleUrl unchanged')
+assert(parseYearRange('2016-2023')?.length === 8 && parseYearRange('2021 – 2024')?.[0] === 2021, 'year ranges parse, en dash too')
+assert(parseYearRange('2019') === null && parseYearRange('2024-2021') === null && parseYearRange(null) === null, 'single, backwards or missing year is not a range')
+assert(formatVehicleType('Pickup Truck') === 'Pickup truck' && formatVehicleType('SUV') === 'SUV' && formatVehicleType('  ') === null, 'vehicle type label')
+assert(vehicleNoun('Pickup Truck') === 'truck' && vehicleNoun('SUV') === 'vehicle' && vehicleNoun(null) === 'vehicle', 'truck or vehicle in the copy')
+assert(vehicleTitle({ year: '2019', make: 'Toyota', model: 'Tacoma', trim: null }) === '2019 Toyota Tacoma', 'title skips a missing trim')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

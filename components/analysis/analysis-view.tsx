@@ -1,15 +1,16 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
-import { ResultLayout } from "./result-layout"
-import { ResultsShellHeader } from "./results-shell-header"
+import { cardClass, primaryButtonClass, ResultPhoto } from "@/components/results/result-shell"
+import { cn } from "@/lib/utils"
+import { ResultLayout, ResultNoticesFooter } from "./result-layout"
 import type { AnalysisRecord } from "@/types/analysis"
 import { apiErrorMessage, readJson } from "@/lib/api-errors"
+
+const stateCardClass = cn(cardClass, "flex flex-col items-center gap-2 px-5 py-8 text-center sm:p-8")
 
 export function AnalysisView({ id }: { id: string }) {
     const [record, setRecord] = useState<AnalysisRecord | null>(null)
@@ -117,22 +118,22 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-xl shadow-sm border border-border">
-                <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-                <h2 className="text-xl font-semibold">Error</h2>
-                <p className="text-muted-foreground mt-2">{error}</p>
-                <div className="mt-6 w-full max-w-sm">
-                    <p className="text-sm text-muted-foreground mb-4">Or pick your vehicle manually:</p>
+            <section aria-label="Error" className={cn(stateCardClass, "mx-auto max-w-2xl")}>
+                <AlertCircle className="h-10 w-10 text-[#9B1C1C]" aria-hidden="true" />
+                <h1 className="font-heading text-xl font-bold text-[#17212B]">Error</h1>
+                <p className="text-[15px] text-[#2B3742]">{error}</p>
+                <div className="mt-4 w-full max-w-sm text-left">
+                    <p className="mb-3 text-sm text-[#5A6672]">Or pick your vehicle manually:</p>
                     <VehicleSelector location="degraded_state" />
                 </div>
-            </div>
+            </section>
         )
     }
 
     if (!record) {
         return (
             <div className="flex flex-col items-center justify-center p-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-[#C8460F]" aria-label="Loading" />
             </div>
         )
     }
@@ -141,43 +142,43 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (status === 'identifying' || status === 'detecting_products') {
         return (
-            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-sm border border-border">
-                <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden mb-8 shadow-inner">
-                    <Image src={image_url} alt="Analyzing" fill className="object-cover opacity-70" />
-                    <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            <section aria-label="Analyzing your photo" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
+                <div className="relative mb-3 aspect-video w-full max-w-md overflow-hidden rounded-xl">
+                    <ResultPhoto imageUrl={image_url} alt="Analyzing" className="h-full w-full rounded-xl border-0 opacity-70" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
+                        <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
                     </div>
                 </div>
-                <h2 className="text-2xl font-semibold mb-2">
+                <h1 className="font-heading text-2xl font-bold text-[#17212B]">
                     {status === 'identifying' ? 'Identifying Vehicle...' : 'Detecting Products...'}
-                </h2>
-                <p className="text-muted-foreground text-center max-w-md">
+                </h1>
+                <p className="max-w-md text-[15px] text-[#2B3742]">
                     Our AI is scanning your photo. This usually takes about 15 to 30 seconds.
                 </p>
-            </div>
+            </section>
         )
     }
 
     if (status === 'error') {
         return (
-            <div className="w-full max-w-6xl mx-auto space-y-8">
-                <ResultsShellHeader />
-                <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
-                    <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Something went wrong on our end.</h2>
-                    <p className="text-muted-foreground mt-2 mb-6 max-w-md">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+                <section aria-label="Analysis error" className={stateCardClass}>
+                    <AlertCircle className="h-10 w-10 text-[#9B1C1C]" aria-hidden="true" />
+                    <h1 className="font-heading text-xl font-bold text-[#17212B]">Something went wrong on our end.</h1>
+                    <p className="max-w-md text-[15px] text-[#2B3742]">
                         That analysis didn&apos;t finish. Give it another try, or pick your vehicle to keep going.
                     </p>
-                    <Button onClick={handleRetry} className={retryError ? "mb-3" : "mb-8"} size="lg">
-                        <RefreshCw className="w-4 h-4 mr-2" />
+                    <button type="button" onClick={handleRetry} className={cn(primaryButtonClass, "mt-2 w-auto px-6")}>
+                        <RefreshCw className="h-4 w-4" aria-hidden="true" />
                         Try again
-                    </Button>
-                    {retryError && <p className="text-sm text-destructive mb-8">{retryError}</p>}
-                    <div className="w-full max-w-md border-t pt-8 text-left">
-                        <p className="text-sm font-medium mb-4">Or pick your vehicle</p>
+                    </button>
+                    {retryError && <p className="text-sm text-[#9B1C1C]">{retryError}</p>}
+                    <div className="mt-4 w-full max-w-md border-t border-[#E4EBF0] pt-6 text-left">
+                        <p className="mb-3 text-sm font-semibold text-[#17212B]">Or pick your vehicle</p>
                         <VehicleSelector location="degraded_state" />
                     </div>
-                </div>
+                </section>
+                <ResultNoticesFooter />
             </div>
         )
     }
@@ -188,23 +189,21 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (!vehiclePresent) {
         return (
-            <div className="w-full max-w-6xl mx-auto space-y-8">
-                <ResultsShellHeader />
-                <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-border text-center">
-                    <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden mb-6 opacity-75">
-                        <Image src={image_url} alt="Uploaded photo" fill className="object-cover" />
-                    </div>
-                    <h2 className="text-xl font-semibold mb-2">That&apos;s a great photo, but we don&apos;t see a vehicle in it.</h2>
-                    <p className="text-muted-foreground max-w-md mb-8">
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+                <section aria-label="No vehicle found" className={stateCardClass}>
+                    <ResultPhoto imageUrl={image_url} alt="Uploaded photo" className="mb-3 aspect-video h-auto w-full max-w-md opacity-75" />
+                    <h1 className="font-heading text-xl font-bold text-[#17212B]">That&apos;s a great photo, but we don&apos;t see a vehicle in it.</h1>
+                    <p className="max-w-md text-[15px] text-[#2B3742]">
                         Upload a clear shot of a car or truck and we&apos;ll break down what&apos;s on it.
                     </p>
-                    <Button asChild className="mb-4" size="lg">
-                        <Link href="/#upload-zone">Try another photo</Link>
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2 max-w-xs">
+                    <Link href="/#upload-zone" className={cn(primaryButtonClass, "mt-2 w-auto px-6")}>
+                        Try another photo
+                    </Link>
+                    <p className="mt-1 max-w-xs text-xs text-[#5A6672]">
                         Tips for a good photo: ensure the vehicle is clearly visible, well-lit, and occupies most of the frame. Avoid heavy filters.
                     </p>
-                </div>
+                </section>
+                <ResultNoticesFooter />
             </div>
         )
     }

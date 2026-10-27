@@ -117,6 +117,36 @@ export function resolveVehicleUrl(
 }
 
 /**
+ * The catalog generation that holds every year from yearStart to yearEnd,
+ * e.g. Toyota Tacoma 2016-2023 is entirely 3rd Gen. Null when the range
+ * crosses a generation boundary or the vehicle has no catalog.
+ *
+ * Only the results page's curated-picks link uses this. resolveVehicleUrl()
+ * (and analysis_completed's catalog_match) stay exact-year only.
+ */
+export function resolveCatalogGeneration(
+  make: string,
+  model: string,
+  yearStart: number,
+  yearEnd: number
+): { href: string; label: string; model: string } | null {
+  if (!Number.isFinite(yearStart) || !Number.isFinite(yearEnd) || yearStart > yearEnd) return null
+  const vehicle = supportedVehicles.find(
+    (v) =>
+      v.make.toLowerCase() === make.trim().toLowerCase() &&
+      v.model.toLowerCase() === model.trim().toLowerCase()
+  )
+  if (!vehicle) return null
+
+  const gen = vehicle.generations.find(
+    (g) => yearStart >= g.yearStart && yearEnd <= g.yearEnd
+  )
+  if (!gen) return null
+
+  return { href: `${vehicle.routeBase}/${gen.slug}`, label: gen.label, model: vehicle.model }
+}
+
+/**
  * Flat list of all supported generation cards for the Browse by Vehicle grid.
  */
 export function getSupportedGenerationCards(): Array<

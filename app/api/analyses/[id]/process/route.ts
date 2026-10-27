@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdmin, runPartPipeline, runPipeline } from '@/lib/pipeline'
 
-export const maxDuration = 60
+// The pipeline runs in this request via waitUntil, so this caps how long an
+// analysis can take (Hobby plan with Fluid compute allows up to 300s). The
+// 2-minute stale rule in GET /api/analyses/[id] still catches dead runs.
+export const maxDuration = 300
 
 /** Minimum gap between retries of the same analysis. */
 const RETRY_COOLDOWN_MS = 10_000

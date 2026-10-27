@@ -1,6 +1,6 @@
 # Vehicle pages plan: product research, expansion, and Amazon data
 
-Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built and merged (#17), and the `asin` migration is on dev and production. Phase 0 diagnostics are in [section 2.4](#24-what-phase-0-found-2026-10-23). Creators API access arrived 2026-10-27 ([section 8.1](#81-status-updated-2026-10-27)). Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
+Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built and merged (#17), and the `asin` migration is on dev and production. Phase 0 diagnostics are in [section 2.4](#24-what-phase-0-found-2026-10-23). Creators API credentials exist since 2026-10-27, and product data unlocks at 10 qualifying sales ([section 8.1](#81-status-updated-2026-10-27)). Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
 
 ## Recommendations
 
@@ -9,7 +9,7 @@ Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engin
 3. **Add a vehicle + product type page, like `/vehicles/toyota/tacoma/bed-racks`.** Most of the search demand is there, and none of it is targeted today. "tacoma bed rack" gets 3,700 searches a month. "3rd gen tacoma bed rack" gets 150. Generation pages stay, as hubs for searches like "3rd gen tacoma accessories" and "2025 tacoma accessories".
 4. **Keep product data in the repo for now, not Supabase.** Store it as typed data files, restructured into a product catalog plus fitment rules. Use Supabase now only to log which product (ASIN) each click went to. Later, use it to cache live Amazon data once the API is connected. Move the editorial data to Supabase only when one of the triggers in [section 6](#6-product-data-supabase-or-the-repo) happens.
 5. **Amazon stays the destination, but links go to product pages instead of searches.** `/go` sends people to `amazon.com/s?k=...` today, a search results page that mixes in parts that don't fit. Add ASIN support to `/go`, and keep search as the fallback.
-6. **The Amazon API is worth it, to check listings and keep data fresh. It can't pick products.** PA-API 5.0 has been retired. Its successor, the Creators API, requires 10 qualifying sales in the trailing 30 days, and we qualified in October 2026. Use it to check ratings and part numbers during research, then to refresh price, image and availability daily and to flag dead listings. Product selection stays with humans.
+6. **The Amazon API is worth it, to check listings and keep data fresh. It can't pick products.** PA-API 5.0 has been retired. Its successor, the Creators API, requires 10 qualifying sales in the trailing 30 days, and the account came within a sale or two of that in October 2026. Use it to check ratings and part numbers during research, then to refresh price, image and availability daily and to flag dead listings. Product selection stays with humans.
 
 ## 1. Where the vehicle pages stand
 
@@ -274,7 +274,7 @@ Move when any of these is true:
 
 ### 8.1 Status (updated 2026-10-27)
 
-- **We have access.** Matt got Creators API access on 2026-10-27, after 10 ordered items in the week of Oct 18 to 24 (9 shipped, 1 returned).
+- **Credentials work; product data is waiting on sales.** Matt created Creators API credentials on 2026-10-27. The first lookup that day signed in, then got `AssociateNotEligible` back from GetItems. The week of Oct 18 to 24 had 10 ordered items, but only 9 shipped and 1 was returned, so the account was probably at 8 or 9 qualifying sales. The same lookup works once Amazon counts 10.
 - PA-API 5.0 is retired. Amazon's documentation says calls now return 403, and the Creators API is the successor ([Amazon Creators API docs](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/introduction), [deprecation notice](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation)).
 - **Keeping access:** the account needs at least 10 qualifying sales in the past 30 days. Third-party guides say a qualifying sale has shipped, came through our tag and wasn't returned, and that access is suspended while sales are below the bar and comes back when they recover. The client reports this as `AssociateNotEligible`.
 - **How a call works** (from Amazon's Node.js SDK): get a token from Login with Amazon (`https://api.amazon.com/auth/o2/token`, client credentials, scope `creatorsapi::default`) for version 3.1 credentials. Older 2.1 credentials use a Cognito endpoint instead. Then POST to `https://creatorsapi.amazon/catalog/v1/getItems` with an `x-marketplace: www.amazon.com` header, the partner tag, up to 10 ASINs and the resources wanted.
@@ -291,7 +291,7 @@ Yes, for keeping data fresh. Not for choosing products.
 - **It also covers half of the research check.** Star rating and ratings count settle the 4.3-star, 200-rating rule ([section 4.3](#43-selection-rules)), and brand plus part number confirm that a listing is the part that was researched. A human still checks fitment and the seller.
 - **What it isn't good for:** choosing products. Search results are ranked by Amazon relevance, not by fitment. Amazon Garage fitment data isn't in the API (verify against the API reference). Product choice stays with humans.
 - **Cost:** the API is free. The limits are the sales requirement and the rate limits. A daily refresh of 1,200 ASINs is 120 `GetItems` calls, far under 8,640 a day.
-- **Timing:** access came months sooner than this plan expected (10 ordered items in one week of October 2026). Pages still mustn't depend on it, because it lapses whenever sales fall below 10 a month.
+- **Timing:** the account got within a sale or two of the bar in one week of October 2026, months sooner than this plan expected. Pages still mustn't depend on the API, because access lapses whenever sales fall below 10 a month.
 
 ### 8.3 Build steps
 
@@ -363,7 +363,7 @@ order by clicks desc;
 | 1. Tacoma pilot | Weeks 2 to 4 | Research 3rd and 4th gen fully, then 2nd gen, light 1st gen. Publish about 9 product-type pages. |
 | 2. Measure | Weeks 5 to 12 | Check at 4 weeks, decide at 8 ([section 2.3](#23-gate-to-expand-8-weeks-after-launch)). Research Wave 1 in parallel. |
 | 3. Expand | After the gate | Wave 1: Gladiator, 4Runner, Bronco. Wave 2: F-150, Wrangler, Maverick, Tundra, Ram 1500. Wave 3 as tests. About 1 vehicle every 1 to 2 weeks, set by research capacity. Show catalog picks for supported vehicles on `/r/[id]` above the AI's free-text suggestions. |
-| 4. Creators API | Access since 2026-10-27 | Client and ASIN lookup script done. Price cache and product-card prices after the first catalog import ([section 8.3](#83-build-steps)). |
+| 4. Creators API | Credentials since 2026-10-27; data at 10 qualifying sales | Client and ASIN lookup script done. Price cache and product-card prices after the first catalog import ([section 8.3](#83-build-steps)). |
 
 **Metrics, per vehicle and per page type:**
 

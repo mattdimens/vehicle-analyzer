@@ -82,6 +82,7 @@ export type Database = {
           error_details: string | null
           id: string
           image_url: string
+          kind: string
           result_data: Json | null
           status: string
           updated_at: string
@@ -94,6 +95,7 @@ export type Database = {
           error_details?: string | null
           id: string
           image_url: string
+          kind?: string
           result_data?: Json | null
           status: string
           updated_at?: string
@@ -106,6 +108,7 @@ export type Database = {
           error_details?: string | null
           id?: string
           image_url?: string
+          kind?: string
           result_data?: Json | null
           status?: string
           updated_at?: string

@@ -62,10 +62,16 @@ export interface AnalysisDetectedProduct {
 }
 
 // ── Top-level analyses row ─────────────────────────────────────────────
+/** Vehicle analysis (homepage photo flow) or part identification (/part-identifier). */
+export type AnalysisKind = 'vehicle' | 'part'
+
 export interface AnalysisRecord {
     id: string
+    /** Rows from before the column existed are vehicles. */
+    kind?: AnalysisKind
     image_url: string
     status: 'identifying' | 'detecting_products' | 'complete' | 'error'
+    /** Vehicle rows: the fitment result. Part rows: the part identification (read it with getPartIdentification). */
     result_data: AnalysisResultData | null
     detected_products: AnalysisDetectedProduct[] | null
     confidence_score?: number | null
@@ -74,6 +80,18 @@ export interface AnalysisRecord {
     user_id: string | null
     created_at: string
     updated_at: string
+}
+
+export function isPartRecord(record: Pick<AnalysisRecord, 'kind'>): boolean {
+    return record.kind === 'part'
+}
+
+/** The part identification stored on a part row, or null if the row isn't a finished part result. */
+export function getPartIdentification(record: AnalysisRecord): PartIdentification | null {
+    if (!isPartRecord(record) || record.status !== 'complete') return null
+    const data = record.result_data as unknown as Partial<PartIdentification> | null
+    if (!data || typeof data.partName !== 'string' || typeof data.confidence !== 'number') return null
+    return data as PartIdentification
 }
 
 export function getConfidence(record: AnalysisRecord): number {
@@ -85,6 +103,7 @@ export function getConfidence(record: AnalysisRecord): number {
 
 // ── Band label helper ──────────────────────────────────────────────────
 import { analysisConfig } from '@/config/analysis'
+import type { PartIdentification } from '@/app/actions'
 
 export type ConfidenceBand = 'High' | 'Medium' | 'Low'
 

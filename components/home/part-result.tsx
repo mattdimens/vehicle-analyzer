@@ -55,6 +55,8 @@ interface PartResultProps {
     onRequestPhoto?: () => void
     /** Show the mobile sticky shop bar for this result. Only one result on a page gets it. */
     showStickyBar?: boolean
+    /** h1 on /r/[id], which has no other heading; h3 under a page's own H1. */
+    titleAs?: "h1" | "h3"
 }
 
 const BAND_PILL: Record<PartDisplayBand, { label: string; tone: MatchTone }> = {
@@ -70,7 +72,7 @@ const RETAKE_TIPS = [
 ]
 
 /** Part identifier result: answer first, then the shop block, then details. */
-export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, showStickyBar }: PartResultProps) {
+export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, showStickyBar, titleAs = "h3" }: PartResultProps) {
     const band = getPartDisplayBand(part.confidence)
     const isLow = band === "low"
     // Strong and medium: the visitor confirms the vehicle (chips in the shop
@@ -131,9 +133,9 @@ export function PartResult({ part, imageUrl, hideSaveActions, onRequestPhoto, sh
             )}
         >
             {isLow ? (
-                <LowMatchHeader part={part} imageUrl={imageUrl} onRequestPhoto={onRequestPhoto} className={leftColumn} />
+                <LowMatchHeader part={part} imageUrl={imageUrl} onRequestPhoto={onRequestPhoto} titleAs={titleAs} className={leftColumn} />
             ) : (
-                <ResultHeader part={part} band={band} imageUrl={imageUrl} className={leftColumn} />
+                <ResultHeader part={part} band={band} imageUrl={imageUrl} titleAs={titleAs} className={leftColumn} />
             )}
 
             {showCloserMatch && (
@@ -315,7 +317,7 @@ function MatchPill({ band, confidence }: { band: PartDisplayBand; confidence: nu
     )
 }
 
-function ResultHeader({ part, band, imageUrl, className }: { part: PartIdentification; band: PartDisplayBand; imageUrl?: string; className?: string }) {
+function ResultHeader({ part, band, imageUrl, titleAs, className }: { part: PartIdentification; band: PartDisplayBand; imageUrl?: string; titleAs: "h1" | "h3"; className?: string }) {
     return (
         <ResultHeaderCard
             ariaLabel="Identified part"
@@ -323,6 +325,7 @@ function ResultHeader({ part, band, imageUrl, className }: { part: PartIdentific
             imageAlt="Your part photo"
             eyebrow={<>{part.category}{band === "medium" && " · Most likely"}</>}
             title={part.partName}
+            titleAs={titleAs}
             pill={<MatchPill band={band} confidence={part.confidence} />}
             summary={part.function}
             className={className}
@@ -330,13 +333,13 @@ function ResultHeader({ part, band, imageUrl, className }: { part: PartIdentific
     )
 }
 
-function LowMatchHeader({ part, imageUrl, onRequestPhoto, className }: { part: PartIdentification; imageUrl?: string; onRequestPhoto?: () => void; className?: string }) {
+function LowMatchHeader({ part, imageUrl, onRequestPhoto, titleAs: Title, className }: { part: PartIdentification; imageUrl?: string; onRequestPhoto?: () => void; titleAs: "h1" | "h3"; className?: string }) {
     return (
         <section aria-label="No confident match" className={cn(cardClass, "flex flex-col gap-3.5 py-5 @2xl:p-6", className)}>
             <div className="flex items-center gap-3">
                 <ResultPhoto imageUrl={imageUrl} alt="Your part photo" className="h-16 w-16 @2xl:h-24 @2xl:w-24" />
                 <div className="flex min-w-0 flex-col gap-1">
-                    <h3 className="font-heading text-[22px] font-bold leading-tight text-[#17212B]">We couldn&apos;t pin this one down</h3>
+                    <Title className="font-heading text-[22px] font-bold leading-tight text-[#17212B]">We couldn&apos;t pin this one down</Title>
                     <MatchPill band="low" confidence={part.confidence} />
                 </div>
             </div>

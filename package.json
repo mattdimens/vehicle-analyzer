@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx test/unit-test.ts && tsx test/analysis-fixture-test.ts && tsx test/resolver-fixture-test.ts"
+    "test": "tsx test/unit-test.ts && tsx test/part-identification-test.ts && tsx test/analysis-fixture-test.ts && tsx test/resolver-fixture-test.ts"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",

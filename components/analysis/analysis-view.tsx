@@ -2,22 +2,38 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { AlertCircle, RefreshCw } from "lucide-react"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { cardClass, primaryButtonClass, ResultPhoto } from "@/components/results/result-shell"
 import { cn } from "@/lib/utils"
 import { ResultLayout, ResultNoticesFooter } from "./result-layout"
 import { PartResultView } from "./part-result-view"
-import type { AnalysisRecord } from "@/types/analysis"
-import { getConfidenceBand, getPartIdentification, isPartRecord } from "@/types/analysis"
+import { AnalysisProgress } from "./analysis-progress"
+import type { AnalysisKind, AnalysisRecord } from "@/types/analysis"
+import { getConfidenceBand, getPartIdentification, isAnalysisInProgress, isPartRecord } from "@/types/analysis"
 import { apiErrorMessage, readJson } from "@/lib/api-errors"
 
 const stateCardClass = cn(cardClass, "flex flex-col items-center gap-2 px-5 py-8 text-center sm:p-8")
+/** A fade for the result when it replaces the loading screen. */
+const resultFadeClass = "animate-in fade-in duration-200 motion-reduce:animate-none"
 
-export function AnalysisView({ id }: { id: string }) {
+/** After this long in progress the screen says so and offers a different photo. Polling carries on. */
+const SLOW_AFTER_MS = 60_000
+
+const PROGRESS_TITLE: Record<AnalysisKind, string> = {
+    part: "Identifying your part... | Visual Fitment",
+    vehicle: "Identifying your vehicle... | Visual Fitment",
+}
+const READY_TITLE = "Your result is ready | Visual Fitment"
+const OUR_TITLES = new Set([...Object.values(PROGRESS_TITLE), READY_TITLE])
+
+/** `initialKind` (looked up by the page) picks the loading copy before the first fetch returns. */
+export function AnalysisView({ id, initialKind = "vehicle" }: { id: string; initialKind?: AnalysisKind }) {
     const [record, setRecord] = useState<AnalysisRecord | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [isPolling, setIsPolling] = useState(true)
+    // The result arrived while the tab was in the background
+    const [readyWhileHidden, setReadyWhileHidden] = useState(false)
 
     const fetchRecord = useCallback(async () => {
         try {
@@ -33,6 +49,9 @@ export function AnalysisView({ id }: { id: string }) {
 
             if (data.data.status === 'complete' || data.data.status === 'error') {
                 setIsPolling(false)
+            }
+            if (data.data.status === 'complete' && document.visibilityState === 'hidden') {
+                setReadyWhileHidden(true)
             }
         } catch (err) {
             console.error(err)
@@ -61,7 +80,7 @@ export function AnalysisView({ id }: { id: string }) {
 
     useEffect(() => {
         if (!record) return
-        if (record.status === 'identifying' || record.status === 'detecting_products') {
+        if (isAnalysisInProgress(record.status)) {
             hasSeenInProgress.current = true
             return
         }
@@ -114,6 +133,68 @@ export function AnalysisView({ id }: { id: string }) {
         })
     }, [record])
 
+    const kind: AnalysisKind = record ? (isPartRecord(record) ? "part" : "vehicle") : initialKind
+    const running = record ? isAnalysisInProgress(record.status) : false
+    const createdAt = record?.created_at
+
+    // Elapsed time from created_at (so a reopened link mid-run is right), or
+    // from this view's retry, since a retried record's created_at is old
+    const [retryStartedAt, setRetryStartedAt] = useState<number | null>(null)
+    const [isSlow, setIsSlow] = useState(false)
+
+    useEffect(() => {
+        if (!running || !createdAt) return
+        const startedAt = Math.max(Date.parse(createdAt) || 0, retryStartedAt ?? 0)
+        const timer = setInterval(() => setIsSlow(Date.now() - startedAt >= SLOW_AFTER_MS), 1000)
+        return () => clearInterval(timer)
+    }, [running, createdAt, retryStartedAt])
+
+    // Once per view, when the 60-second state first shows
+    const hasTrackedSlow = useRef(false)
+    const slowStatus = running && isSlow ? record?.status : null
+
+    useEffect(() => {
+        if (!slowStatus || hasTrackedSlow.current) return
+        hasTrackedSlow.current = true
+        import('@/lib/analytics').then(({ trackEvent, getPlatform, getEntryDoor }) => {
+            trackEvent('analysis_wait_slow', { kind, status: slowStatus, platform: getPlatform(), entry_door: getEntryDoor() })
+        })
+    }, [slowStatus, kind])
+
+    // Tab title: says what's running, then "ready" if the result lands while
+    // the tab is in the background; otherwise the page's own <title>.
+    const status = record?.status
+
+    useEffect(() => {
+        if (!readyWhileHidden) return
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') setReadyWhileHidden(false)
+        }
+        document.addEventListener('visibilitychange', onVisibilityChange)
+        return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+    }, [readyWhileHidden])
+
+    const tabTitle = error
+        ? null
+        : !status || isAnalysisInProgress(status)
+            ? PROGRESS_TITLE[kind]
+            : readyWhileHidden ? READY_TITLE : null
+    const pageTitle = useRef<string | null>(null)
+
+    useEffect(() => {
+        // Next.js can stream the page's <title> in after this mounts, so keep
+        // watching: remember any title that isn't ours, and put ours back on top
+        const apply = () => {
+            if (!OUR_TITLES.has(document.title)) pageTitle.current = document.title
+            const wanted = tabTitle ?? pageTitle.current
+            if (wanted && document.title !== wanted) document.title = wanted
+        }
+        apply()
+        const observer = new MutationObserver(apply)
+        observer.observe(document.head, { subtree: true, childList: true, characterData: true })
+        return () => observer.disconnect()
+    }, [tabTitle])
+
     const [retryError, setRetryError] = useState<string | null>(null)
 
     const handleRetry = async () => {
@@ -126,6 +207,8 @@ export function AnalysisView({ id }: { id: string }) {
         // Allow the retried run to report its own completion
         hasTrackedCompletion.current = false
         hasSeenInProgress.current = true
+        setRetryStartedAt(Date.now())
+        setIsSlow(false)
         setError(null)
         setRecord(prev => prev ? { ...prev, status: 'identifying', error_details: null } : null)
         setIsPolling(true)
@@ -146,48 +229,14 @@ export function AnalysisView({ id }: { id: string }) {
     }
 
     if (!record) {
-        return (
-            <div className="flex flex-col items-center justify-center p-12">
-                <Loader2 className="h-8 w-8 animate-spin text-[#C8460F]" aria-label="Loading" />
-            </div>
-        )
+        return <AnalysisProgress kind={kind} record={null} slow={false} />
     }
 
-    const { status, image_url } = record
+    const { image_url } = record
     const isPart = isPartRecord(record)
 
-    if (isPart && (status === 'identifying' || status === 'detecting_products')) {
-        return (
-            <section aria-label="Identifying your part" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
-                <div className="relative mb-3 aspect-square w-full max-w-[280px] overflow-hidden rounded-xl">
-                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Your part photo" className="h-full w-full rounded-xl border-0 opacity-70" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
-                        <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
-                    </div>
-                </div>
-                <h1 className="font-heading text-2xl font-bold text-[#17212B]">Identifying your part...</h1>
-                <p className="max-w-md text-[15px] text-[#2B3742]">This usually takes 10 to 30 seconds. You can leave this page open.</p>
-            </section>
-        )
-    }
-
-    if (status === 'identifying' || status === 'detecting_products') {
-        return (
-            <section aria-label="Analyzing your photo" className={cn(stateCardClass, "mx-auto max-w-2xl")} aria-live="polite">
-                <div className="relative mb-3 aspect-video w-full max-w-md overflow-hidden rounded-xl">
-                    <ResultPhoto fit="contain" imageUrl={image_url} alt="Analyzing" className="h-full w-full rounded-xl border-0 opacity-70" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#17212B]/10">
-                        <Loader2 className="h-12 w-12 animate-spin text-white drop-shadow" aria-hidden="true" />
-                    </div>
-                </div>
-                <h1 className="font-heading text-2xl font-bold text-[#17212B]">
-                    {status === 'identifying' ? 'Identifying Vehicle...' : 'Detecting Products...'}
-                </h1>
-                <p className="max-w-md text-[15px] text-[#2B3742]">
-                    Our AI is scanning your photo. This usually takes about 15 to 30 seconds.
-                </p>
-            </section>
-        )
+    if (running) {
+        return <AnalysisProgress kind={kind} record={record} slow={isSlow} />
     }
 
     if (isPart && status === 'error') {
@@ -239,7 +288,7 @@ export function AnalysisView({ id }: { id: string }) {
 
     if (isPart) {
         const part = getPartIdentification(record)
-        if (part) return <PartResultView part={part} imageUrl={image_url} />
+        if (part) return <div className={resultFadeClass}><PartResultView part={part} imageUrl={image_url} /></div>
         // A finished row without a readable identification: nothing to show
         return (
             <section aria-label="Identification error" className={cn(stateCardClass, "mx-auto max-w-2xl")}>
@@ -277,5 +326,5 @@ export function AnalysisView({ id }: { id: string }) {
     }
 
     // Hand off to ResultLayout for Low/Medium/High/Partial display
-    return <ResultLayout record={record} />
+    return <div className={resultFadeClass}><ResultLayout record={record} /></div>
 }

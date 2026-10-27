@@ -3,7 +3,10 @@ import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdmin, runPartPipeline, runPipeline } from '@/lib/pipeline'
 import { assertSupabaseStorageUrl, UrlValidationError } from '@/lib/url-validation'
 
-export const maxDuration = 60
+// The pipeline runs in this request via waitUntil, so this caps how long an
+// analysis can take (Hobby plan with Fluid compute allows up to 300s). The
+// 2-minute stale rule in GET /api/analyses/[id] still catches dead runs.
+export const maxDuration = 300
 
 function generateId() {
     // 12 hex chars (48 bits) from a CSPRNG; result links are public-by-link

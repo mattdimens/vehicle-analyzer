@@ -5,16 +5,20 @@ import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useSaveToSupabase } from "@/hooks/use-save-to-supabase"
 import { trackEvent, getPlatform } from "@/lib/analytics"
 import type { AnalysisResults, DetectedProduct } from "@/app/actions"
+import { cn } from "@/lib/utils"
 
 interface SaveToGarageButtonProps {
     vehicleImageUrl: string
     results: AnalysisResults
     detectedProducts: DetectedProduct[]
+    /** Look of the unsaved button. Saving and the save_to_garage event are the same either way. */
+    variant?: "default" | "outline"
+    className?: string
 }
 
 export const PENDING_GARAGE_SAVE_KEY = "pending_garage_save"
 
-export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts }: SaveToGarageButtonProps) {
+export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts, variant = "default", className }: SaveToGarageButtonProps) {
     const { save, isSaving, isSaved } = useSaveToSupabase({
         table: "garage_vehicles",
         pendingStorageKey: PENDING_GARAGE_SAVE_KEY,
@@ -39,8 +43,8 @@ export function SaveToGarageButton({ vehicleImageUrl, results, detectedProducts 
 
     return (
         <Button
-            variant={isSaved ? "secondary" : "default"}
-            className="w-full sm:w-auto mt-4 sm:mt-0"
+            variant={isSaved ? "secondary" : variant}
+            className={cn("w-full sm:w-auto mt-4 sm:mt-0", className)}
             onClick={handleSave}
             disabled={isSaving || isSaved}
         >

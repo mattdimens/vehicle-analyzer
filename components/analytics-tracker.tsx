@@ -24,13 +24,17 @@ export function AnalyticsTracker() {
                 if (sourcePage === 'vehicle_page') {
                     catalogMatch = true
                 }
-                
+
+                // Which results link was clicked: part identifier links anywhere,
+                // vehicle result links on /r/ (category pages use the same sources)
+                const isVehicleResultLink = window.location.pathname.startsWith('/r/') &&
+                    (rawSource === 'detected-products' || rawSource === 'recommended-accessories')
+
                 trackEvent('affiliate_click', {
                     entry_door: getEntryDoor(),
                     source_page: sourcePage,
                     ...(catalogMatch !== undefined ? { catalog_match: catalogMatch } : {}),
-                    // Which part identifier link was clicked
-                    ...(rawSource.startsWith('part-') ? { link_type: rawSource } : {})
+                    ...(rawSource.startsWith('part-') || isVehicleResultLink ? { link_type: rawSource } : {})
                 })
             } catch {
                 // Ignore parse errors

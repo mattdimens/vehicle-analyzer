@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 export default async function AnalysisPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8">
-            <div className="container max-w-4xl px-4">
+        <div className="min-h-screen bg-[#EEF3F6] pb-12 pt-4 md:pt-7">
+            <div className="container">
                 <AnalysisView id={id} />
             </div>
         </div>

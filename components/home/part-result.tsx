@@ -338,7 +338,7 @@ function LowMatchHeader({ part, imageUrl, onRequestPhoto, titleAs: Title, classN
     return (
         <section aria-label="No confident match" className={cn(cardClass, "flex flex-col gap-3.5 py-5 @2xl:p-6", className)}>
             <div className="flex items-center gap-3">
-                <ResultPhoto imageUrl={imageUrl} alt="Your part photo" className="h-16 w-16 @2xl:h-24 @2xl:w-24" />
+                <ResultPhoto fit="contain" imageUrl={imageUrl} alt="Your part photo" className="h-16 w-16 @2xl:h-24 @2xl:w-24" />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Title className="font-heading text-[22px] font-bold leading-tight text-[#17212B]">We couldn&apos;t pin this one down</Title>
                     <MatchPill band="low" confidence={part.confidence} />

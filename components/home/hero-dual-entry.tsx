@@ -172,8 +172,9 @@ export function HeroDualEntry() {
 
               {attachedFile && previewUrl ? (
                 <div className="flex flex-col items-center justify-center w-full h-full relative">
-                  <div className="relative w-full max-w-[280px] aspect-video rounded-xl overflow-hidden shadow-md border border-border">
-                    <Image src={previewUrl} alt="Attached vehicle" fill className="object-cover" />
+                  <div className="relative w-full max-w-[280px] aspect-video rounded-xl overflow-hidden shadow-md border border-border bg-white">
+                    {/* Whole photo, whatever its shape (a portrait phone shot isn't trimmed) */}
+                    <Image src={previewUrl} alt="Attached vehicle" fill className="object-contain" />
                     <button 
                       onClick={(e) => { e.stopPropagation(); setAttachedFile(null); setPreviewUrl(null); }}
                       className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"

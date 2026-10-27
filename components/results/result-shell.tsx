@@ -72,20 +72,45 @@ export function MatchPill({ tone, size = "md", children }: { tone: MatchTone; si
  * The analysed photo. Visitors' photos load as-is (no image optimization
  * quota spent on them); pass `sizes` for our own static images (the samples)
  * to get resized, lazily loaded copies.
+ *
+ * `fit="contain"` shows the whole photo, whatever its shape, over a soft
+ * blurred copy of itself so the frame doesn't show empty bars. Use it
+ * wherever the visitor looks at their photo. `fit="cover"` (the default)
+ * fills the frame and trims the edges, for tiny thumbnails and the samples.
  */
-export function ResultPhoto({ imageUrl, alt, sizes, className }: { imageUrl?: string; alt: string; sizes?: string; className?: string }) {
+export function ResultPhoto({ imageUrl, alt, sizes, className, fit = "cover" }: {
+    imageUrl?: string
+    alt: string
+    sizes?: string
+    className?: string
+    fit?: "cover" | "contain"
+}) {
+    const contain = fit === "contain"
+    const frameClass = cn(
+        "relative shrink-0 overflow-hidden rounded-xl border border-[#D5DEE5]",
+        contain ? "bg-white" : "bg-[#E4EBF0]",
+        className
+    )
+
     if (sizes && imageUrl) {
         return (
-            <div className={cn("relative shrink-0 overflow-hidden rounded-xl border border-[#D5DEE5] bg-[#E4EBF0]", className)}>
-                <Image src={imageUrl} alt={alt} fill sizes={sizes} className="object-cover" />
+            <div className={frameClass}>
+                {contain && (
+                    <Image src={imageUrl} alt="" aria-hidden="true" fill sizes={sizes} className="scale-110 object-cover opacity-30 blur-xl" />
+                )}
+                <Image src={imageUrl} alt={alt} fill sizes={sizes} className={contain ? "object-contain" : "object-cover"} />
             </div>
         )
     }
     return (
-        <div className={cn("shrink-0 overflow-hidden rounded-xl border border-[#D5DEE5] bg-[#E4EBF0]", className)}>
+        <div className={frameClass}>
+            {imageUrl && contain && (
+                // eslint-disable-next-line @next/next/no-img-element -- decorative backdrop of the same user photo (cached, one request)
+                <img src={imageUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-xl" />
+            )}
             {imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- user photo (Supabase URL); skip Vercel image optimization quota
-                <img src={imageUrl} alt={alt} className="h-full w-full object-cover" />
+                <img src={imageUrl} alt={alt} className={cn("relative h-full w-full", contain ? "object-contain" : "object-cover")} />
             )}
         </div>
     )
@@ -132,6 +157,7 @@ export function ResultHeaderCard({
                     <ResultPhoto
                         imageUrl={imageUrl}
                         alt={imageAlt}
+                        fit="contain"
                         className="h-[190px] w-full rounded-none border-0 @xl/header:h-[180px] @xl/header:w-[260px] @xl/header:rounded-[14px]"
                     />
                     <div className="@container/header-body flex min-w-0 flex-1 flex-col gap-2.5 p-4 @xl/header:p-0">
@@ -157,7 +183,7 @@ export function ResultHeaderCard({
                 className
             )}
         >
-            <ResultPhoto imageUrl={imageUrl} alt={imageAlt} className="h-[72px] w-[72px] @2xl:row-span-2 @2xl:h-40 @2xl:w-40" />
+            <ResultPhoto imageUrl={imageUrl} alt={imageAlt} fit="contain" className="h-[72px] w-[72px] @2xl:row-span-2 @2xl:h-40 @2xl:w-40" />
             <div className="flex min-w-0 flex-col gap-1 @2xl:gap-2">
                 <span className={eyebrowClass}>{eyebrow}</span>
                 <Title className="font-heading text-[26px] font-bold leading-[1.1] text-[#17212B] @2xl:text-[34px]">{title}</Title>

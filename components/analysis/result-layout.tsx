@@ -148,7 +148,7 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
                 <section aria-label="Confirm your vehicle" className={cn(cardClass, "flex flex-col gap-4 py-5 sm:p-6")}>
                     <div className="flex items-center gap-3">
-                        <ResultPhoto imageUrl={record.image_url} alt="Uploaded photo" className="h-16 w-16 sm:h-24 sm:w-24" />
+                        <ResultPhoto fit="contain" imageUrl={record.image_url} alt="Uploaded photo" className="h-16 w-16 sm:h-24 sm:w-24" />
                         <h1 className="font-heading text-[22px] font-bold leading-tight text-[#17212B]">
                             We think we&apos;ve got it, but we&apos;re not fully sure.
                         </h1>

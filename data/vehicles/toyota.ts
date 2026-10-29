@@ -21,16 +21,19 @@ function buildCategories(genLabel: string) {
       products: [
         {
           title: "Tri-fold tonneau cover",
+          productType: "bed-covers",
           blurb:
             `A hard tri-fold keeps cargo dry and cuts drag for better highway mileage on your ${genLabel} Tacoma.`,
         },
         {
           title: "Budget roll-up bed cover",
+          productType: "bed-covers",
           blurb:
             `An affordable roll-up cover provides basic weather protection without breaking the bank.`,
         },
         {
           title: "Premium retractable tonneau",
+          productType: "bed-covers",
           blurb:
             `Flush-mount retractable design with key-lock security for full bed access when you need it.`,
         },
@@ -63,11 +66,13 @@ function buildCategories(genLabel: string) {
       products: [
         {
           title: "All-weather floor mats",
+          productType: "floor-mats",
           blurb:
             `Deep-channel mats trap mud, snow, and spills to keep your ${genLabel} Tacoma cabin clean.`,
         },
         {
           title: "Budget seat covers",
+          productType: "seat-covers",
           blurb:
             `Affordable neoprene covers shield your factory upholstery from daily wear and tear.`,
         },
@@ -105,6 +110,7 @@ function buildCategories(genLabel: string) {
       products: [
         {
           title: "Skid plate set",
+          productType: "front-bumpers",
           blurb:
             `Steel or aluminum underbody armor shields the oil pan, transfer case, and fuel tank on trails.`,
         },
@@ -115,6 +121,7 @@ function buildCategories(genLabel: string) {
         },
         {
           title: "Premium roof rack system",
+          productType: "roof-racks",
           blurb:
             `A low-profile rack adds cargo space for overland gear without increasing wind noise.`,
         },
@@ -136,6 +143,7 @@ function buildCategories(genLabel: string) {
         },
         {
           title: "Premium headlight upgrade",
+          productType: "headlights",
           blurb:
             `Projector-style LED headlights improve throw distance and give your Tacoma a modern look.`,
         },
@@ -152,11 +160,13 @@ function buildCategories(genLabel: string) {
         },
         {
           title: "Budget steel wheels",
+          productType: "wheels",
           blurb:
             `Classic steel wheels are tough, affordable, and easy to repair if you bend a rim on the trail.`,
         },
         {
           title: "Premium forged alloy wheels",
+          productType: "wheels",
           blurb:
             `Lightweight forged wheels reduce unsprung weight for sharper handling and a standout look.`,
         },
@@ -168,6 +178,7 @@ function buildCategories(genLabel: string) {
       products: [
         {
           title: "Bull bar",
+          productType: "front-bumpers",
           blurb:
             `A bolt-on bull bar adds front-end protection and a mounting point for auxiliary lights.`,
         },
@@ -212,6 +223,7 @@ export const toyota: VehicleMake = {
           popular: [
             {
               title: "Tri-fold tonneau cover",
+              productType: "bed-covers",
               brand: undefined,
               blurb: "The most-searched accessory for the new Tacoma, and it is easy to see why: instant bed security with zero-drill install.",
               source: "editorial",
@@ -219,6 +231,7 @@ export const toyota: VehicleMake = {
             },
             {
               title: "All-weather floor mats",
+              productType: "floor-mats",
               brand: undefined,
               blurb: "Owners in every climate start here. Deep channels trap everything from trail mud to coffee spills.",
               source: "editorial",
@@ -246,6 +259,7 @@ export const toyota: VehicleMake = {
           popular: [
             {
               title: "Skid plate set",
+              productType: "front-bumpers",
               brand: undefined,
               blurb: "TRD Pro owners and trail builders alike upgrade the factory skid coverage for full underbody protection.",
               source: "editorial",
@@ -280,6 +294,7 @@ export const toyota: VehicleMake = {
           popular: [
             {
               title: "Tri-fold tonneau cover",
+              productType: "bed-covers",
               brand: undefined,
               blurb: "A tonneau cover is the easiest way to make a high-mileage 2nd Gen look and function like new.",
               source: "editorial",
@@ -287,6 +302,7 @@ export const toyota: VehicleMake = {
             },
             {
               title: "Budget seat covers",
+              productType: "seat-covers",
               brand: undefined,
               blurb: "After a decade of use, a set of neoprene covers hides wear and protects what is left of the factory cloth.",
               source: "editorial",
@@ -294,6 +310,7 @@ export const toyota: VehicleMake = {
             },
             {
               title: "Bull bar",
+              productType: "front-bumpers",
               brand: undefined,
               blurb: "A steel bull bar adds low-speed protection and gives you a solid mount for off-road lights.",
               source: "editorial",
@@ -314,6 +331,7 @@ export const toyota: VehicleMake = {
           popular: [
             {
               title: "Premium headlight upgrade",
+              productType: "headlights",
               brand: undefined,
               blurb: "Factory halogens are dim by modern standards. A projector LED swap transforms nighttime visibility.",
               source: "editorial",
@@ -321,6 +339,7 @@ export const toyota: VehicleMake = {
             },
             {
               title: "All-weather floor mats",
+              productType: "floor-mats",
               brand: undefined,
               blurb: "Replace worn-out carpet mats with deep-channel liners that actually keep water off the floor pan.",
               source: "editorial",

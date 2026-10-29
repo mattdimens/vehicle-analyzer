@@ -1,6 +1,6 @@
 # Vehicle pages plan: product research, expansion, and Amazon data
 
-Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built and merged (#17), and the `asin` migration is on dev and production. Phase 0 diagnostics are in [section 2.4](#24-what-phase-0-found-2026-10-23). Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
+Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engineering is built and merged (#17), and the `asin` migration is on dev and production. Phase 0 diagnostics are in [section 2.4](#24-what-phase-0-found-2026-10-23). Creators API credentials exist since 2026-10-27, and product data unlocks at 10 qualifying sales ([section 8.1](#81-status-updated-2026-10-27)). Written 2026-10-21. Keyword data: Ahrefs, US, pulled 2026-10-21. The raw demand numbers are in [research/vehicle-accessory-demand-2026-10.csv](research/vehicle-accessory-demand-2026-10.csv): one row per vehicle and product type, at 100 or more searches a month and KD 20 or below, with short and make-prefixed phrasings summed.
 
 ## Recommendations
 
@@ -9,7 +9,7 @@ Status: approved by Matt 2026-10-22 (all decisions in section 12). Phase 0 engin
 3. **Add a vehicle + product type page, like `/vehicles/toyota/tacoma/bed-racks`.** Most of the search demand is there, and none of it is targeted today. "tacoma bed rack" gets 3,700 searches a month. "3rd gen tacoma bed rack" gets 150. Generation pages stay, as hubs for searches like "3rd gen tacoma accessories" and "2025 tacoma accessories".
 4. **Keep product data in the repo for now, not Supabase.** Store it as typed data files, restructured into a product catalog plus fitment rules. Use Supabase now only to log which product (ASIN) each click went to. Later, use it to cache live Amazon data once the API is connected. Move the editorial data to Supabase only when one of the triggers in [section 6](#6-product-data-supabase-or-the-repo) happens.
 5. **Amazon stays the destination, but links go to product pages instead of searches.** `/go` sends people to `amazon.com/s?k=...` today, a search results page that mixes in parts that don't fit. Add ASIN support to `/go`, and keep search as the fallback.
-6. **The Amazon API is worth it later, to keep data fresh. It can't pick products.** PA-API 5.0 has been retired. Its successor, the Creators API, requires 10 qualifying sales in the trailing 30 days. Once you qualify, use it to refresh price, image and availability daily and to flag dead listings. Product selection stays with humans.
+6. **The Amazon API is worth it, to check listings and keep data fresh. It can't pick products.** PA-API 5.0 has been retired. Its successor, the Creators API, requires 10 qualifying sales in the trailing 30 days, and the account came within a sale or two of that in October 2026. Use it to confirm part numbers and availability during research, then to refresh price, image and availability daily and to flag dead listings. Product selection stays with humans.
 
 ## 1. Where the vehicle pages stand
 
@@ -173,6 +173,8 @@ For each vehicle, generation and product type, show 3 to 5 real products, each w
 - At least one owner source recommends it, and owners don't report a recurring problem.
 - No more than 2 products from one brand in a section. Budget, mid and premium are all represented.
 
+**Check stock and rating first.** They rule out the most candidates and take minutes: `scripts/amazon-lookup.ts` gives stock, and the rating has to be read from the Amazon page because the API doesn't return it. In October 2026, a full round of 3rd gen Tacoma headlight research ended with every in-stock candidate at 3.6 to 3.8 stars or unrated, so the product type was paused.
+
 ### 4.4 Fitment fields to record
 
 Years (start and end), cab, bed length, trims included or excluded (TRD Pro, Hybrid, Raptor, Rubicon), drivetrain, and install notes ("drilling required", "not compatible with the factory deck rail system"). The photo pipeline already returns `cabStyle` and `bedLength` (`PrimaryVehicle` in [lib/analysis-stages.ts](../lib/analysis-stages.ts)). Use the same vocabulary, normalized, so the results page can later show picks for the user's exact truck.
@@ -272,27 +274,33 @@ Move when any of these is true:
 
 ## 8. Amazon Creators API (long term)
 
-### 8.1 Status as of October 2026
+### 8.1 Status (updated 2026-10-27)
 
+- **Credentials work; product data is waiting on sales.** Matt created Creators API credentials on 2026-10-27. The first lookup that day signed in, then got `AssociateNotEligible` back from GetItems. The week of Oct 18 to 24 had 10 ordered items, but only 9 shipped and 1 was returned, so the account was probably at 8 or 9 qualifying sales. The same lookup works once Amazon counts 10.
 - PA-API 5.0 is retired. Amazon's documentation says calls now return 403, and the Creators API is the successor ([Amazon Creators API docs](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/introduction), [deprecation notice](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation)).
-- **Eligibility:** an Associates account in good standing and at least 10 qualifying sales in the past 30 days. Some third-party guides say access is suspended if sales drop below that. Verify in Associates Central.
-- **Rate limits:** new credentials start at 1 request per second and 8,640 requests per day, then scale with shipped revenue ([API rates](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/concepts/api-rates)). `GetItems` takes up to 10 ASINs per call.
-- **Credentials** moved to Login with Amazon. One secondary source says older credentials stopped working on 2026-09-11. Verify when registering.
+- **Keeping access:** the account needs at least 10 qualifying sales in the past 30 days. Third-party guides say a qualifying sale has shipped, came through our tag and wasn't returned, and that access is suspended while sales are below the bar and comes back when they recover. The client reports this as `AssociateNotEligible`.
+- **How a call works** (from Amazon's Node.js SDK): get a token from Login with Amazon (`https://api.amazon.com/auth/o2/token`, client credentials, scope `creatorsapi::default`) for version 3.1 credentials. Older 2.1 credentials use a Cognito endpoint instead. Then POST to `https://creatorsapi.amazon/catalog/v1/getItems` with an `x-marketplace: www.amazon.com` header, the partner tag, up to 10 ASINs and the resources wanted.
+- **What GetItems returns:** title, brand, manufacturer part number, images and offers (price, availability, seller, buy box winner). Customer reviews are in the API's resource list, but on 2026-10-29 Amazon sent none for our account, even when the request asked for them. The API also has `listReports` and `getReport` endpoints. What those reports contain hasn't been checked; if they include ordered ASINs, they could replace the manual orders check in [section 2.3](#23-gate-to-expand-8-weeks-after-launch).
+- **Rate limits:** new credentials start at 1 request per second and 8,640 requests per day, then scale with shipped revenue ([API rates](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/concepts/api-rates)).
+- **Credentials** live in `AMAZON_CREATORS_CREDENTIAL_ID`, `AMAZON_CREATORS_CREDENTIAL_SECRET` and `AMAZON_CREATORS_CREDENTIAL_VERSION`: in `.env.local` and in Vercel, server-only.
+- **Cloud sessions can't call it.** The network policy blocks Amazon's hosts and the environment has no credential, so lookups run on Matt's machine or on Vercel.
 
 ### 8.2 Does it make sense?
 
 Yes, for keeping data fresh. Not for choosing products.
 
 - **What it's good for:** current price, availability, the main image, title, variations (for example bed-length versions), and catching dead or out-of-stock ASINs every day. Those are exactly the two weak spots of hand-entered data.
+- **It also confirms listings during research.** Brand and part number confirm that a listing is the part that was researched, and availability catches dead listings before approval. Ratings don't come back for our account, so a human still checks the 4.3-star, 200-rating rule ([section 4.3](#43-selection-rules)), fitment and the seller.
+- **"Currently unavailable" was common.** In the first lookups (2026-10-29), 9 of 14 listings came back unavailable with no price, including all three Morimoto Tacoma headlights and every Philips and Osram H11 bulb tried. Spot-check one in a browser before dropping a product for it.
 - **What it isn't good for:** choosing products. Search results are ranked by Amazon relevance, not by fitment. Amazon Garage fitment data isn't in the API (verify against the API reference). Product choice stays with humans.
 - **Cost:** the API is free. The limits are the sales requirement and the rate limits. A daily refresh of 1,200 ASINs is 120 `GetItems` calls, far under 8,640 a day.
-- **Timing:** sitewide clicks from search were about 109 in July 2026. Reaching 10 sales a month may take months, so nothing in phases 0 to 3 depends on the API.
+- **Timing:** the account got within a sale or two of the bar in one week of October 2026, months sooner than this plan expected. Pages still mustn't depend on the API, because access lapses whenever sales fall below 10 a month.
 
-### 8.3 Build steps, once eligible
+### 8.3 Build steps
 
-1. Register in Associates Central. Store the credentials in Vercel as server-only variables. Never use the `NEXT_PUBLIC_` prefix. Add them to `.env.example`.
-2. Add `lib/amazon/creators-api.ts`, server-only like `lib/analysis-stages.ts`.
-3. Add the `amazon_items` migration ([section 6.4](#64-supabase-later-the-amazon-data-cache)), plus a Vercel Cron job that refreshes every 6 to 24 hours.
+1. **Done:** register in Associates Central and get credentials. Store them in Vercel (Production and Preview) and `.env.local` as server-only variables. Never use the `NEXT_PUBLIC_` prefix. `.env.example` lists them.
+2. **Done:** `lib/amazon/creators-api.ts`, server-only like `lib/analysis-stages.ts`, and `scripts/amazon-lookup.ts`, which prints title, brand, part number, price, availability, seller and URL for a list of ASINs as a table that pastes into the research Sheet. Use it on every candidate row before approval.
+3. **After the first catalog import:** add the `amazon_items` migration ([section 6.4](#64-supabase-later-the-amazon-data-cache)), plus a Vercel Cron job that refreshes every 6 to 24 hours.
 4. Product cards show "$129.99 at Amazon (as of Oct 21, 2:00 PM)", the Amazon image and availability. Price and image are hidden when the cache is older than 24 hours. Show the timestamp always: the policies reportedly require one next to any price refreshed less often than hourly.
 5. A weekly report lists ASINs that have been unavailable for 3 or more days, for replacement. Those links fall back to search automatically.
 6. Optional: use `SearchItems` to feed new candidates into the research Sheet for human vetting. Never publish them automatically.
@@ -358,7 +366,7 @@ order by clicks desc;
 | 1. Tacoma pilot | Weeks 2 to 4 | Research 3rd and 4th gen fully, then 2nd gen, light 1st gen. Publish about 9 product-type pages. |
 | 2. Measure | Weeks 5 to 12 | Check at 4 weeks, decide at 8 ([section 2.3](#23-gate-to-expand-8-weeks-after-launch)). Research Wave 1 in parallel. |
 | 3. Expand | After the gate | Wave 1: Gladiator, 4Runner, Bronco. Wave 2: F-150, Wrangler, Maverick, Tundra, Ram 1500. Wave 3 as tests. About 1 vehicle every 1 to 2 weeks, set by research capacity. Show catalog picks for supported vehicles on `/r/[id]` above the AI's free-text suggestions. |
-| 4. Creators API | At 10 sales in 30 days | [Section 8.3](#83-build-steps-once-eligible) |
+| 4. Creators API | Credentials since 2026-10-27; data at 10 qualifying sales | Client and ASIN lookup script done. Price cache and product-card prices after the first catalog import ([section 8.3](#83-build-steps)). |
 
 **Metrics, per vehicle and per page type:**
 

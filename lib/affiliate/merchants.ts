@@ -13,6 +13,11 @@ export type MerchantBuilder = (params: MerchantBuilderParams) => string;
 
 const ASIN_PATTERN = /^[A-Z0-9]{10}$/;
 
+/** The Associates tag on every Amazon link and Creators API request. */
+export function getAssociateTag(): string {
+  return process.env.AMAZON_ASSOCIATE_TAG || "visualfitme0b-20";
+}
+
 /** The trimmed, uppercase ASIN, or null when the value isn't one. */
 export function normalizeAsin(value: string | null | undefined): string | null {
   const asin = value?.trim().toUpperCase();
@@ -21,7 +26,7 @@ export function normalizeAsin(value: string | null | undefined): string | null {
 
 export const merchants: Record<string, MerchantBuilder> = {
   amazon: ({ vehicle, brand, product, asin, tagged = true }) => {
-    const tag = process.env.AMAZON_ASSOCIATE_TAG || "visualfitme0b-20";
+    const tag = getAssociateTag();
 
     const productAsin = normalizeAsin(asin);
     if (productAsin) {

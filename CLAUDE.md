@@ -21,6 +21,7 @@ The cloud environment is set up like this:
 - **Network:** Custom, with the default allowlist plus `*.supabase.co`.
 - **Gemini:** the key is a network secret, so it never enters the session. `GEMINI_API_KEY` holds a placeholder, and the proxy swaps in the real key on requests to `generativelanguage.googleapis.com`, so live Gemini calls work. They cost money: only make them when the task needs it.
 - **Supabase:** the three Supabase variables point at the dev project `visualfitment-dev` (`svkwgklyyqmwpcrgdjja`), not production. It has the same schema and no real data, so the full photo-analysis flow can run. Never put production Supabase keys in the cloud environment.
+- **Amazon:** the network policy blocks `amazon.com` and the Creators API hosts (`creatorsapi.amazon`, `api.amazon.com`), and the cloud environment has no Creators API credential. Run `scripts/amazon-lookup.ts` locally, or test API code on the Vercel preview deploy.
 - When the app can't run end to end, use the tests and the Vercel preview deploy.
 
 ## Rules that are easy to break

@@ -11,6 +11,9 @@
  * The second form reads ASINs from the clipboard (one per line, or separated
  * by spaces or commas) and copies the table back.  Messages go to stderr, so
  * only the table lands on the clipboard.
+ *
+ * Add --raw to print Amazon's JSON responses instead of the table, to see
+ * exactly which fields came back.
  */
 import { normalizeAsin } from '../lib/affiliate/merchants'
 import {
@@ -34,8 +37,10 @@ const COLUMNS = [
   'Amazon URL',
 ]
 
+const RAW = process.argv.includes('--raw')
+
 async function readInput(): Promise<string[]> {
-  const args = process.argv.slice(2)
+  const args = process.argv.slice(2).filter((arg) => arg !== '--raw')
   if (args.length > 0 || process.stdin.isTTY) return args
   let text = ''
   for await (const chunk of process.stdin) text += chunk
@@ -88,7 +93,12 @@ async function main() {
   }
 
   console.error(`Looking up ${asins.length} ASIN${asins.length === 1 ? '' : 's'}...`)
-  const { items, errors } = await createCreatorsApiClient(config).getItems(asins)
+  const client = createCreatorsApiClient(config)
+  if (RAW) {
+    console.log(JSON.stringify(await client.getItemsRaw(asins), null, 2))
+    return
+  }
+  const { items, errors } = await client.getItems(asins)
   const byAsin = new Map(items.map((item) => [item.asin, item]))
 
   console.log(COLUMNS.join('\t'))

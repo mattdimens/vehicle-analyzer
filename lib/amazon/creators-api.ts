@@ -122,8 +122,10 @@ function str(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
+/** A number, or a numeric string such as "1,204" (Amazon's SDK converts those, so accept them too). */
 function num(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
+  const n = typeof value === 'string' && value.trim() ? Number(value.replace(/,/g, '')) : value
+  return typeof n === 'number' && Number.isFinite(n) ? n : null
 }
 
 function displayValue(value: unknown): string | null {
@@ -265,20 +267,34 @@ export function createCreatorsApiClient(config: CreatorsApiConfig, deps: Partial
     return data
   }
 
-  /** Look up ASINs, MAX_ITEMS_PER_REQUEST at a time.  Invalid and repeated ASINs are skipped. */
-  async function getItems(asins: string[]): Promise<GetItemsResult> {
+  /**
+   * GetItems responses as Amazon sent them, one per batch of
+   * MAX_ITEMS_PER_REQUEST ASINs.  Invalid and repeated ASINs are skipped.
+   */
+  async function getItemsRaw(asins: string[]): Promise<(Json | undefined)[]> {
     const ids = [...new Set(asins.flatMap((a) => normalizeAsin(a) ?? []))]
-    const result: GetItemsResult = { items: [], errors: [] }
+    const responses: (Json | undefined)[] = []
 
     for (let i = 0; i < ids.length; i += MAX_ITEMS_PER_REQUEST) {
       // Amazon's reference example sends marketplace and itemIdType in the body; its SDK sends the header.
-      const data = await post('/catalog/v1/getItems', {
-        partnerTag: config.partnerTag,
-        marketplace: MARKETPLACE,
-        itemIdType: 'ASIN',
-        itemIds: ids.slice(i, i + MAX_ITEMS_PER_REQUEST),
-        resources: ITEM_RESOURCES,
-      })
+      responses.push(
+        await post('/catalog/v1/getItems', {
+          partnerTag: config.partnerTag,
+          marketplace: MARKETPLACE,
+          itemIdType: 'ASIN',
+          itemIds: ids.slice(i, i + MAX_ITEMS_PER_REQUEST),
+          resources: ITEM_RESOURCES,
+        })
+      )
+    }
+    return responses
+  }
+
+  /** Look up ASINs and flatten the items. */
+  async function getItems(asins: string[]): Promise<GetItemsResult> {
+    const result: GetItemsResult = { items: [], errors: [] }
+
+    for (const data of await getItemsRaw(asins)) {
       for (const raw of list(obj(data?.itemsResult)?.items)) {
         const item = parseItem(raw)
         if (item) result.items.push(item)
@@ -290,5 +306,5 @@ export function createCreatorsApiClient(config: CreatorsApiConfig, deps: Partial
     return result
   }
 
-  return { getItems }
+  return { getItems, getItemsRaw }
 }

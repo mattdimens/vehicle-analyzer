@@ -147,6 +147,10 @@ async function main() {
   }))
   assert(noBuyBox?.price?.amount === 24.5 && noBuyBox.price.display === '24.5 USD', 'falls back to the first listing')
   assert(parseItem({ asin: 'not-an-asin' }) === null && parseItem(null) === null, 'rejects items without a valid ASIN')
+  const stringNumbers = parseItem(rawItem('B00U1OIESK', { customerReviews: { count: '1,204', starRating: { value: '4.4' } } }))
+  assert(stringNumbers?.rating === 4.4 && stringNumbers.ratingsCount === 1204, 'reads ratings sent as text')
+  const notNumbers = parseItem(rawItem('B00U1OIESK', { customerReviews: { count: 'many', starRating: { value: '' } } }))
+  assert(notNumbers?.rating === null && notNumbers.ratingsCount === null, 'ignores text that is not a number')
 
   console.log('\ngetItems')
   const api = fakeApi()
@@ -174,6 +178,10 @@ async function main() {
   api.advance(3_600_000)
   await client.getItems(['B00U1OIESK'])
   assert(api.tokenCalls().length === 2, 'renews the token after it expires')
+
+  const raw = await client.getItemsRaw(['B00U1OIESK', 'B0B72CHXH3'])
+  const rawItems = (raw[0]?.itemsResult as { items: { asin: string }[] } | undefined)?.items
+  assert(raw.length === 1 && rawItems?.[1]?.asin === 'B0B72CHXH3', 'getItemsRaw returns the responses unparsed')
 
   console.log('\ngetItems, version 2.1 credentials')
   const legacy = fakeApi()

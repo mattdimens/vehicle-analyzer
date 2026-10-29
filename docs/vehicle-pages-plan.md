@@ -173,6 +173,8 @@ For each vehicle, generation and product type, show 3 to 5 real products, each w
 - At least one owner source recommends it, and owners don't report a recurring problem.
 - No more than 2 products from one brand in a section. Budget, mid and premium are all represented.
 
+**Check stock and rating first.** They rule out the most candidates and take minutes: `scripts/amazon-lookup.ts` gives stock, and the rating has to be read from the Amazon page because the API doesn't return it. In October 2026, a full round of 3rd gen Tacoma headlight research ended with every in-stock candidate at 3.6 to 3.8 stars or unrated, so the product type was paused.
+
 ### 4.4 Fitment fields to record
 
 Years (start and end), cab, bed length, trims included or excluded (TRD Pro, Hybrid, Raptor, Rubicon), drivetrain, and install notes ("drilling required", "not compatible with the factory deck rail system"). The photo pipeline already returns `cabStyle` and `bedLength` (`PrimaryVehicle` in [lib/analysis-stages.ts](../lib/analysis-stages.ts)). Use the same vocabulary, normalized, so the results page can later show picks for the user's exact truck.

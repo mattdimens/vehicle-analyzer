@@ -11,7 +11,7 @@ import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/
 import { merchants, normalizeAsin } from '../lib/affiliate/merchants'
 import { buildGoUrl, getAllMakes } from '../data/vehicles/index'
 import { productTypes } from '../data/vehicles/product-types'
-import { catalog, createCatalogQueries } from '../data/vehicles/catalog'
+import { catalog, createCatalogQueries, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
 import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles/catalog/fitment'
 import type { CatalogProduct, VehicleCatalog } from '../data/vehicles/types'
@@ -202,7 +202,16 @@ const tiedQueries = createCatalogQueries({ ...fixture, picks: fixture.picks.filt
 assert(tiedQueries.getFeaturedPicks('toyota', 'tacoma')?.items[0].resolved.product.id === 'd', 'on a tie the hub features the newest generation')
 const fixtureStats = queries.getCatalogStats()
 assert(fixtureStats.totalProducts === 9 && fixtureStats.totalGenerations === 4, 'stats count researched products only')
-assert(fixtureStats.totalCategories === 10, 'stats count product types where researched, placeholder categories elsewhere')
+assert(fixtureStats.totalCategories === 10, 'stats count researched product types plus the placeholder categories still shown')
+
+const thirdGen = makes.find((m) => m.slug === 'toyota')!.models.find((m) => m.slug === 'tacoma')!.generations.find((g) => g.slug === '3rd-gen')!
+const leftover = remainingPlaceholders(thirdGen.categories, new Set(['bed-covers', 'seat-covers']))
+assert(!leftover.some((c) => c.slug === 'bed'), 'a placeholder category left empty is dropped')
+assert(leftover.find((c) => c.slug === 'interior')?.products.map((p) => p.title).join() === 'All-weather floor mats,Premium center console organizer', 'placeholders for a researched product type are dropped, the rest stay')
+assert(remainingPlaceholders(thirdGen.categories, new Set()).length === thirdGen.categories.length, 'nothing researched keeps every placeholder category')
+assert(withoutResearched([{ productType: 'seat-covers' }, { productType: 'wheels' }, {}], new Set(['seat-covers'])).length === 2, 'popular picks drop researched product types')
+const placeholderTypes = makes.flatMap((m) => m.models.flatMap((mo) => mo.generations.flatMap((g) => [...g.categories.flatMap((c) => c.products), ...g.popular].flatMap((p) => p.productType ?? []))))
+assert(placeholderTypes.length > 0 && placeholderTypes.every((t) => productTypes.some((pt) => pt.slug === t)), 'placeholder product types are real product-type slugs')
 assert(queries.getCatalogProductByAsin(fixture.products[9].asin)?.status === 'retired', 'retired products are found by ASIN')
 
 const d = fixture.products[3]

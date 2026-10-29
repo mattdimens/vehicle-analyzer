@@ -7,8 +7,9 @@ import type { VehicleCatalog } from "../types"
  * (docs/vehicle-pages-plan.md, section 4.5), and every product needs a human
  * check of the live Amazon listing first.
  *
- * A generation page switches from the placeholder template to these picks
- * as soon as it has any, so publish a generation's research in one PR.
+ * Picks show above the placeholder template on generation pages and the
+ * model hub.  Placeholders tagged with a researched product type
+ * (VehicleProduct.productType) drop out.
  */
 export const toyotaTacoma: VehicleCatalog = {
   products: [

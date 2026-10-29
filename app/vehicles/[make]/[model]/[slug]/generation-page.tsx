@@ -1,6 +1,11 @@
 import type { Metadata } from "next"
 import type { VehicleGeneration, VehicleMake, VehicleModel } from "@/data/vehicles/types"
-import { getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
+import {
+  getGenerationSections,
+  getProductTypePages,
+  remainingPlaceholders,
+  withoutResearched,
+} from "@/data/vehicles/catalog"
 import { fitmentCheckedLabel } from "@/data/vehicles/catalog/fitment"
 import { VehicleHero } from "@/components/vehicles/vehicle-hero"
 import { CategorySection } from "@/components/vehicles/category-section"
@@ -85,10 +90,13 @@ export function GenerationPage(props: GenerationPageProps) {
   const vehicleString = `${generation.displayRange} ${make.name} ${model.name}`
   const basePath = `/vehicles/${make.slug}/${model.slug}`
 
-  // Researched catalog picks replace the placeholder template as soon as
-  // this generation has any.
+  // Researched catalog picks come first.  The placeholder template stays
+  // below them for what hasn't been researched yet, minus the placeholders a
+  // researched product type replaces.
   const sections = getGenerationSections(make.slug, model.slug, generation.slug)
-  const hasCatalog = sections.length > 0
+  const researched = new Set(sections.map((s) => s.productType.slug))
+  const placeholders = remainingPlaceholders(generation.categories, researched)
+  const popular = withoutResearched(generation.popular, researched)
   const productTypePages = getProductTypePages(make.slug, model.slug)
   const typesWithPages = new Set(productTypePages.map((t) => t.slug))
   const checkedLabel = fitmentCheckedLabel(sections.flatMap((s) => s.picks.map((r) => r.product)))
@@ -129,9 +137,10 @@ export function GenerationPage(props: GenerationPageProps) {
 
   // JSON-LD: ItemList of product names. No Product/Offer markup: we don't sell
   // these items, and Offers without a price are invalid for Google.
-  const allProducts = hasCatalog
-    ? sections.flatMap((s) => s.picks.map((r) => `${r.product.brand} ${r.product.name}`))
-    : generation.categories.flatMap((cat) => cat.products.map((p) => p.title))
+  const allProducts = [
+    ...sections.flatMap((s) => s.picks.map((r) => `${r.product.brand} ${r.product.name}`)),
+    ...placeholders.flatMap((cat) => cat.products.map((p) => p.title)),
+  ]
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -174,48 +183,43 @@ export function GenerationPage(props: GenerationPageProps) {
           {checkedLabel && (
             <p className="text-sm text-muted-foreground">Fitment checked {checkedLabel}.</p>
           )}
-          {hasCatalog
-            ? sections.map((s) => (
-                <CatalogSection
-                  key={s.productType.slug}
-                  id={`cat-${s.productType.slug}`}
-                  title={s.productType.name}
-                  icon={s.productType.icon}
-                  note={s.note}
-                  picks={s.picks}
-                  vehicle={{
-                    make: make.slug,
-                    model: model.slug,
-                    modelName: model.name,
-                    yearStart: generation.yearStart,
-                    yearEnd: generation.yearEnd,
-                    vehicleString,
-                  }}
-                  more={
-                    typesWithPages.has(s.productType.slug)
-                      ? {
-                          href: `${basePath}/${s.productType.slug}`,
-                          label: `${model.name} ${s.productType.name.toLowerCase()} for every generation`,
-                        }
-                      : undefined
-                  }
-                />
-              ))
-            : generation.categories.map((cat) => (
-                <CategorySection
-                  key={cat.slug}
-                  category={cat}
-                  vehicleString={vehicleString}
-                />
-              ))}
+          {sections.map((s) => (
+            <CatalogSection
+              key={s.productType.slug}
+              id={`cat-${s.productType.slug}`}
+              title={s.productType.name}
+              icon={s.productType.icon}
+              note={s.note}
+              picks={s.picks}
+              vehicle={{
+                make: make.slug,
+                model: model.slug,
+                modelName: model.name,
+                yearStart: generation.yearStart,
+                yearEnd: generation.yearEnd,
+                vehicleString,
+              }}
+              more={
+                typesWithPages.has(s.productType.slug)
+                  ? {
+                      href: `${basePath}/${s.productType.slug}`,
+                      label: `${model.name} ${s.productType.name.toLowerCase()} for every generation`,
+                    }
+                  : undefined
+              }
+            />
+          ))}
+          {placeholders.map((cat) => (
+            <CategorySection key={cat.slug} category={cat} vehicleString={vehicleString} />
+          ))}
         </div>
       </section>
 
-      {/* Placeholder popular picks, until this generation has catalog picks */}
-      {!hasCatalog && (
+      {/* Placeholder popular picks, minus any a researched product type replaces */}
+      {popular.length > 0 && (
         <PopularPicks
           modelNamePlural={`${model.name}s`}
-          items={generation.popular}
+          items={popular}
           vehicleString={vehicleString}
         />
       )}

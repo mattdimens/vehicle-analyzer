@@ -27,6 +27,12 @@ export interface VehicleProduct {
    * placeholder.
    */
   image?: string
+  /**
+   * Product type slug (data/vehicles/product-types.ts) this placeholder
+   * stands in for.  Once a page shows researched picks of that type, the
+   * placeholder is left out.
+   */
+  productType?: string
 }
 
 // ── Category ───────────────────────────────────────────────────────────
@@ -57,6 +63,8 @@ export interface PopularItem {
   source: "editorial" | "aggregated"
   /** Slug of the parent category, used for /go link building */
   categorySlug: string
+  /** Product type this item stands in for, as on VehicleProduct */
+  productType?: string
 }
 
 // ── Generation ─────────────────────────────────────────────────────────

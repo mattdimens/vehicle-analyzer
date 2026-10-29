@@ -20,6 +20,7 @@ import type {
   Pick,
   ProductTypeGuide,
   VehicleCatalog,
+  VehicleCategory,
   VehicleGeneration,
   VehicleMake,
   VehicleModel,
@@ -72,6 +73,31 @@ export interface ProductTypeRoute {
   make: string
   model: string
   productType: string
+}
+
+// ── Placeholders beside researched picks ───────────────────────────────
+
+/** Items that don't stand in for one of the researched product types. */
+export function withoutResearched<T extends { productType?: string }>(
+  items: T[],
+  researched: ReadonlySet<string>
+): T[] {
+  return items.filter((item) => !item.productType || !researched.has(item.productType))
+}
+
+/**
+ * The placeholder categories a page still shows below its researched picks:
+ * placeholders for a researched product type are left out, and so is any
+ * category left empty.
+ */
+export function remainingPlaceholders(
+  categories: VehicleCategory[],
+  researched: ReadonlySet<string>
+): VehicleCategory[] {
+  return categories.flatMap((cat) => {
+    const products = withoutResearched(cat.products, researched)
+    return products.length > 0 ? [{ ...cat, products }] : []
+  })
 }
 
 // ── Queries ────────────────────────────────────────────────────────────
@@ -198,8 +224,8 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
    *
    * Products count only researched catalog products shown on generation
    * pages, not the placeholder template.  Categories count what generation
-   * pages actually show: catalog product types where a generation has picks,
-   * the placeholder categories where it doesn't.
+   * pages actually show: catalog product types plus the placeholder
+   * categories still shown below them.
    */
   function getCatalogStats(): {
     totalProducts: number
@@ -215,13 +241,13 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
         for (const gen of model.generations) {
           totalGenerations++
           const sections = getGenerationSections(make.slug, model.slug, gen.slug)
-          if (sections.length > 0) {
-            for (const s of sections) {
-              categories.add(s.productType.slug)
-              for (const r of s.picks) products.add(r.product.id)
-            }
-          } else {
-            for (const cat of gen.categories) categories.add(cat.slug)
+          for (const s of sections) {
+            categories.add(s.productType.slug)
+            for (const r of s.picks) products.add(r.product.id)
+          }
+          const researched = new Set(sections.map((s) => s.productType.slug))
+          for (const cat of remainingPlaceholders(gen.categories, researched)) {
+            categories.add(cat.slug)
           }
         }
       }

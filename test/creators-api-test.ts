@@ -61,22 +61,28 @@ function rawItem(asin: string, overrides: Record<string, unknown> = {}) {
 interface Call {
   url: string
   init: RequestInit
+  /** Fake clock time when the request was sent */
+  at: number
 }
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
-/** A fake fetch that answers token requests and replays queued API responses. */
-function fakeApi(apiResponses: Response[] = []) {
+/**
+ * A fake fetch that answers token requests and replays queued API responses.
+ * tokenDelayMs is how long each token request takes on the fake clock.
+ */
+function fakeApi(apiResponses: Response[] = [], tokenDelayMs = 0) {
   const calls: Call[] = []
   const sleeps: number[] = []
   let clock = 1_000_000
   let tokens = 0
   const fetchFn = async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const url = String(input)
-    calls.push({ url, init })
+    calls.push({ url, init, at: clock })
     if (url.includes('/token')) {
+      clock += tokenDelayMs
       tokens++
       return jsonResponse(200, { access_token: `token-${tokens}`, expires_in: 3600 })
     }
@@ -174,6 +180,10 @@ async function main() {
   assert(tokenCall.url === 'https://api.amazon.com/auth/o2/token', 'version 3.1 uses Login with Amazon')
   assert(tokenBody.scope === 'creatorsapi::default' && tokenBody.grant_type === 'client_credentials', 'requests the Creators API scope')
   assert(api.sleeps.length === 1 && api.sleeps[0] === MIN_REQUEST_INTERVAL_MS, 'waits between requests to stay at 1 per second')
+  const slowToken = fakeApi([], 500)
+  await createCreatorsApiClient(config, slowToken.deps).getItems(asins)
+  const [firstBatch, secondBatch] = slowToken.apiCalls()
+  assert(secondBatch.at - firstBatch.at >= MIN_REQUEST_INTERVAL_MS, 'a slow token request does not shorten the gap between requests')
 
   api.advance(3_600_000)
   await client.getItems(['B00U1OIESK'])

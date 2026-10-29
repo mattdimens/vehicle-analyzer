@@ -232,11 +232,12 @@ export function createCreatorsApiClient(config: CreatorsApiConfig, deps: Partial
   }
 
   async function post(path: string, body: Json, retried = false): Promise<Json | undefined> {
+    // Get the token first, so time spent fetching it doesn't count toward the interval.
+    const accessToken = await getToken()
     const wait = lastRequestAt + MIN_REQUEST_INTERVAL_MS - now()
     if (wait > 0) await sleep(wait)
     lastRequestAt = now()
 
-    const accessToken = await getToken()
     const res = await doFetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: {

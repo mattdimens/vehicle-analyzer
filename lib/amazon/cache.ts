@@ -82,15 +82,20 @@ export function formatAsOf(iso: string): string {
 }
 
 /**
- * A row as a card should show it.  Missing or stale rows (older than
- * AMAZON_DATA_MAX_AGE_MS) give null, so the card falls back to editorial
- * content with no price or image.
+ * A row as a card should show it.  Missing, stale (older than
+ * AMAZON_DATA_MAX_AGE_MS) and not_found rows give null, so the card falls back
+ * to editorial content with no price or image.  Only a listing Amazon returned
+ * without an offer, or as out of stock, shows as unavailable.
  */
 export function amazonCardData(row: AmazonItemRow | undefined, now: Date = new Date()): AmazonCardData | null {
   if (!row) return null
   const fetched = Date.parse(row.fetched_at)
   if (Number.isNaN(fetched) || now.getTime() - fetched > AMAZON_DATA_MAX_AGE_MS) return null
 
+  // not_found means the API returned nothing, which also happens for listings
+  // the brand keeps out of the API ("ItemNotAccessible", e.g. WeatherTech).
+  // That says nothing about whether Amazon sells it, so show the editorial card.
+  if (row.status === 'not_found') return null
   const asOf = formatAsOf(row.fetched_at)
   if (row.status !== 'ok' || !row.price_display || row.price_amount === null) {
     return { kind: 'unavailable', asOf }

@@ -171,7 +171,9 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
               key={generation.slug}
               id={generation.slug}
               title={`${generation.label} ${model.name} (${generation.displayRange})`}
-              icon={productType.icon}
+              productTypeSlug={productType.slug}
+              itemNoun={productType.name.toLowerCase()}
+              checkedLabel={fitmentCheckedLabel(picks.map((r) => r.product))}
               note={note}
               picks={picks}
               vehicle={{

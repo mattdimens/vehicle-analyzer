@@ -13,17 +13,27 @@ import { cn } from "@/lib/utils"
  * it is mounted.
  */
 
-export const AFFILIATE_LINK_PROPS = { target: "_blank", rel: "nofollow sponsored noopener" } as const
+// Class tokens live in ./tokens so server components can use them too (a
+// "use client" module hands server components references, not strings).
+import {
+    AFFILIATE_LINK_PROPS,
+    cardClass,
+    eyebrowClass,
+    sectionTitleClass,
+    fieldLabelClass,
+    primaryButtonClass,
+    outlineButtonClass,
+} from "./tokens"
 
-export const cardClass = "rounded-2xl border border-[#D5DEE5] bg-white p-4"
-/** Category label above a result title ("Engine", "Pickup truck"). */
-export const eyebrowClass = "text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]"
-export const sectionTitleClass = "font-heading text-lg font-bold text-[#17212B]"
-export const fieldLabelClass = "text-[13px] font-semibold text-[#5A6672]"
-export const primaryButtonClass =
-    "flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#C8460F] px-3 py-2 text-center text-base font-semibold text-white transition-colors hover:bg-[#AD3C0C]"
-export const outlineButtonClass =
-    "flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-[#17212B] bg-white px-3 py-2 text-center text-[15px] font-semibold text-[#17212B] transition-colors hover:bg-[#F4F7F9]"
+export {
+    AFFILIATE_LINK_PROPS,
+    cardClass,
+    eyebrowClass,
+    sectionTitleClass,
+    fieldLabelClass,
+    primaryButtonClass,
+    outlineButtonClass,
+}
 
 /** Desktop placement for everything in the left column. */
 export const resultLeftColumn = "@2xl:col-start-1"

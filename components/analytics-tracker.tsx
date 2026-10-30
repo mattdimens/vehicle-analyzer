@@ -25,6 +25,15 @@ export function AnalyticsTracker() {
                     catalogMatch = true
                 }
 
+                // Vehicle pages: a researched pick (the link has an ASIN) or a
+                // search, and its product type (or category, for searches)
+                const vehicleParams = rawSource === 'vehicle-page'
+                    ? {
+                        link_type: url.searchParams.get('asin') ? 'vehicle-pick' : 'vehicle-search',
+                        product_type: url.searchParams.get('cat') || 'unknown',
+                    }
+                    : {}
+
                 // Which results link was clicked: part identifier links anywhere,
                 // vehicle result links on /r/ (category pages use the same sources)
                 const isVehicleResultLink = window.location.pathname.startsWith('/r/') &&
@@ -34,7 +43,8 @@ export function AnalyticsTracker() {
                     entry_door: getEntryDoor(),
                     source_page: sourcePage,
                     ...(catalogMatch !== undefined ? { catalog_match: catalogMatch } : {}),
-                    ...(rawSource.startsWith('part-') || isVehicleResultLink ? { link_type: rawSource } : {})
+                    ...(rawSource.startsWith('part-') || isVehicleResultLink ? { link_type: rawSource } : {}),
+                    ...vehicleParams
                 })
             } catch {
                 // Ignore parse errors

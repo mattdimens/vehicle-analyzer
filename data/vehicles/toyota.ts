@@ -256,6 +256,20 @@ export const toyota: VehicleMake = {
           intro:
             "The third-generation Tacoma ran for eight model years, making it the most common Tacoma on the road today. Its 3.5L V6 and available crawl control made it a favorite for both daily driving and weekend trail use, with a massive aftermarket catalog to match.",
           categories: buildCategories("3rd Gen"),
+          faqs: [
+            {
+              q: "Which seat covers fit an Access Cab?",
+              a: "Of our picks, only the Covercraft Carhartt front covers fit an Access Cab. The others are cut for the Double Cab.",
+            },
+            {
+              q: "Do 3rd Gen parts fit a 2024 Tacoma?",
+              a: "Usually not. Toyota redesigned the Tacoma for 2024, so seat covers and most body parts don't carry over. Check the years on every listing.",
+            },
+            {
+              q: "How do I know which cab and bed I have?",
+              a: "A Double Cab has four full doors. An Access Cab has two front doors and small rear-hinged doors. Snap a photo and we'll identify the cab and bed for you.",
+            },
+          ],
           popular: [
             {
               title: "Skid plate set",

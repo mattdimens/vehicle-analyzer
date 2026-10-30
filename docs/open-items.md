@@ -39,7 +39,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Code
 
-- [ ] **Light theme rollout** (brief: `vf-light-theme-rollout-brief-oct-2026.md`, four PRs in order, each merged and live before the next). Steps 1 and 2 are [#53](https://github.com/mattdimens/vehicle-analyzer/pull/53) and #PR. Calls Matt approved on 2026-10-30:
+- [ ] **Light theme rollout** (brief: `vf-light-theme-rollout-brief-oct-2026.md`, four PRs in order, each merged and live before the next). Steps 1 and 2 are [#53](https://github.com/mattdimens/vehicle-analyzer/pull/53) and [#54](https://github.com/mattdimens/vehicle-analyzer/pull/54). Calls Matt approved on 2026-10-30:
   - The brand green in the code is mostly `#003223`, plus `#002A1C` and `#2A6B42`. Step 4's re-check searches for those as well as the brief's two values.
   - Orange text: `#C8460F` on white cards, `#9A3412` directly on the page background (`#C8460F` is 4.33:1 on `#EEF3F6`).
   - Step 2: the hub link sends `browse_by_vehicle_click` with `generation: "all"`. "Go" with no year chosen fires nothing, since it only jumps to the cards.

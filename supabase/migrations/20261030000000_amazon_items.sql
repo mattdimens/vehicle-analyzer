@@ -1,8 +1,8 @@
 -- Cache of Amazon listing data for catalog products, from the Creators API.
 --
 -- A Vercel Cron job (/api/cron/amazon-items) refreshes every active catalog
--- ASIN; vehicle pages read the cache when they're regenerated.  Pages hide
--- price, image and stock once fetched_at is more than 24 hours old, so a
+-- ASIN daily; vehicle pages read the cache when they're regenerated.  Pages
+-- hide price, image and stock once fetched_at is 23 hours old, so a
 -- stalled refresh, or lost API access, falls back to the editorial card.
 -- Plan: docs/vehicle-pages-plan.md, sections 6.4 and 8.3.
 --

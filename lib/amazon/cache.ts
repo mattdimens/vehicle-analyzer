@@ -15,8 +15,13 @@ export type AmazonItemRow = AmazonItemsTable['Row']
 export type AmazonItemInsert = AmazonItemsTable['Insert']
 export type AmazonItemStatus = 'ok' | 'unavailable' | 'not_found'
 
-/** Price, image and stock are hidden once the data is older than this (Amazon's 24-hour rule). */
-export const AMAZON_DATA_MAX_AGE_MS = 24 * 60 * 60 * 1000
+/**
+ * Price, image and stock are hidden once the data is older than this.
+ * Amazon allows 24 hours; pages regenerate hourly and can be served for up
+ * to an hour after they render, so they stop showing data at 23 hours and
+ * nothing a visitor sees is ever more than 24 hours old.
+ */
+export const AMAZON_DATA_MAX_AGE_MS = 23 * 60 * 60 * 1000
 
 /** Availability types that mean Amazon won't sell it right now. */
 const NOT_SELLING = new Set(['OUT_OF_STOCK', 'UNAVAILABLE'])

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { refreshAmazonItems } from "@/lib/amazon/refresh"
 
 /**
- * Vercel Cron (vercel.json): refreshes the amazon_items cache for every
- * active catalog ASIN.  Vercel sends `Authorization: Bearer $CRON_SECRET`;
+ * Vercel Cron (vercel.json, daily at 10:00 UTC: the Hobby plan allows one run
+ * a day): refreshes the amazon_items cache for every active catalog ASIN.  Vercel sends `Authorization: Bearer $CRON_SECRET`;
  * anything else is refused, so nobody else can spend the API quota.
  */
 export const dynamic = "force-dynamic"

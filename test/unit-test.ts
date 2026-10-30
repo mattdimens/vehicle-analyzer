@@ -322,7 +322,8 @@ assert(formatAsOf('2026-10-30T18:00:00Z') === 'Oct 30, 2:00 PM ET', 'as-of time 
 const asRow = (r: ReturnType<typeof toAmazonItemRow>) => ({ title: null, brand: null, image_url: null, price_amount: null, price_display: null, currency: null, availability: null, availability_message: null, merchant: null, detail_page_url: null, ...r, fetched_at: r.fetched_at ?? '' })
 const card = amazonCardData(asRow(liveRow), new Date('2026-10-31T10:00:00Z'))
 assert(card?.kind === 'live' && card.priceDisplay === '$272.97' && card.inStock && card.asOf === 'Oct 30, 2:00 PM ET', 'fresh ok row shows price, stock and time')
-assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T18:00:01Z')) === null, 'a row older than 24 hours shows nothing')
+assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T17:00:01Z')) === null, 'a row older than 23 hours shows nothing (pages are served up to an hour after they render)')
+assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T16:59:00Z'))?.kind === 'live', 'a row just under 23 hours old still shows')
 assert(amazonCardData(undefined) === null, 'no row shows nothing')
 assert(amazonCardData(asRow(missing), new Date('2026-10-30T19:00:00Z'))?.kind === 'unavailable', 'a fresh not_found row shows as unavailable')
 

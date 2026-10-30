@@ -34,7 +34,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 ## Code
 
 - [ ] **Product research** for the 3rd, 4th, 2nd and 1st Gen Tacoma, by the process in [plan section 4](vehicle-pages-plan.md#4-product-research-process). Claude researches and checks each Amazon listing, then opens one PR per generation and product type for Matt to approve. Next: a sixth 3rd Gen seat cover, so `/vehicles/toyota/tacoma/seat-covers` gets published (it needs 6 products). 3rd Gen headlights are paused (no candidate met the rating bar). No bed and tonneau covers, and no RealTruck-owned brands.
-- [ ] **Amazon data on the cards:** in review, [PR #44](https://github.com/mattdimens/vehicle-analyzer/pull/44). The `amazon_items` cache, a 6-hourly refresh, and price, image and stock on the cards. Still to build after it: the Sort control and a weekly report of unavailable listings ([plan 8.3](vehicle-pages-plan.md#83-build-steps), step 5).
+- [ ] **Amazon data on the cards:** in review, [PR #44](https://github.com/mattdimens/vehicle-analyzer/pull/44). The `amazon_items` cache, a daily refresh (the Hobby plan's limit), and price, image and stock on the cards. Still to build after it: the Sort control and a weekly report of unavailable listings ([plan 8.3](vehicle-pages-plan.md#83-build-steps), step 5).
 - [ ] **ESLint 10 and TypeScript 7**, held back. ESLint 10 runs, but `eslint-config-next`'s import, jsx-a11y and react plugins don't support it yet. TypeScript 7 builds, but `typescript-eslint` 8 can't lint with it. Retry each once its plugins support it.
 
 ## Done recently

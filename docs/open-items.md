@@ -11,7 +11,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
 | 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 2 | Request indexing for the three Tacoma product-type pages: `/vehicles/toyota/tacoma/seat-covers`, `/floor-mats` and `/running-boards` | Matt | Now for seat covers; the other two once the guides PR merges | Product-type pages are what the gate depends on. |
+| 2 | Request indexing for the three Tacoma product-type pages: `/vehicles/toyota/tacoma/seat-covers`, `/floor-mats` and `/running-boards` | Matt | Now for seat covers; the other two once [#52](https://github.com/mattdimens/vehicle-analyzer/pull/52) merges | Product-type pages are what the gate depends on. |
 | 3 | Cabs and beds for the 4th and 2nd Gen | Matt | Now that both have picks | The fit filter only works on a generation with configs. The 1st Gen can wait: it has no picks. |
 | 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked, and the first with Amazon prices on the cards. Run both together. |
 | 5 | Amazon cache follow-ups: Sort control and a weekly unavailable-listings report | Claude | When convenient | Prices are live, so Sort can show now. The report catches dead listings before visitors do. |
@@ -22,7 +22,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Waiting on Matt
 
-- [ ] **Request indexing** for `/vehicles/toyota/tacoma/seat-covers` (live since 2026-10-30), and for `/floor-mats` and `/running-boards` under the same path once the guides PR merges.
+- [ ] **Request indexing** for `/vehicles/toyota/tacoma/seat-covers` (live since 2026-10-30), and for `/floor-mats` and `/running-boards` under the same path once [#52](https://github.com/mattdimens/vehicle-analyzer/pull/52) merges.
 - [ ] **Tacoma generation facts** for the hub's "How the generations differ" table: cabs, beds, engines, what carries over, for each generation. A row only shows when all four generations have it. Current values and TODOs: `specs` in [data/vehicles/toyota.ts](../data/vehicles/toyota.ts).
 - [ ] **Cabs and beds for the 4th and 2nd Gen** (`configs` in `toyota.ts`), to turn on the "Your truck" filter on those pages. The 1st Gen can wait until it has picks.
 - [ ] **Rule call on 2-pick sections.** 1st Gen floor mats have two passing sets (COTAZA B0FGY1T67N and DrCarNow B0FXWFJYZB, Regular Cab and Xtracab), one short of the 3-pick minimum. Allowing 2 picks would add them.
@@ -46,7 +46,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 - 2026-10-30: Amazon price, image and stock on the vehicle cards, from an `amazon_items` cache refreshed daily ([PR #44](https://github.com/mattdimens/vehicle-analyzer/pull/44)). Production migration, `CRON_SECRET` and the first fill done; the Carhartt covers showed $272.97. #44 also added the RealTruck rule to plan 4.3 (no bed covers, no RealTruck-owned brands).
 - 2026-10-30: Research paused by Matt after the 3rd Gen pass. Matt's rule calls are recorded in plan 4.3.
 - 2026-10-30: Research resumed and merged: 4th Gen floor mats and running boards ([#50](https://github.com/mattdimens/vehicle-analyzer/pull/50)), 2nd Gen floor mats and running boards ([#51](https://github.com/mattdimens/vehicle-analyzer/pull/51)). 1st Gen scanned and paused.
-- 2026-10-30: Floor mats and running boards guides, which publish `/vehicles/toyota/tacoma/floor-mats` and `/vehicles/toyota/tacoma/running-boards` (guides PR).
+- 2026-10-30: Floor mats and running boards guides, which publish `/vehicles/toyota/tacoma/floor-mats` and `/vehicles/toyota/tacoma/running-boards` ([#52](https://github.com/mattdimens/vehicle-analyzer/pull/52)).
 - 2026-10-30: Major-version upgrades: Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2. Matt tested a vehicle and a part photo on the preview ([PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40)).
 - 2026-10-30: Product-type page on the light layout, with one shared guides list ([PR #38](https://github.com/mattdimens/vehicle-analyzer/pull/38)).
 - 2026-10-30: Dependency updates within ranges, React 19.3, and the zod advisory fix; `npm audit` is clean ([PR #39](https://github.com/mattdimens/vehicle-analyzer/pull/39)).

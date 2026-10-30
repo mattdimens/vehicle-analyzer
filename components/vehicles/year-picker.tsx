@@ -24,6 +24,10 @@ interface YearPickerProps {
   generations: YearPickerGeneration[]
   /** Where "Go" points before a year is chosen (the generation cards) */
   fallbackHref: string
+  /** Which page the picker is on, sent with vehicle_year_selected */
+  page: "hub" | "homepage" | "make"
+  /** The "identify it from a photo" link, for pages without their own */
+  showPhotoLink?: boolean
 }
 
 /**
@@ -31,7 +35,7 @@ interface YearPickerProps {
  * points "Go" at that generation's page.  Without JavaScript, "Go" jumps to
  * the generation cards, which are plain links.
  */
-export function YearPicker({ modelName, years, generations, fallbackHref }: YearPickerProps) {
+export function YearPicker({ modelName, years, generations, fallbackHref, page, showPhotoLink = true }: YearPickerProps) {
   const id = useId()
   const [year, setYear] = useState<number | null>(null)
   const generation = year === null ? undefined : generations.find((g) => year >= g.yearStart && year <= g.yearEnd)
@@ -41,7 +45,7 @@ export function YearPicker({ modelName, years, generations, fallbackHref }: Year
     setYear(next)
     const g = next === null ? undefined : generations.find((x) => next >= x.yearStart && next <= x.yearEnd)
     if (next !== null && g) {
-      trackEvent("vehicle_year_selected", { year: next, generation: g.slug, entry_door: getEntryDoor() })
+      trackEvent("vehicle_year_selected", { year: next, generation: g.slug, entry_door: getEntryDoor(), page })
     }
   }
 
@@ -68,6 +72,7 @@ export function YearPicker({ modelName, years, generations, fallbackHref }: Year
           href={generation?.href ?? fallbackHref}
           className={cn(primaryButtonClass, "w-auto shrink-0 px-6")}
           aria-label={generation ? `Go to ${generation.label} ${modelName} accessories` : "Go to the generations"}
+          data-browse-generation={generation?.label}
         >
           Go
         </Link>
@@ -80,13 +85,15 @@ export function YearPicker({ modelName, years, generations, fallbackHref }: Year
           </span>
         )}
       </p>
-      <Link
-        href="/#upload-zone"
-        className="-mt-1 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#17212B] hover:underline"
-      >
-        <Camera className="h-[18px] w-[18px] text-[#C8460F]" aria-hidden="true" />
-        Not sure? Identify it from a photo
-      </Link>
+      {showPhotoLink && (
+        <Link
+          href="/#upload-zone"
+          className="-mt-1 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#17212B] hover:underline"
+        >
+          <Camera className="h-[18px] w-[18px] text-[#C8460F]" aria-hidden="true" />
+          Not sure? Identify it from a photo
+        </Link>
+      )}
     </div>
   )
 }

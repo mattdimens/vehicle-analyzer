@@ -134,6 +134,18 @@ export function remainingPlaceholders(
 // ── Queries ────────────────────────────────────────────────────────────
 
 /** Queries over a catalog.  Exported so tests can run them on fixture data. */
+/** What a generation card shows, on the hub, the homepage and the make page. */
+export interface GenerationCardData {
+  slug: string
+  label: string
+  yearStart: number
+  yearEnd: number
+  displayRange: string
+  href: string
+  intro: string
+  pickCount: number
+}
+
 export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake[]) {
   const productsById = new Map(catalog.products.map((p) => [p.id, p]))
   const productsByAsin = new Map(catalog.products.map((p) => [p.asin, p]))
@@ -180,6 +192,20 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
         (a, b) =>
           (typeOrder.get(a.productType.slug) ?? 0) - (typeOrder.get(b.productType.slug) ?? 0)
       )
+  }
+
+  /** One card per generation of a model, newest first, with its researched-pick count. */
+  function getGenerationCards(makeSlug: string, modelSlug: string): GenerationCardData[] {
+    return (findModel(makeSlug, modelSlug)?.model.generations ?? []).map((generation) => ({
+      slug: generation.slug,
+      label: generation.label,
+      yearStart: generation.yearStart,
+      yearEnd: generation.yearEnd,
+      displayRange: generation.displayRange,
+      href: `/vehicles/${makeSlug}/${modelSlug}/${generation.slug}`,
+      intro: generation.intro,
+      pickCount: getGenerationSections(makeSlug, modelSlug, generation.slug).reduce((n, s) => n + s.picks.length, 0),
+    }))
   }
 
   /**
@@ -301,6 +327,7 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
 
   return {
     getGenerationSections,
+    getGenerationCards,
     getProductTypePage,
     getProductTypePages,
     getProductTypeRoutes,
@@ -325,6 +352,7 @@ if (catalogErrors.length > 0) {
 
 export const {
   getGenerationSections,
+  getGenerationCards,
   getProductTypePage,
   getProductTypePages,
   getProductTypeRoutes,

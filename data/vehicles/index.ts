@@ -158,7 +158,7 @@ export function buildGoUrl({
 
 // ── Supported vehicles ─────────────────────────────────────────────────
 
-export { supportedVehicles, getSupportedGenerationCards } from "./supported-vehicles"
+export { supportedVehicles } from "./supported-vehicles"
 export type { SupportedVehicle, SupportedGeneration } from "./supported-vehicles"
 
 // Catalog queries and getCatalogStats live in ./catalog, which only server

@@ -4,7 +4,7 @@
  * This is the single source of truth for vehicles with live catalog pages.
  * It drives:
  *   - Year/Make/Model selector routing
- *   - Browse by Vehicle generation grid
+ *   - Which models the Browse by Vehicle section lists
  *   - Catalog stats bar counts
  *
  * Adding a new vehicle family requires only:
@@ -25,8 +25,6 @@ export interface SupportedGeneration {
   label: string
   /** Human-readable range for card display, e.g. "2024+" */
   displayRange: string
-  /** Descriptive card title for SEO, e.g. "4th Gen Toyota Tacoma Accessories (2024+)" */
-  cardTitle: string
 }
 
 export interface SupportedVehicle {
@@ -58,7 +56,6 @@ export const supportedVehicles: SupportedVehicle[] = [
         slug: "4th-gen",
         label: "4th Gen",
         displayRange: "2024+",
-        cardTitle: "4th Gen Toyota Tacoma Accessories (2024+)",
       },
       {
         yearStart: 2016,
@@ -66,7 +63,6 @@ export const supportedVehicles: SupportedVehicle[] = [
         slug: "3rd-gen",
         label: "3rd Gen",
         displayRange: "2016-2023",
-        cardTitle: "3rd Gen Toyota Tacoma Accessories (2016-2023)",
       },
       {
         yearStart: 2005,
@@ -74,7 +70,6 @@ export const supportedVehicles: SupportedVehicle[] = [
         slug: "2nd-gen",
         label: "2nd Gen",
         displayRange: "2005-2015",
-        cardTitle: "2nd Gen Toyota Tacoma Accessories (2005-2015)",
       },
       {
         yearStart: 1995,
@@ -82,7 +77,6 @@ export const supportedVehicles: SupportedVehicle[] = [
         slug: "1st-gen",
         label: "1st Gen",
         displayRange: "1995-2004",
-        cardTitle: "1st Gen Toyota Tacoma Accessories (1995-2004)",
       },
     ],
   },
@@ -144,22 +138,6 @@ export function resolveCatalogGeneration(
   if (!gen) return null
 
   return { href: `${vehicle.routeBase}/${gen.slug}`, label: gen.label, model: vehicle.model }
-}
-
-/**
- * Flat list of all supported generation cards for the Browse by Vehicle grid.
- */
-export function getSupportedGenerationCards(): Array<
-  SupportedGeneration & { make: string; model: string; href: string }
-> {
-  return supportedVehicles.flatMap((v) =>
-    v.generations.map((g) => ({
-      ...g,
-      make: v.make,
-      model: v.model,
-      href: `${v.routeBase}/${g.slug}`,
-    }))
-  )
 }
 
 /**

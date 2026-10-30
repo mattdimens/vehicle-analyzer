@@ -4,17 +4,19 @@ import type { ProductTypePageData } from "@/data/vehicles/catalog"
 import { fitmentCheckedLabel, fitmentFor } from "@/data/vehicles/catalog/fitment"
 import type { TruckConfigs } from "@/data/vehicles/types"
 import { getPostBySlug } from "@/lib/blog"
-import { VehicleHero } from "@/components/vehicles/vehicle-hero"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
+import { GenerationHero, PhotoCheckCard } from "@/components/vehicles/generation-hero"
 import { CatalogSection } from "@/components/vehicles/catalog-section"
 import { PageNav } from "@/components/vehicles/page-nav"
 import { TruckFilterProvider } from "@/components/vehicles/truck-filter"
 import type { FitSection } from "@/components/vehicles/truck-filter"
 import { TruckBarDesktop, TruckRow } from "@/components/vehicles/truck-bar"
-import { ProductTypeLinks } from "@/components/vehicles/product-type-links"
-import { RelatedGuides } from "@/components/vehicles/related-guides"
-import type { GuideLink } from "@/components/vehicles/related-guides"
-import { BreadcrumbNav } from "@/components/ui/breadcrumb-nav"
+import { GuideLinks } from "@/components/vehicles/guide-links"
+import type { GuideLink } from "@/components/vehicles/guide-links"
 import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
+import { bodyTextClass, cardClass, mutedTextClass } from "@/components/results/tokens"
+import { cn } from "@/lib/utils"
 
 const BASE_URL = "https://visualfitment.com"
 
@@ -138,6 +140,14 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
           beds: Array.from(new Set(withConfigs.flatMap((c) => c.beds))),
         }
       : undefined
+  const photoCard = {
+    title: barConfigs
+      ? `${barConfigs.cabs.join(" or ")}? ${barConfigs.beds.join(" or ")} bed?`
+      : `Not sure which ${model.name} you have?`,
+    line: `Upload a photo of your ${model.name} to see what fits.`,
+    buttonLabel: `Identify my ${model.name}`,
+    href: `${productType.toolHref ?? "/"}#upload-zone`,
+  }
   const navItems = sections.map(({ generation, picks }) => ({
     id: generation.slug,
     label: `${generation.label} (${generation.displayRange})`,
@@ -155,17 +165,14 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
-      <BreadcrumbNav items={breadcrumbItems} />
-
-      <VehicleHero
+      <GenerationHero
+        breadcrumb={breadcrumbItems}
+        back={{ href: basePath, label: `All ${model.name} accessories` }}
+        eyebrow={`${make.name} ${model.name}`}
         h1={h1}
         intro={guide.intro}
-        ctaLabel={`Upload a photo of your ${model.name} to see what fits`}
-        ctaHref={`${productType.toolHref ?? "/"}#upload-zone`}
+        aside={<PhotoCheckCard {...photoCard} />}
       />
-
-      {/* Affiliate disclosure - adjacent to product recommendations */}
-      <AffiliateDisclosure />
 
       <TruckFilterProvider
         make={make.slug}
@@ -188,58 +195,85 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
           }
         />
 
-        <section className="w-full bg-white py-14 md:py-16">
-          <div className="container max-w-5xl space-y-14">
-            <div className="rounded-xl border border-border bg-gray-50 p-6">
-              <h2 className="font-heading text-lg font-bold text-foreground">
-                What to know before you buy
-              </h2>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground">
-                {guide.buyingNotes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-              {checkedLabel && (
-                <p className="mt-4 text-sm text-muted-foreground">Fitment checked {checkedLabel}.</p>
-              )}
+        <div className="w-full bg-white">
+          <div className="container max-w-6xl pb-16 pt-4 md:pt-8">
+            {/* Affiliate disclosure - adjacent to product recommendations */}
+            <AffiliateDisclosure variant="inline" className="mb-6 md:mb-8" />
+
+            <div className="space-y-12 md:space-y-14">
+              <section aria-labelledby="buying-notes-title" className={cn(cardClass, "p-5 md:p-6")}>
+                <h2 id="buying-notes-title" className="font-heading text-lg font-bold text-[#17212B]">
+                  What to know before you buy
+                </h2>
+                <ul className={cn("mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed md:text-[15px]", bodyTextClass)}>
+                  {guide.buyingNotes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+                {checkedLabel && (
+                  <p className={cn("mt-4 text-[13px]", mutedTextClass)}>Fitment checked {checkedLabel}.</p>
+                )}
+              </section>
+
+              {sections.map(({ generation, picks, note }) => (
+                <CatalogSection
+                  key={generation.slug}
+                  id={generation.slug}
+                  title={`${generation.label} ${model.name} (${generation.displayRange})`}
+                  productTypeSlug={productType.slug}
+                  itemNoun={productType.name.toLowerCase()}
+                  checkedLabel={fitmentCheckedLabel(picks.map((r) => r.product))}
+                  note={note}
+                  picks={picks}
+                  filtered={Boolean(generation.configs)}
+                  vehicle={{
+                    make: make.slug,
+                    model: model.slug,
+                    modelName: model.name,
+                    yearStart: generation.yearStart,
+                    yearEnd: generation.yearEnd,
+                    vehicleString: `${generation.displayRange} ${make.name} ${model.name}`,
+                  }}
+                  more={{
+                    href: `${basePath}/${generation.slug}`,
+                    label: `All ${generation.label} ${model.name} accessories`,
+                  }}
+                />
+              ))}
+
+              {/* Under 1024px the photo card moves here from the hero */}
+              <PhotoCheckCard {...photoCard} className="lg:hidden" />
+
+              {/* Footer band: more for this model, and the guide */}
+              <div className="grid gap-12 border-t border-[#D5DEE5] pt-10 md:grid-cols-2 md:gap-10">
+                <section aria-labelledby="more-accessories-title">
+                  <h2 id="more-accessories-title" className="font-heading text-lg font-bold text-[#17212B]">
+                    More {model.name} accessories
+                  </h2>
+                  <ul className="mt-2">
+                    {[
+                      ...otherTypes.map((t) => ({ href: `${basePath}/${t.slug}`, label: `${model.name} ${t.name.toLowerCase()}` })),
+                      { href: basePath, label: `All ${model.name} accessories` },
+                    ].map((link) => (
+                      <li key={link.href} className="border-t border-[#EDF1F4] first:border-t-0">
+                        <Link
+                          href={link.href}
+                          className="flex min-h-12 items-center justify-between gap-3 text-[15px] font-medium text-[#17212B] hover:text-[#9A3412]"
+                        >
+                          {link.label}
+                          <ChevronRight className={cn("h-4 w-4 shrink-0", mutedTextClass)} aria-hidden="true" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <GuideLinks guides={guides} />
+              </div>
             </div>
-
-            {sections.map(({ generation, picks, note }) => (
-              <CatalogSection
-                key={generation.slug}
-                id={generation.slug}
-                title={`${generation.label} ${model.name} (${generation.displayRange})`}
-                productTypeSlug={productType.slug}
-                itemNoun={productType.name.toLowerCase()}
-                checkedLabel={fitmentCheckedLabel(picks.map((r) => r.product))}
-                note={note}
-                picks={picks}
-                filtered={Boolean(generation.configs)}
-                vehicle={{
-                  make: make.slug,
-                  model: model.slug,
-                  modelName: model.name,
-                  yearStart: generation.yearStart,
-                  yearEnd: generation.yearEnd,
-                  vehicleString: `${generation.displayRange} ${make.name} ${model.name}`,
-                }}
-                more={{
-                  href: `${basePath}/${generation.slug}`,
-                  label: `All ${generation.label} ${model.name} accessories`,
-                }}
-              />
-            ))}
           </div>
-        </section>
+        </div>
       </TruckFilterProvider>
-
-      <ProductTypeLinks
-        title={`More ${model.name} accessories`}
-        productTypes={otherTypes}
-        basePath={basePath}
-      />
-
-      <RelatedGuides guides={guides} />
     </>
   )
 }

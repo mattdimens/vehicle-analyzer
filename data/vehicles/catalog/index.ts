@@ -18,6 +18,7 @@ import type { ProductType } from "../product-types"
 import type {
   CatalogProduct,
   Pick,
+  PickRole,
   ProductTypeGuide,
   VehicleCatalog,
   VehicleCategory,
@@ -44,6 +45,8 @@ export interface ProductTypeSection {
   productType: ProductType
   picks: ResolvedPick[]
   note?: string
+  /** The model's guide for this product type, when one exists (its buying notes) */
+  guide?: ProductTypeGuide
 }
 
 /** One generation's picks on a product-type page. */
@@ -75,7 +78,35 @@ export interface ProductTypeRoute {
   productType: string
 }
 
+// ── Pick order ─────────────────────────────────────────────────────────
+
+const ROLE_ORDER: Record<PickRole, number> = {
+  "best-overall": 0,
+  budget: 1,
+  premium: 2,
+  "best-for": 3,
+}
+
+/**
+ * Display order for a section's picks: best overall, best budget, premium,
+ * then the "best for" picks in data order.
+ */
+export function orderPicks<T extends { pick: Pick }>(picks: T[]): T[] {
+  // Array.prototype.sort is stable, so "best for" picks keep their data order.
+  return [...picks].sort((a, b) => ROLE_ORDER[a.pick.role] - ROLE_ORDER[b.pick.role])
+}
+
 // ── Placeholders beside researched picks ───────────────────────────────
+
+/**
+ * Link text for a placeholder search: the title without its "Budget" or
+ * "Premium" prefix, e.g. "Budget mud flaps" -> "Mud flaps".  Only the visible
+ * text changes; the /go link keeps the full title.
+ */
+export function placeholderLinkLabel(title: string): string {
+  const label = title.replace(/^(budget|premium)\s+/i, "")
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
 
 /** Items that don't stand in for one of the researched product types. */
 export function withoutResearched<T extends { productType?: string }>(
@@ -115,10 +146,18 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
   }
 
   function resolve(picks: Pick[]): ResolvedPick[] {
-    return picks.flatMap((pick) => {
-      const product = productsById.get(pick.productId)
-      return product ? [{ pick, product }] : []
-    })
+    return orderPicks(
+      picks.flatMap((pick) => {
+        const product = productsById.get(pick.productId)
+        return product ? [{ pick, product }] : []
+      })
+    )
+  }
+
+  function findGuide(makeSlug: string, modelSlug: string, typeSlug: string) {
+    return catalog.guides.find(
+      (g) => g.make === makeSlug && g.model === modelSlug && g.category === typeSlug
+    )
   }
 
   /** Product-type sections for a generation page, in product-type order. */
@@ -133,7 +172,9 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
       )
       .flatMap((s) => {
         const productType = getProductType(s.category)
-        return productType ? [{ productType, picks: resolve(s.picks), note: s.note }] : []
+        if (!productType) return []
+        const guide = findGuide(makeSlug, modelSlug, s.category)
+        return [{ productType, picks: resolve(s.picks), note: s.note, guide }]
       })
       .sort(
         (a, b) =>
@@ -152,9 +193,7 @@ export function createCatalogQueries(catalog: VehicleCatalog, makes: VehicleMake
   ): ProductTypePageData | undefined {
     const found = findModel(makeSlug, modelSlug)
     const productType = getProductType(typeSlug)
-    const guide = catalog.guides.find(
-      (g) => g.make === makeSlug && g.model === modelSlug && g.category === typeSlug
-    )
+    const guide = findGuide(makeSlug, modelSlug, typeSlug)
     if (!found || !productType || !guide) return undefined
 
     const sections = found.model.generations.flatMap((generation) => {

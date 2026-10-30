@@ -86,6 +86,11 @@ export interface VehicleGeneration {
   categories: VehicleCategory[]
   /** Editorially curated popular picks for this generation */
   popular: PopularItem[]
+  /**
+   * Fitment questions shown as plain text on the generation page.  Matt
+   * confirms every answer.  No FAQPage markup without his sign-off.
+   */
+  faqs?: { q: string; a: string }[]
 }
 
 // ── Model ──────────────────────────────────────────────────────────────

@@ -11,10 +11,10 @@ import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/
 import { merchants, normalizeAsin } from '../lib/affiliate/merchants'
 import { buildGoUrl, getAllMakes } from '../data/vehicles/index'
 import { productTypes } from '../data/vehicles/product-types'
-import { catalog, createCatalogQueries, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
+import { catalog, createCatalogQueries, getGenerationSections, orderPicks, placeholderLinkLabel, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
 import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles/catalog/fitment'
-import type { CatalogProduct, VehicleCatalog } from '../data/vehicles/types'
+import type { CatalogProduct, Pick, VehicleCatalog } from '../data/vehicles/types'
 import { buildExactPartSearch, buildPartGoUrl, buildPartSearch, buildTypedPartSearch, buildVehicleItemSearch, partSearchVehicle, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
 import { getPartDisplayBand } from '../config/analysis'
 import { detectedVehicleLabel, formatVehicleLabel, initialPartVehicle, parsePartVehicleChoice, partForVehicle } from '../lib/part-vehicle'
@@ -218,6 +218,30 @@ const d = fixture.products[3]
 assert(formatFitment(fitmentFor(d, 'toyota', 'tacoma', { yearStart: 2024, yearEnd: 2026 }), 'Tacoma') === 'Fits 2024-2026 Tacoma, Double Cab, 5-ft bed. Not for TRD Pro. Drilling required.', 'fitment line lists years, cab, bed, exclusions and notes')
 assert(fitmentFor(d, 'toyota', 'tacoma', { yearStart: 2016, yearEnd: 2023 }).length === 0, 'fitment outside the years is ignored')
 assert(fitmentCheckedLabel(fixture.products.slice(0, 3)) === 'September 2026', 'fitment checked uses the oldest check date')
+
+console.log('\norderPicks')
+const rolePicks: { pick: Pick }[] = [
+    { pick: { productId: 'for-1', role: 'best-for', label: 'Best for one' } },
+    { pick: { productId: 'budget', role: 'budget' } },
+    { pick: { productId: 'for-2', role: 'best-for', label: 'Best for two' } },
+    { pick: { productId: 'premium', role: 'premium' } },
+    { pick: { productId: 'overall', role: 'best-overall' } },
+]
+assert(orderPicks(rolePicks).map((r) => r.pick.productId).join() === 'overall,budget,premium,for-1,for-2', 'best overall, budget, premium, then best-for picks in data order')
+assert(rolePicks[0].pick.productId === 'for-1', 'orderPicks leaves its input alone')
+assert(orderPicks([]).length === 0, 'no picks, no order')
+assert(queries.getGenerationSections('toyota', 'tacoma', '4th-gen')[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'generation sections list picks in role order')
+assert(queries.getProductTypePage('toyota', 'tacoma', 'bed-covers')?.sections[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'product-type pages list picks in role order')
+assert(getGenerationSections('toyota', 'tacoma', '3rd-gen')[0].picks.map((r) => r.pick.role).join() === 'best-overall,budget,best-for,best-for,best-for', '3rd Gen seat covers: best overall, then budget, then best-for')
+assert(sections3.find((s) => s.productType.slug === 'bed-covers')?.guide?.buyingNotes.length === 3, 'a section carries its product-type guide')
+assert(sections3.find((s) => s.productType.slug === 'seat-covers')?.guide === undefined, 'a section without a guide has none')
+
+console.log('\nplaceholderLinkLabel')
+assert(placeholderLinkLabel('Budget mud flaps') === 'Mud flaps', 'drops a Budget prefix')
+assert(placeholderLinkLabel('Premium grille insert') === 'Grille insert', 'drops a Premium prefix')
+assert(placeholderLinkLabel('Fender flares') === 'Fender flares', 'leaves other titles alone')
+assert(placeholderLinkLabel('Budget') === 'Budget', 'a bare word is not a prefix')
+assert(thirdGen.faqs !== undefined && thirdGen.faqs.length === 3 && thirdGen.faqs.every((f) => f.q.endsWith('?') && f.a.length > 0), '3rd Gen has three fitment questions with answers')
 
 console.log('\nbuildPartSearch')
 const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }

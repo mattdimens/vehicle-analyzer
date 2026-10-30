@@ -171,3 +171,39 @@
     @apply w-full max-w-6xl mx-auto px-4;
   }
 }
+/*
+ * Vehicle pages: a <details> that is a disclosure on phones and always open
+ * from 768px. Its content is in the HTML either way. Browsers without
+ * ::details-content keep it an ordinary disclosure.
+ * - .vf-open-md: open from 768px; its summary stays as a heading, not a toggle
+ * - .vf-hide-md: hidden from 768px when inside .vf-open-md (the chevron, or a
+ *   summary that only makes sense on phones)
+ * - .vf-inline-md: from 768px the summary and the content run on as one
+ *   paragraph (the hero intro)
+ */
+@supports selector(::details-content) {
+  @media (min-width: 48rem) {
+    details.vf-open-md::details-content {
+      content-visibility: visible;
+    }
+    details.vf-open-md > summary {
+      pointer-events: none;
+    }
+    details.vf-open-md .vf-hide-md {
+      display: none;
+    }
+    details.vf-inline-md > summary,
+    details.vf-inline-md::details-content,
+    details.vf-inline-md > p {
+      display: inline;
+    }
+  }
+}
+
+/* Chip rails scroll sideways without a scrollbar. */
+.vf-rail {
+  scrollbar-width: none;
+}
+.vf-rail::-webkit-scrollbar {
+  display: none;
+}

@@ -11,14 +11,13 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
 | 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 2 | Test and merge [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40) (Lucide 1, react-dropzone 20, `@types/node` 22, Gemini SDK 2) | Matt | Now | Finished, but upload one vehicle photo and one part photo on its Vercel preview first: a real upload is the one path Claude couldn't test locally. |
-| 3 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
-| 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #3 is paying off. Run both together. |
-| 5 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
-| 6 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
-| 7 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #3's research. |
-| 8 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
-| 9 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
+| 2 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
+| 3 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #2 is paying off. Run both together. |
+| 4 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
+| 5 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
+| 6 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #2's research. |
+| 7 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
+| 8 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
 
 ## Waiting on Matt
 
@@ -36,11 +35,11 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 ## Code
 
 - [ ] **Amazon data on the cards:** image, price with time, stock, and the Sort control. Needs its own brief once the `amazon_items` cache table is designed ([plan 6.4](vehicle-pages-plan.md#64-supabase-later-the-amazon-data-cache) and [8.3](vehicle-pages-plan.md#83-build-steps)). The Creators API needs 10 qualifying sales in 30 days first.
-- [ ] **Major-version upgrades:** in review, [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40): Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2. Needs a photo upload test on its preview.
 - [ ] **ESLint 10 and TypeScript 7**, held back. ESLint 10 runs, but `eslint-config-next`'s import, jsx-a11y and react plugins don't support it yet. TypeScript 7 builds, but `typescript-eslint` 8 can't lint with it. Retry each once its plugins support it.
 
 ## Done recently
 
+- 2026-10-30: Major-version upgrades: Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2. Matt tested a vehicle and a part photo on the preview ([PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40)).
 - 2026-10-30: Product-type page on the light layout, with one shared guides list ([PR #38](https://github.com/mattdimens/vehicle-analyzer/pull/38)).
 - 2026-10-30: Dependency updates within ranges, React 19.3, and the zod advisory fix; `npm audit` is clean ([PR #39](https://github.com/mattdimens/vehicle-analyzer/pull/39)).
 - 2026-10-30: Demand logging uses the shared High band (80 or more) instead of a hardcoded 85 ([PR #41](https://github.com/mattdimens/vehicle-analyzer/pull/41)).

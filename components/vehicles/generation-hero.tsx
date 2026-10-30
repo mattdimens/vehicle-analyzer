@@ -48,7 +48,7 @@ export function GenerationHero({ breadcrumb, back, eyebrow, h1, intro, generatio
   return (
     <section className="w-full border-b border-[#D5DEE5] bg-[#F4F7F9]">
       <div className="container max-w-6xl py-5 md:py-8">
-        <BreadcrumbNav items={breadcrumb} variant="light" className="mb-5 hidden md:block" />
+        <BreadcrumbNav items={breadcrumb} variant="inline" className="mb-5 hidden md:block" />
         {back && (
           <Link
             href={back.href}

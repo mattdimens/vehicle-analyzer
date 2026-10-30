@@ -162,7 +162,7 @@ export function UploadZone({
                             className={cn(
                                 "flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors",
                                 activeMode === "vehicle"
-                                    ? "bg-[#E8712B] text-white"
+                                    ? "bg-[#C8460F] text-white"
                                     : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
                             )}
                         >
@@ -177,7 +177,7 @@ export function UploadZone({
                             className={cn(
                                 "flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors",
                                 activeMode === "part"
-                                    ? "bg-[#E8712B] text-white"
+                                    ? "bg-[#C8460F] text-white"
                                     : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
                             )}
                         >
@@ -216,8 +216,8 @@ export function UploadZone({
                             isDragActive
                                 ? "md:border-2 md:border-dashed md:border-primary md:bg-[#FFF2EB]"
                                 : hasItems
-                                    ? "md:items-stretch md:border md:border-[#D4DFDB] md:bg-white md:p-5"
-                                    : "md:border-2 md:border-dashed md:border-[#BFD0CA] md:bg-[#F6FAF8] md:hover:bg-[#EEF5F2]"
+                                    ? "md:items-stretch md:border md:border-[#D5DEE5] md:bg-white md:p-5"
+                                    : "md:border-2 md:border-dashed md:border-[#B9C5CF] md:bg-[#F4F7F9] md:hover:bg-[#EEF3F6]"
                         )
                     )}
                 >
@@ -656,7 +656,7 @@ export function UploadZone({
                                             className={cn(
                                                 "flex items-center gap-2 cursor-pointer text-sm px-3 py-1.5 rounded-full border transition-colors",
                                                 selectedAnalysis === opt.value
-                                                    ? "border-primary bg-primary/10 text-primary font-medium"
+                                                    ? "border-primary bg-primary/10 text-[#9A3412] font-medium"
                                                     : "border-border text-muted-foreground hover:border-primary/50"
                                             )}
                                         >
@@ -683,7 +683,7 @@ export function UploadZone({
                                 <>
                                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
                                         <Zap className="w-3.5 h-3.5 text-primary" />
-                                        Analyzing for: <span className="text-primary font-semibold">{categoryLabel ?? "All Categories"}</span>
+                                        Analyzing for: <span className="text-[#9A3412] font-semibold">{categoryLabel ?? "All Categories"}</span>
                                     </span>
                                     <button
                                         type="button"
@@ -750,7 +750,7 @@ export function UploadZone({
                             Identifying a whole vehicle instead?{" "}
                             <Link
                                 href="/"
-                                className="text-primary hover:text-primary/80 font-medium underline underline-offset-2"
+                                className="text-[#9A3412] hover:text-[#7C2D12] font-medium underline underline-offset-2"
                             >
                                 Use the Vehicle Analyzer
                             </Link>
@@ -842,7 +842,7 @@ function PartPhotoRow({ item, onReplace, onCrop, onRemove }: {
     const pending = item.status === "pending"
     // After a failed start the visitor can retry ("Identify Part") or swap the photo
     const editable = pending || item.status === "error"
-    const outlineClass = "h-11 px-3.5 border-[#C9D6D1] bg-white text-sm text-foreground hover:bg-muted hover:text-foreground"
+    const outlineClass = "h-11 px-3.5 border-[#B9C5CF] bg-white text-sm text-foreground hover:bg-muted hover:text-foreground"
 
     return (
         <div className="flex items-center gap-5">

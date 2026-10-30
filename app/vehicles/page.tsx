@@ -74,15 +74,15 @@ export default function VehiclesIndexPage() {
               <Link
                 key={make.slug}
                 href={`/vehicles/${make.slug}`}
-                className="group flex flex-col rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-[#E8712B]/40 hover:-translate-y-0.5"
+                className="group flex flex-col rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-[#17212B] hover:-translate-y-0.5"
               >
-                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-[#E8712B] transition-colors">
+                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-[#C8460F] transition-colors">
                   {make.name}
                 </h3>
                 <p className="mt-2 flex-1 text-sm text-muted-foreground">
                   {make.models.length} model{make.models.length !== 1 ? "s" : ""} with accessory picks
                 </p>
-                <div className="mt-4 flex items-center text-sm font-medium text-[#E8712B] opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mt-4 flex items-center text-sm font-medium text-[#C8460F] opacity-0 group-hover:opacity-100 transition-opacity">
                   Browse models
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </div>

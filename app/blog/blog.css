@@ -1,15 +1,13 @@
 /* ============================================================
    VISUAL FITMENT — BLOG STYLES
    Scoped to /blog/* pages via the blog layout.
-   Brand: VF_ORANGE #E8712B, VF_DARK #0D2818, VF_GREEN #1A4D2E
+   Brand: orange text #C8460F, ink #17212B (the site's light card system)
    Fonts: DM Serif Display (display), DM Sans (body)
    ============================================================ */
 
 :root {
-  --vf-orange: #E8712B;
-  --vf-dark: #0D2818;
-  --vf-green: #1A4D2E;
-  --vf-green-light: #2A6B42;
+  --vf-orange: #C8460F;
+  --vf-ink: #17212B;
   --blog-text-primary: #1a1a1a;
   --blog-text-secondary: #4a4a4a;
   --blog-text-muted: #717171;
@@ -80,7 +78,7 @@
   font-family: var(--blog-font-display);
   font-size: 2.6rem;
   line-height: 1.15;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-bottom: 1rem;
   letter-spacing: -0.01em;
   max-width: 680px;
@@ -211,7 +209,7 @@
 .article-body h2 {
   font-family: var(--blog-font-display);
   font-size: 1.75rem;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-top: 3rem;
   margin-bottom: 1rem;
   line-height: 1.25;
@@ -223,7 +221,7 @@
   font-family: var(--blog-font-body);
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-top: 2rem;
   margin-bottom: 0.75rem;
   line-height: 1.35;
@@ -290,7 +288,7 @@
 }
 
 .callout strong {
-  color: var(--vf-dark);
+  color: var(--vf-ink);
 }
 
 /* ---- SPEAKABLE SUMMARY ---- */
@@ -315,7 +313,7 @@
 }
 
 .comparison-table thead th {
-  background: var(--vf-green);
+  background: var(--vf-ink);
   color: white;
   font-weight: 600;
   padding: 0.75rem 1rem;
@@ -366,7 +364,7 @@
 .faq-section h2 {
   font-family: var(--blog-font-display);
   font-size: 1.75rem;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-bottom: 1.5rem;
   font-weight: 400;
 }
@@ -477,7 +475,7 @@
 .related-articles h2 {
   font-family: var(--blog-font-display);
   font-size: 1.5rem;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-bottom: 1.5rem;
   font-weight: 400;
 }
@@ -539,7 +537,7 @@
 .blog-index-title {
   font-family: var(--blog-font-display);
   font-size: 2.2rem;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   margin-bottom: 0.5rem;
   font-weight: 400;
 }
@@ -580,7 +578,7 @@
 
 .card-image-placeholder {
   aspect-ratio: 16/9;
-  background: linear-gradient(135deg, #0D2818 0%, #1A4D2E 50%, #2A6B42 100%);
+  background: var(--blog-bg-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -610,7 +608,7 @@
   font-size: 1.15rem;
   margin-top: 0.4rem;
   line-height: 1.3;
-  color: var(--vf-dark);
+  color: var(--vf-ink);
   font-weight: 400;
 }
 

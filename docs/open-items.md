@@ -1,8 +1,26 @@
 # Open items
 
-The one list of what's still to do on Visual Fitment: things waiting on Matt, scheduled checks, and code work. Claude updates it at the end of each session: tick off what got done (move it to "Done recently" with the date and PR) and add anything new. Detail stays in the linked docs; each item here is one or two lines.
+The one list of what's still to do on Visual Fitment: things waiting on Matt, scheduled checks, and code work. Claude updates it at the end of each session: tick off what got done (move it to "Done recently" with the date and PR), add anything new to its section, and re-rank "Priorities". Detail stays in the linked docs; each item here is one or two lines.
 
 Last updated: 2026-10-30.
+
+## Priorities
+
+Every open item below, in the order to do it. Ranked by what moves the Tacoma pilot toward its 8-week gate ([plan 2.3](vehicle-pages-plan.md#23-gate-to-expand-8-weeks-after-launch)), then by risk, then by effort. Dated checks sit where their date falls.
+
+| # | Item | Who | When | Why this rank |
+|---|---|---|---|---|
+| 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
+| 2 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
+| 3 | Product-type page layout | Claude | Before the first product-type page goes live | It still has the old dark hero, so the first page would launch looking unlike the rest. Small, and worth doing in the same PR as the sixth seat cover. |
+| 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #2 is paying off. Run both together. |
+| 5 | Major-version dependency upgrades | Claude | November | Staying current on Next.js closed critical advisories in October. Do them before falling further behind, one major per PR. |
+| 6 | Hardcoded confidence cutoff in demand logging | Claude | When convenient | Small fix, keeps the demand data consistent with the rest of the app. |
+| 7 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
+| 8 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #2's research. |
+| 9 | Unused preview branch in `results-display.tsx` | Claude | When convenient | Cleanup only. Needs Matt's OK to delete. |
+| 10 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
+| 11 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
 
 ## Waiting on Matt
 

@@ -14,9 +14,9 @@
   /* Mirage */
   --font-sans: "Inter", sans-serif;
   --font-heading: "Space Grotesk", sans-serif;
-  --color-ring: #e05500;
-  --color-ring: oklch(0.655 0.222 36.6);
-  /* Blaze Orange */
+  --color-ring: #c8460f;
+  --color-ring: oklch(0.569 0.175 39.1);
+  /* Orange */
   --color-input: #d5ddde;
   --color-input: oklch(0.88 0.019 217.41);
   /* Darker Wild Sand */
@@ -26,12 +26,12 @@
   --color-destructive: #d93025;
   --color-destructive: oklch(0.577 0.245 27.325);
   /* Kept original red */
-  --color-accent-foreground: #fbfbfb;
-  --color-accent-foreground: oklch(0.985 0 0);
-  /* White-ish */
-  --color-accent: #2d6058;
-  --color-accent: oklch(0.395 0.065 204.4);
-  /* Deep Sea Green */
+  --color-accent-foreground: #17212b;
+  --color-accent-foreground: oklch(0.243 0.024 248.8);
+  /* Ink */
+  --color-accent: #f4f7f9;
+  --color-accent: oklch(0.974 0.004 236.5);
+  /* Hover surface */
   --color-muted-foreground: #566070;
   --color-muted-foreground: oklch(0.45 0.024 246.3);
   /* Lighter Mirage */
@@ -47,9 +47,9 @@
   --color-primary-foreground: #fbfbfb;
   --color-primary-foreground: oklch(0.985 0 0);
   /* White-ish */
-  --color-primary: #e05500;
-  --color-primary: oklch(0.655 0.222 36.6);
-  /* Blaze Orange */
+  --color-primary: #c8460f;
+  --color-primary: oklch(0.569 0.175 39.1);
+  /* Orange: white text and normal-size links on white meet WCAG AA */
   --color-popover-foreground: #1a2332;
   --color-popover-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
@@ -106,8 +106,8 @@
   /* Pure White */
   --popover-foreground: oklch(0.205 0.024 246.3);
   /* Mirage */
-  --primary: oklch(0.655 0.222 36.6);
-  /* Blaze Orange */
+  --primary: oklch(0.569 0.175 39.1);
+  /* Orange */
   --primary-foreground: oklch(0.985 0 0);
   /* White-ish */
   --secondary: oklch(0.97 0 0);
@@ -118,18 +118,18 @@
   /* Wild Sand */
   --muted-foreground: oklch(0.45 0.024 246.3);
   /* Lighter Mirage */
-  --accent: oklch(0.395 0.065 204.4);
-  /* Deep Sea Green */
-  --accent-foreground: oklch(0.985 0 0);
-  /* White-ish */
+  --accent: oklch(0.974 0.004 236.5);
+  /* Hover surface */
+  --accent-foreground: oklch(0.243 0.024 248.8);
+  /* Ink */
   --destructive: oklch(0.577 0.245 27.325);
   /* Kept original red */
   --border: oklch(0.88 0.019 217.41);
   /* Darker Wild Sand */
   --input: oklch(0.88 0.019 217.41);
   /* Darker Wild Sand */
-  --ring: oklch(0.655 0.222 36.6);
-  /* Blaze Orange */
+  --ring: oklch(0.569 0.175 39.1);
+  /* Orange */
   --radius: 0.75rem;
 }
 

@@ -1,3 +1,6 @@
+import { mutedTextClass } from "@/components/results/tokens"
+import { cn } from "@/lib/utils"
+
 /**
  * TrustStrip
  *
@@ -7,8 +10,8 @@
  */
 export function TrustStrip() {
   return (
-    <div className="w-full bg-[#003223] pb-4 pt-2">
-      <p className="text-center text-sm text-white/60 font-medium tracking-wide max-w-3xl mx-auto px-4">
+    <div className="w-full pb-4 pt-2">
+      <p className={cn("text-center text-sm font-medium tracking-wide max-w-3xl mx-auto px-4", mutedTextClass)}>
         Identify your vehicle or a part from a photo, then shop accessories for it.
       </p>
     </div>

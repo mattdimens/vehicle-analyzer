@@ -14,6 +14,7 @@ import { HeroDualEntry } from "@/components/home/hero-dual-entry"
 import { SampleResultPreview } from "@/components/home/sample-result-preview"
 import { UploadZone } from "@/components/home/upload-zone"
 import { HeroEyebrow } from "@/components/results/sample-result-card"
+import { pageBackgroundClass } from "@/components/results/tokens"
 
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
@@ -555,9 +556,9 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     }
 
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className={cn("flex min-h-screen flex-col", showCategories && pageBackgroundClass)}>
             <div className="flex-1">
-                <div className="bg-[#003223]">
+                <div className={cn(!showCategories && "bg-[#003223]")}>
                     {/* Homepage: dual-entry hero (photo tool + vehicle selector) */}
                     {showCategories ? (
                         <>
@@ -646,10 +647,10 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
                 {showCategories && <AffiliateDisclosure />}
                 {showCategories && <BrowseByVehicle />}
 
-                <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} />
+                <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} className={cn(showCategories && "bg-transparent")} />
 
                 {/* Visual Separator */}
-                {showCategories && <div className="w-full h-px bg-[#E0E0E0]" />}
+                {showCategories && <div className="w-full h-px bg-[#D5DEE5]" />}
 
                 {showCategories && <ProductCategories />}
 

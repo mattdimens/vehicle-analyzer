@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export interface RelatedPageItem {
     title: string
@@ -10,11 +11,12 @@ export interface RelatedPageItem {
 interface RelatedPagesProps {
     items: RelatedPageItem[]
     heading?: string
+    className?: string
 }
 
-export function RelatedPages({ items, heading = "You Might Also Like" }: RelatedPagesProps) {
+export function RelatedPages({ items, heading = "You Might Also Like", className }: RelatedPagesProps) {
     return (
-        <section className="w-full bg-gray-50 py-16 border-t border-border/40">
+        <section className={cn("w-full bg-gray-50 py-16 border-t border-border/40", className)}>
             <div className="container max-w-5xl">
                 <h2 className="font-heading text-2xl font-bold text-black mb-8 text-center">
                     {heading}

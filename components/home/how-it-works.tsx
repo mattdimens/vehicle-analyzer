@@ -2,6 +2,7 @@ import { Upload, Table, type LucideIcon } from "lucide-react"
 import React from "react"
 import Link from "next/link"
 import { supportedVehicles } from "@/data/vehicles/supported-vehicles"
+import { cn } from "@/lib/utils"
 
 export interface HowItWorksStep {
     title: string
@@ -11,6 +12,7 @@ export interface HowItWorksStep {
 interface HowItWorksProps {
     heading?: React.ReactNode
     steps?: HowItWorksStep[]
+    className?: string
 }
 
 // Removed static defaultSteps in favor of dynamic fallback inside component
@@ -18,12 +20,12 @@ interface HowItWorksProps {
 // Icons per position, kept consistent across all pages
 const defaultIcons: LucideIcon[] = [Upload, Table]
 const defaultStyles = [
-    "border-2 border-black bg-white",
-    "border-2 border-black bg-[#0F172A] text-white",
-    "border-2 border-black bg-white",
+    "border-2 border-[#17212B] bg-white",
+    "border-2 border-[#17212B] bg-[#17212B] text-white",
+    "border-2 border-[#17212B] bg-white",
 ]
 
-export function HowItWorks({ heading, steps }: HowItWorksProps) {
+export function HowItWorks({ heading, steps, className }: HowItWorksProps) {
     const flagship = supportedVehicles[0]
     const flagshipGen = flagship.generations[0]
     const shopBaseUrl = `${flagship.routeBase}/${flagshipGen.slug}`
@@ -38,7 +40,7 @@ export function HowItWorks({ heading, steps }: HowItWorksProps) {
             description: (
                 <>
                     In seconds, get a detailed breakdown: vehicle specs, identified parts, and direct links to buy compatible accessories. Already know your truck?{" "}
-                    <Link href={shopBaseUrl} className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                    <Link href={shopBaseUrl} className="text-[#9A3412] underline underline-offset-2 hover:text-[#7C2D12] transition-colors">
                         Browse {flagshipGen.label} {flagship.make} {flagship.model} accessories directly.
                     </Link>
                 </>
@@ -50,10 +52,10 @@ export function HowItWorks({ heading, steps }: HowItWorksProps) {
     const gridCols = activeSteps.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
 
     return (
-        <section id="how-it-works" className="w-full bg-white py-16 md:py-20">
+        <section id="how-it-works" className={cn("w-full bg-white py-16 md:py-20", className)}>
             <div className="container max-w-6xl">
                 <div className="mb-20 text-center">
-                    <h2 className="font-heading text-5xl font-bold text-black">
+                    <h2 className="font-heading text-5xl font-bold text-[#17212B]">
                         {heading ?? (
                             <>How <span className="italic text-primary">Visual Fitment</span> Works</>
                         )}
@@ -71,7 +73,7 @@ export function HowItWorks({ heading, steps }: HowItWorksProps) {
                                 <div className="relative mb-8 flex h-40 items-center justify-center">
                                     {/* Connector Line (Left) */}
                                     {!isFirst && (
-                                        <div className="absolute left-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-black md:block" />
+                                        <div className="absolute left-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#17212B] md:block" />
                                     )}
 
                                     <div className={`relative z-10 flex h-20 w-20 items-center justify-center rounded-full ${defaultStyles[i] ?? defaultStyles[0]}`}>
@@ -80,14 +82,14 @@ export function HowItWorks({ heading, steps }: HowItWorksProps) {
 
                                     {/* Connector Line (Right) */}
                                     {!isLast && (
-                                        <div className="absolute right-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-black md:block" />
+                                        <div className="absolute right-0 top-1/2 hidden h-[2px] w-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#17212B] md:block" />
                                     )}
                                 </div>
-                                <div className="border-t border-black pt-6">
-                                    <h3 className="mb-3 font-heading text-2xl font-medium">
+                                <div className="border-t border-[#17212B] pt-6">
+                                    <h3 className="mb-3 font-heading text-2xl font-medium text-[#17212B]">
                                         {step.title}
                                     </h3>
-                                    <div className="text-lg leading-relaxed text-muted-foreground">
+                                    <div className="text-lg leading-relaxed text-[#5A6672]">
                                         {step.description}
                                     </div>
                                 </div>

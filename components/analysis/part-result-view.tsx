@@ -42,7 +42,7 @@ export function PartResultView({ part, imageUrl }: { part: PartIdentification; i
                 showStickyBar
                 titleAs="h1"
             />
-            <SaveToGarageCTA placement="results" />
+            <SaveToGarageCTA placement="results" className="rounded-2xl border" />
 
             <input
                 ref={photoInputRef}

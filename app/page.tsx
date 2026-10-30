@@ -60,6 +60,7 @@ export default function Home() {
         blogSection={<FromTheBlog posts={blogPosts} />}
         relatedContent={
           <RelatedPages
+            className="bg-transparent"
             items={[
               {
                 title: "Part Identifier",

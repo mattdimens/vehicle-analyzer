@@ -57,13 +57,13 @@ export function SampleResultPreview() {
 
     return (
         <div id="sample-result-preview" className="mx-auto flex w-full max-w-5xl flex-col gap-2.5 px-4 pb-10">
-            <SampleEyebrow className="text-center md:text-left" />
+            <SampleEyebrow tone="light" className="text-center md:text-left" />
 
             <SampleCardLink
                 href={`/r/${record.id}`}
                 ariaLabel={`See the full sample result for a ${title}`}
                 page="homepage"
-                className="flex flex-col overflow-hidden md:flex-row md:gap-5 md:p-5"
+                className="flex flex-col overflow-hidden border border-[#D5DEE5] shadow-none transition-colors hover:border-[#17212B] hover:shadow-none focus-visible:ring-[#17212B]/30 md:flex-row md:gap-5 md:p-5"
             >
                 {/* The vehicle */}
                 <div className="flex flex-col md:min-w-0 md:flex-1 md:gap-3">
@@ -122,7 +122,7 @@ export function SampleResultPreview() {
                 </div>
             </SampleCardLink>
 
-            <SampleCaption className="text-center md:hidden" />
+            <SampleCaption tone="light" className="text-center md:hidden" />
         </div>
     )
 }

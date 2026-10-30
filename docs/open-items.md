@@ -11,16 +11,14 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
 | 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 2 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
-| 3 | Product-type page layout | Claude | Before the first product-type page goes live | It still has the old dark hero, so the first page would launch looking unlike the rest. Small, and worth doing in the same PR as the sixth seat cover. |
-| 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #2 is paying off. Run both together. |
-| 5 | Major-version dependency upgrades | Claude | November | Staying current on Next.js closed critical advisories in October. Do them before falling further behind, one major per PR. |
-| 6 | Hardcoded confidence cutoff in demand logging | Claude | When convenient | Small fix, keeps the demand data consistent with the rest of the app. |
-| 7 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
-| 8 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #2's research. |
-| 9 | Unused preview branch in `results-display.tsx` | Claude | When convenient | Cleanup only. Needs Matt's OK to delete. |
-| 10 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
-| 11 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
+| 2 | Test and merge [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40) (Lucide 1, react-dropzone 20, `@types/node` 22, Gemini SDK 2) | Matt | Now | Finished, but upload one vehicle photo and one part photo on its Vercel preview first: a real upload is the one path Claude couldn't test locally. |
+| 3 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
+| 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #3 is paying off. Run both together. |
+| 5 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
+| 6 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
+| 7 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #3's research. |
+| 8 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
+| 9 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
 
 ## Waiting on Matt
 
@@ -38,13 +36,15 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 ## Code
 
 - [ ] **Amazon data on the cards:** image, price with time, stock, and the Sort control. Needs its own brief once the `amazon_items` cache table is designed ([plan 6.4](vehicle-pages-plan.md#64-supabase-later-the-amazon-data-cache) and [8.3](vehicle-pages-plan.md#83-build-steps)). The Creators API needs 10 qualifying sales in 30 days first.
-- [ ] **Photo pipeline demand logging** uses a hardcoded confidence cutoff of 85 ([lib/pipeline.ts](../lib/pipeline.ts)) instead of the shared thresholds ([REVIEW.md](../REVIEW.md), M7 leftovers).
-- [ ] **Unused preview branch** in [components/home/results-display.tsx](../components/home/results-display.tsx) (`variant="preview"`, hardcodes Tacoma links). Deleting it hasn't been approved yet ([REVIEW.md](../REVIEW.md), N10).
-- [ ] **Major-version dependency upgrades** were skipped in the October audit ([REVIEW.md](../REVIEW.md), L11).
-- [ ] **Product-type page layout:** it got the new cards and the "Your truck" filter in Step 2, but still has the old dark hero and disclosure band. Restyle it when the first one goes live.
+- [ ] **Major-version upgrades:** in review, [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40): Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2. Needs a photo upload test on its preview.
+- [ ] **ESLint 10 and TypeScript 7**, held back. ESLint 10 runs, but `eslint-config-next`'s import, jsx-a11y and react plugins don't support it yet. TypeScript 7 builds, but `typescript-eslint` 8 can't lint with it. Retry each once its plugins support it.
 
 ## Done recently
 
+- 2026-10-30: Product-type page on the light layout, with one shared guides list ([PR #38](https://github.com/mattdimens/vehicle-analyzer/pull/38)).
+- 2026-10-30: Dependency updates within ranges, React 19.3, and the zod advisory fix; `npm audit` is clean ([PR #39](https://github.com/mattdimens/vehicle-analyzer/pull/39)).
+- 2026-10-30: Demand logging uses the shared High band (80 or more) instead of a hardcoded 85 ([PR #41](https://github.com/mattdimens/vehicle-analyzer/pull/41)).
+- 2026-10-30: The unused `variant="preview"` branch in `results-display.tsx` turned out to have been deleted on 2026-10-11 ([PR #5](https://github.com/mattdimens/vehicle-analyzer/pull/5)). `REVIEW.md` N10 still said it was there, and is corrected.
 - 2026-10-30: Search Console indexing requested for the 5 Tacoma URLs and the 5 pages Google didn't seem to know (`/truck-bed-covers`, `/blog`, `/vehicles`, `/vehicles/toyota`, `/blog/running-boards-buying-guide`).
 - 2026-10-30: Vercel Firewall rate-limit rule added for the analysis endpoints ([REVIEW.md](../REVIEW.md), manual step 2).
 - 2026-10-30: Vehicle pages redesign, all three steps: generation page layout (#32), "Your truck" fit filter (#33), model hub (#34). The hub ships without the comparison table until the facts above are in.

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import type { VehicleGeneration, VehicleMake, VehicleModel } from "@/data/vehicles/types"
-import { productTypes } from "@/data/vehicles/product-types"
+import { productTypes, SKIPPED_PRODUCT_TYPES } from "@/data/vehicles/product-types"
 import { getGenerationSections, getProductTypePages, remainingPlaceholders } from "@/data/vehicles/catalog"
 import { fitmentCheckedLabel, fitmentFor } from "@/data/vehicles/catalog/fitment"
 import { GenerationHero, PhotoCheckCard } from "@/components/vehicles/generation-hero"
@@ -70,7 +70,9 @@ export async function GenerationPage(props: GenerationPageProps) {
   const researched = new Set(sections.map((s) => s.productType.slug))
   const placeholders = remainingPlaceholders(generation.categories, researched)
   const typesWithPages = new Set(getProductTypePages(make.slug, model.slug).map((t) => t.slug))
-  const comingSoon = productTypes.filter((t) => !researched.has(t.slug)).map((t) => t.name)
+  const comingSoon = productTypes
+    .filter((t) => !researched.has(t.slug) && !SKIPPED_PRODUCT_TYPES.has(t.slug))
+    .map((t) => t.name)
   const faqs = generation.faqs ?? []
   const otherGenerations = model.generations.filter((g) => g.slug !== generation.slug)
 

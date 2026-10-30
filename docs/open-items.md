@@ -6,12 +6,10 @@ Last updated: 2026-10-30.
 
 ## Waiting on Matt
 
-- [ ] **Request indexing in Search Console** for the 5 Tacoma URLs, changed by the redesign (PRs #32 to #34): `/vehicles/toyota/tacoma` and its 4 generation pages. Also the 5 pages Google doesn't seem to know yet: `/truck-bed-covers`, `/blog`, `/vehicles`, `/vehicles/toyota`, `/blog/running-boards-buying-guide` ([plan 2.4](vehicle-pages-plan.md#24-what-phase-0-found-2026-10-23)).
 - [ ] **Tacoma generation facts** for the hub's "How the generations differ" table: cabs, beds, engines, what carries over, for each generation. A row only shows when all four generations have it. Current values and TODOs: `specs` in [data/vehicles/toyota.ts](../data/vehicles/toyota.ts).
 - [ ] **Cabs and beds for the 4th, 2nd and 1st Gen** (`configs` in `toyota.ts`), to turn on the "Your truck" filter on those pages.
 - [ ] **Product research**, by the process in [plan section 4](vehicle-pages-plan.md#4-product-research-process). Next: a sixth 3rd Gen seat cover, so `/vehicles/toyota/tacoma/seat-covers` gets published (it needs 6 products), then bed covers for the 3rd and 4th Gen. 3rd Gen headlights are paused (no candidate met the rating bar).
 - [ ] **Privacy contact address.** Set `CONTACT_EMAIL` in [app/privacy/page.tsx](../app/privacy/page.tsx); the email line appears on its own ([REVIEW.md](../REVIEW.md), manual step 1).
-- [ ] **Vercel Firewall rate limit**, if not done yet: about 20 requests per minute per IP on paths starting `/api/analy`, plus a rule for POSTs with a `Next-Action` header ([REVIEW.md](../REVIEW.md), manual step 2).
 
 ## Scheduled checks
 
@@ -29,5 +27,7 @@ Last updated: 2026-10-30.
 
 ## Done recently
 
+- 2026-10-30: Search Console indexing requested for the 5 Tacoma URLs and the 5 pages Google didn't seem to know (`/truck-bed-covers`, `/blog`, `/vehicles`, `/vehicles/toyota`, `/blog/running-boards-buying-guide`).
+- 2026-10-30: Vercel Firewall rate-limit rule added for the analysis endpoints ([REVIEW.md](../REVIEW.md), manual step 2).
 - 2026-10-30: Vehicle pages redesign, all three steps: generation page layout (#32), "Your truck" fit filter (#33), model hub (#34). The hub ships without the comparison table until the facts above are in.
 - 2026-10-30: GA4 custom dimensions registered for `product_type`, `cab`, `bed`, `page`, `year`, `generation`, `platform` and `entry_door` (`link_type` and `method` were already there).

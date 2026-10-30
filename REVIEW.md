@@ -74,7 +74,7 @@ Four problems now matter most:
    `alter table public.analysis_results add constraint analysis_results_model_used_check check (model_used is null or model_used like 'gemini-%');`
    This lets analysis logging work again and survives future model upgrades.
 1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
-2. In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
+2. ~~Done Oct 30~~ In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. ~~Done Oct 11~~ The `vehicle_images` bucket limits are set by migration `20261011000200_auth_trigger_and_storage.sql`: `image/jpeg`, `image/png`, `image/gif` and `image/webp` only, 10 MB per file.
 4. ~~Done Oct 11~~ Run `supabase/migrations/20261011000100_function_search_path.sql` in the SQL Editor. After future schema changes, re-run the `pg_dump` command in the README and `supabase gen types` (command at the top of `types/supabase.ts`).
 

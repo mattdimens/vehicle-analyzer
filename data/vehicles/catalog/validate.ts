@@ -4,7 +4,7 @@
  * The rules come from docs/vehicle-pages-plan.md, sections 4.3 and 5.
  */
 import { normalizeAsin } from "@/lib/affiliate/merchants"
-import { productTypes } from "../product-types"
+import { productTypes, SKIPPED_PRODUCT_TYPES } from "../product-types"
 import type { CatalogProduct, PickRole, VehicleCatalog, VehicleMake } from "../types"
 import { fitmentFor } from "./fitment"
 
@@ -55,6 +55,9 @@ export function validateCatalog(
     }
 
     if (!typeSlugs.has(p.category)) errors.push(`${where}: unknown product type "${p.category}"`)
+    if (SKIPPED_PRODUCT_TYPES.has(p.category)) {
+      errors.push(`${where}: ${p.category} is a skipped product type (see SKIPPED_PRODUCT_TYPES)`)
+    }
     if (!p.brand.trim() || !p.name.trim()) errors.push(`${where}: brand and name are required`)
     if (!p.why.trim()) errors.push(`${where}: why is required`)
     if (p.sources.length === 0 || p.sources.some((s) => !/^https?:\/\//.test(s))) {

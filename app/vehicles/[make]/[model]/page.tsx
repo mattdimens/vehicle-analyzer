@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { getAllMakes, getModelBySlug, modelYears } from "@/data/vehicles/index"
-import { productTypes } from "@/data/vehicles/product-types"
+import { productTypes, SKIPPED_PRODUCT_TYPES } from "@/data/vehicles/product-types"
 import { getFeaturedPicks, getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
 import { GenerationHero } from "@/components/vehicles/generation-hero"
 import { YearPicker } from "@/components/vehicles/year-picker"
@@ -134,7 +134,9 @@ export default async function ModelHubPage({ params }: PageProps) {
     ]
   })
   const researchedTypes = new Set(typeTiles.map((t) => t.type.slug))
-  const nextTypes = productTypes.filter((t) => !researchedTypes.has(t.slug)).slice(0, 5)
+  const nextTypes = productTypes
+    .filter((t) => !researchedTypes.has(t.slug) && !SKIPPED_PRODUCT_TYPES.has(t.slug))
+    .slice(0, 5)
 
   // JSON-LD: BreadcrumbList
   const breadcrumbJsonLd = {

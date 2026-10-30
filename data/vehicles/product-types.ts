@@ -56,6 +56,14 @@ export const productTypes: ProductType[] = [
   { slug: "floor-mats", name: "Floor Mats & Liners", icon: "🧽" },
 ]
 
+/**
+ * Product types we don't research or pick for: Matt works at RealTruck, so
+ * bed and tonneau covers stay out to avoid a conflict of interest
+ * (docs/vehicle-pages-plan.md, section 4.3).  Pages leave them out of
+ * "coming soon" and "researching next".
+ */
+export const SKIPPED_PRODUCT_TYPES: ReadonlySet<string> = new Set(["bed-covers"])
+
 export function getProductType(slug: string): ProductType | undefined {
   return productTypes.find((t) => t.slug === slug)
 }

@@ -148,6 +148,93 @@ export const toyotaTacoma: VehicleCatalog = {
       verifiedAt: "2026-10-29",
       status: "active",
     },
+    // ── Seat covers: 4th gen (2024+) ──
+    {
+      id: "ekr-faux-leather-seat-covers-tacoma-2024-2026-double-cab",
+      asin: "B0D12C8G1Z",
+      brand: "EKR",
+      name: "Custom Fit Faux Leather Seat Covers, Full Set (Gas Models)",
+      category: "seat-covers",
+      priceBand: "mid",
+      fitment: [
+        {
+          make: "toyota",
+          model: "tacoma",
+          yearStart: 2024,
+          yearEnd: 2026,
+          cab: ["Double Cab"],
+          excludeTrims: ["TRD Pro", "Trailhunter"],
+          notes: "Gas models only; EKR sells a separate set for the hybrid. Front and rear seats.",
+        },
+      ],
+      why: "The set 4th gen owners report back on most. They describe the fit as close to factory, and it covers both rows for less than one row of canvas covers.",
+      gotcha:
+        "Plan on a long install. Owners say some snap holes don't line up, so you may have to cut a slot, and it's faux leather.",
+      sources: [
+        "https://www.amazon.com/dp/B0D12C8G1Z",
+        "https://www.tacoma4g.com/forum/threads/ekr-seat-covers-review-and-thoughts.12458",
+        "https://www.tacomaworld.com/threads/clazzio-seat-covers-for-2024.863623",
+      ],
+      verifiedAt: "2026-10-30",
+      status: "active",
+    },
+    {
+      id: "rough-country-neoprene-seat-covers-tacoma-2024-2026-front-rear",
+      asin: "B0D6HS9RKW",
+      brand: "Rough Country",
+      name: "Neoprene Front and Rear Seat Covers",
+      category: "seat-covers",
+      priceBand: "budget",
+      fitment: [
+        {
+          make: "toyota",
+          model: "tacoma",
+          yearStart: 2024,
+          yearEnd: 2026,
+          cab: ["Double Cab"],
+          excludeTrims: ["TRD Pro"],
+          notes: "Front buckets and a 60/40 rear bench without a fold-down armrest.",
+        },
+      ],
+      why: "The 4th gen version of the neoprene set 3rd gen owners rate well. It shrugs off water and mud and covers both rows for the lowest price here.",
+      gotcha:
+        "Rough Country says the fit is very snug. Neoprene runs warm, and one owner says an older set lasted about two years.",
+      sources: [
+        "https://www.roughcountry.com/product/toyota-neoprene-seat-covers-91062",
+        "https://www.tacomaworld.com/threads/clazzio-seat-covers-for-2024.863623",
+        "https://www.tacomaworld.com/threads/rough-country-neoprene-seat-covers-review.678922/",
+      ],
+      verifiedAt: "2026-10-30",
+      status: "active",
+    },
+    {
+      id: "covercraft-carhartt-seatsaver-tacoma-2024-2026-front",
+      asin: "B0DYZJC8CW",
+      brand: "Covercraft",
+      name: "Carhartt SeatSaver Front Seat Covers",
+      category: "seat-covers",
+      priceBand: "premium",
+      fitment: [
+        {
+          make: "toyota",
+          model: "tacoma",
+          yearStart: 2024,
+          yearEnd: 2026,
+          excludeTrims: ["TRD Pro"],
+          notes: "Front bucket seats with seat-mounted airbags.",
+        },
+      ],
+      why: "The 2024 and later version of the Carhartt canvas covers 3rd gen owners recommend. The duck canvas is water repellent, machine washable and made for the seat airbags.",
+      gotcha:
+        "Front seats only. The matching rear set is sold separately and doesn't fit the hybrid.",
+      sources: [
+        "https://www.covercraft.com/sku/SSC2615CAGY",
+        "https://www.tacomaworld.com/threads/gen-3-seat-cover-recommendations.769705/",
+        "https://www.tacomaworld.com/threads/carhartt-seat-covers.721638/",
+      ],
+      verifiedAt: "2026-10-30",
+      status: "active",
+    },
   ],
   picks: [
     {
@@ -176,6 +263,18 @@ export const toyotaTacoma: VehicleCatalog = {
         },
       ],
     },
+    {
+      make: "toyota",
+      model: "tacoma",
+      generation: "4th-gen",
+      category: "seat-covers",
+      note: "Covers for the 2024 and later Tacoma are cut for the cab and the rear seat. None of these fit the TRD Pro's IsoDynamic front seats, and the rear sets don't fit a rear bench with a fold-down armrest. Hybrids need a hybrid-specific set.",
+      picks: [
+        { productId: "ekr-faux-leather-seat-covers-tacoma-2024-2026-double-cab", role: "best-overall" },
+        { productId: "rough-country-neoprene-seat-covers-tacoma-2024-2026-front-rear", role: "budget" },
+        { productId: "covercraft-carhartt-seatsaver-tacoma-2024-2026-front", role: "premium" },
+      ],
+    },
   ],
   guides: [
     {
@@ -190,6 +289,7 @@ export const toyotaTacoma: VehicleCatalog = {
         "The 3rd gen's front seats have side airbags in the seatbacks. Choose a cover made for seat airbags, so its stitching gives way when an airbag deploys.",
         "If your driver seat is power-adjusted, check fit with the seller first. One owner with a power seat couldn't reach the straps that buckle under it.",
         "Carhartt canvas can go in the washing machine, neoprene handles water and mud best, and faux leather wipes clean but takes the longest to install.",
+        "On 2024 and later trucks, the TRD Pro's IsoDynamic front seats take none of these covers, and hybrids have their own rear seat, so buy a set that names the hybrid.",
       ],
     },
   ],

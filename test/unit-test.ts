@@ -135,7 +135,7 @@ function fixtureProduct(id: string, overrides: Partial<CatalogProduct> = {}): Ca
         asin: `B0TEST${String(asinCounter).padStart(4, '0')}`,
         brand: `Brand ${id}`,
         name: `Product ${id}`,
-        category: 'bed-covers',
+        category: 'bed-racks',
         priceBand: 'mid',
         fitment: [{ make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023 }],
         why: 'A reason specific to the Tacoma.',
@@ -155,11 +155,11 @@ const fixture: VehicleCatalog = {
     ],
     picks: [
         { make: 'toyota', model: 'tacoma', generation: '3rd-gen', category: 'seat-covers', picks: [{ productId: 'g', role: 'best-overall' }, { productId: 'h', role: 'budget' }, { productId: 'i', role: 'premium' }] },
-        { make: 'toyota', model: 'tacoma', generation: '3rd-gen', category: 'bed-covers', picks: [{ productId: 'a', role: 'best-overall' }, { productId: 'b', role: 'budget' }, { productId: 'c', role: 'premium' }] },
-        { make: 'toyota', model: 'tacoma', generation: '4th-gen', category: 'bed-covers', note: 'The 2024+ bed is a new size.', picks: [{ productId: 'e', role: 'budget' }, { productId: 'd', role: 'best-overall' }, { productId: 'f', role: 'best-for', label: 'Best for the 6-ft bed' }] },
+        { make: 'toyota', model: 'tacoma', generation: '3rd-gen', category: 'bed-racks', picks: [{ productId: 'a', role: 'best-overall' }, { productId: 'b', role: 'budget' }, { productId: 'c', role: 'premium' }] },
+        { make: 'toyota', model: 'tacoma', generation: '4th-gen', category: 'bed-racks', note: 'The 2024+ bed is a new size.', picks: [{ productId: 'e', role: 'budget' }, { productId: 'd', role: 'best-overall' }, { productId: 'f', role: 'best-for', label: 'Best for the 6-ft bed' }] },
     ],
     guides: [
-        { make: 'toyota', model: 'tacoma', category: 'bed-covers', intro: 'Bed covers for every Tacoma.', buyingNotes: ['Note one.', 'Note two.', 'Note three.'] },
+        { make: 'toyota', model: 'tacoma', category: 'bed-racks', intro: 'Bed covers for every Tacoma.', buyingNotes: ['Note one.', 'Note two.', 'Note three.'] },
     ],
 }
 assert(validateCatalog(fixture, makes, today).length === 0, 'valid fixture passes')
@@ -187,21 +187,22 @@ assert(hasError(errorsAfter((c) => { c.picks[1].generation = '9th-gen' }), 'unkn
 assert(hasError(errorsAfter((c) => { c.guides[0].buyingNotes.pop() }), 'at least 3 buying notes'), 'rejects a guide with fewer than 3 notes')
 assert(hasError(errorsAfter((c) => { c.picks[1].picks[0].productId = 'g' }), 'is a seat-covers product'), 'rejects a product from another product type')
 assert(hasError(errorsAfter((c) => { c.products[0].sources = [] }), 'at least one source'), 'rejects a product with no sources')
+assert(hasError(errorsAfter((c) => { c.products[0].category = 'bed-covers' }), 'is a skipped product type'), 'rejects a product of a skipped type (bed covers: RealTruck conflict)')
 
 const queries = createCatalogQueries(fixture, makes)
 const sections3 = queries.getGenerationSections('toyota', 'tacoma', '3rd-gen')
-assert(sections3.map((s) => s.productType.slug).join() === 'bed-covers,seat-covers', 'generation sections follow product-type order')
-const bedCovers = queries.getProductTypePage('toyota', 'tacoma', 'bed-covers')
-assert(bedCovers?.sections.map((s) => s.generation.slug).join() === '4th-gen,3rd-gen', 'product-type page lists the newest generation first')
+assert(sections3.map((s) => s.productType.slug).join() === 'bed-racks,seat-covers', 'generation sections follow product-type order')
+const bedRacks = queries.getProductTypePage('toyota', 'tacoma', 'bed-racks')
+assert(bedRacks?.sections.map((s) => s.generation.slug).join() === '4th-gen,3rd-gen', 'product-type page lists the newest generation first')
 assert(queries.getProductTypePage('toyota', 'tacoma', 'seat-covers') === undefined, 'no product-type page without a guide')
 assert(queries.getProductTypePage('toyota', 'tacoma', '3rd-gen') === undefined, 'a generation slug is not a product-type page')
 const fivePicks = createCatalogQueries({ ...fixture, picks: fixture.picks.map((s) => (s.generation === '4th-gen' ? { ...s, picks: s.picks.slice(0, 2) } : s)) }, makes)
-assert(fivePicks.getProductTypePage('toyota', 'tacoma', 'bed-covers') === undefined, 'no product-type page under 6 products')
-assert(JSON.stringify(queries.getProductTypeRoutes()) === JSON.stringify([{ make: 'toyota', model: 'tacoma', productType: 'bed-covers' }]), 'routes list only qualifying product-type pages')
+assert(fivePicks.getProductTypePage('toyota', 'tacoma', 'bed-racks') === undefined, 'no product-type page under 6 products')
+assert(JSON.stringify(queries.getProductTypeRoutes()) === JSON.stringify([{ make: 'toyota', model: 'tacoma', productType: 'bed-racks' }]), 'routes list only qualifying product-type pages')
 const featuredPicks = queries.getFeaturedPicks('toyota', 'tacoma')
 assert(featuredPicks?.generation.slug === '3rd-gen', 'hub features the generation with the most product types')
 assert(featuredPicks?.items.map((i) => i.resolved.product.id).join() === 'a,g', 'hub shows the best-overall pick per product type')
-const tiedQueries = createCatalogQueries({ ...fixture, picks: fixture.picks.filter((s) => s.category === 'bed-covers') }, makes)
+const tiedQueries = createCatalogQueries({ ...fixture, picks: fixture.picks.filter((s) => s.category === 'bed-racks') }, makes)
 assert(tiedQueries.getFeaturedPicks('toyota', 'tacoma')?.items[0].resolved.product.id === 'd', 'on a tie the hub features the newest generation')
 const fixtureStats = queries.getCatalogStats()
 assert(fixtureStats.totalProducts === 9 && fixtureStats.totalGenerations === 4, 'stats count researched products only')
@@ -234,9 +235,9 @@ assert(orderPicks(rolePicks).map((r) => r.pick.productId).join() === 'overall,bu
 assert(rolePicks[0].pick.productId === 'for-1', 'orderPicks leaves its input alone')
 assert(orderPicks([]).length === 0, 'no picks, no order')
 assert(queries.getGenerationSections('toyota', 'tacoma', '4th-gen')[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'generation sections list picks in role order')
-assert(queries.getProductTypePage('toyota', 'tacoma', 'bed-covers')?.sections[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'product-type pages list picks in role order')
+assert(queries.getProductTypePage('toyota', 'tacoma', 'bed-racks')?.sections[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'product-type pages list picks in role order')
 assert(getGenerationSections('toyota', 'tacoma', '3rd-gen')[0].picks.map((r) => r.pick.role).join() === 'best-overall,budget,best-for,best-for,best-for', '3rd Gen seat covers: best overall, then budget, then best-for')
-assert(sections3.find((s) => s.productType.slug === 'bed-covers')?.guide?.buyingNotes.length === 3, 'a section carries its product-type guide')
+assert(sections3.find((s) => s.productType.slug === 'bed-racks')?.guide?.buyingNotes.length === 3, 'a section carries its product-type guide')
 assert(sections3.find((s) => s.productType.slug === 'seat-covers')?.guide === undefined, 'a section without a guide has none')
 
 console.log('\nplaceholderLinkLabel')

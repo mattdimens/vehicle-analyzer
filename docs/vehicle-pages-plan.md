@@ -176,6 +176,15 @@ For each vehicle, generation and product type, show 3 to 5 real products, each w
 
 **Check stock and rating first.** They rule out the most candidates and take minutes: `scripts/amazon-lookup.ts` gives stock, and the rating has to be read from the Amazon page because the API doesn't return it. In October 2026, a full round of 3rd gen Tacoma headlight research ended with every in-stock candidate at 3.6 to 3.8 stars or unrated, so the product type was paused.
 
+**Rule calls Matt made on 2026-10-30,** after the strict rules paused most 3rd gen Tacoma product types (Amazon-first brands have the ratings but no forum presence; forum favorites sell direct or list each size separately):
+
+- A generation in its first few model years (the 4th gen Tacoma) uses the newer-vehicle bar: 4.0★ from 50+ ratings.
+- A new listing can borrow its product line's record from the previous generation's listing (the Covercraft Carhartt 4th gen covers, whose 3rd gen listing has 587 ratings at 4.5★). The PR says so.
+- A listing with 4.5★ or more from 1,000+ ratings counts as owner evidence when forums don't mention the brand, if its Amazon reviews include Tacoma owners confirming the fit, quoted in the PR. Amazon only shows full reviews to signed-in visitors, so this needs a signed-in browser.
+- Lift and leveling kits are skipped for now: only spacer kits pass on Amazon, and owners warn about them.
+
+As of 2026-10-30, 3rd gen Tacoma bed racks, front bumpers and skid plates, wheels, roof racks, headlights, running boards and lift kits are paused. Seat covers and floor mats have picks.
+
 ### 4.4 Fitment fields to record
 
 Years (start and end), cab, bed length, trims included or excluded (TRD Pro, Hybrid, Raptor, Rubicon), drivetrain, and install notes ("drilling required", "not compatible with the factory deck rail system"). The photo pipeline already returns `cabStyle` and `bedLength` (`PrimaryVehicle` in [lib/analysis-stages.ts](../lib/analysis-stages.ts)). Use the same vocabulary, normalized, so the results page can later show picks for the user's exact truck.

@@ -4,9 +4,10 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { getAllMakes, getModelBySlug, modelYears } from "@/data/vehicles/index"
 import { productTypes, SKIPPED_PRODUCT_TYPES } from "@/data/vehicles/product-types"
-import { getFeaturedPicks, getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
+import { getFeaturedPicks, getGenerationCards, getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
 import { GenerationHero } from "@/components/vehicles/generation-hero"
 import { YearPicker } from "@/components/vehicles/year-picker"
+import { GenerationCards } from "@/components/vehicles/generation-cards"
 import { GenerationTabs } from "@/components/vehicles/generation-tabs"
 import { CompactPickCard } from "@/components/vehicles/compact-pick-card"
 import { pickBadge } from "@/components/vehicles/catalog-product-card"
@@ -17,7 +18,6 @@ import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
 import {
   bodyTextClass,
   cardClass,
-  eyebrowClass,
   mutedTextClass,
   pageSectionTitleClass,
 } from "@/components/results/tokens"
@@ -103,8 +103,6 @@ export default async function ModelHubPage({ params }: PageProps) {
     href: `${basePath}/${generation.slug}`,
     sections: getGenerationSections(make.slug, model.slug, generation.slug),
   }))
-  const pickCount = (sections: (typeof generations)[number]["sections"]) =>
-    sections.reduce((n, s) => n + s.picks.length, 0)
   // Fresh Amazon data for the lead picks, from the amazon_items cache
   const amazon = await amazonCardsFor(
     generations.flatMap(({ sections }) => sections.flatMap((s) => (s.picks[0] ? [s.picks[0].product.asin] : [])))
@@ -216,6 +214,7 @@ export default async function ModelHubPage({ params }: PageProps) {
               href,
             }))}
             fallbackHref="#generations"
+            page="hub"
           />
         }
       />
@@ -227,44 +226,7 @@ export default async function ModelHubPage({ params }: PageProps) {
             <h2 id="generations-title" className={pageSectionTitleClass}>
               Shop by generation
             </h2>
-            <ul className="mt-4 grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
-              {generations.map(({ generation, href, sections }) => {
-                const count = pickCount(sections)
-                return (
-                  <li key={generation.slug}>
-                    <Link
-                      href={href}
-                      className={cn(
-                        cardClass,
-                        "group flex h-full items-center justify-between gap-3 p-4 transition-colors hover:border-[#17212B] md:flex-col md:items-stretch md:justify-start md:gap-1.5 md:p-5"
-                      )}
-                    >
-                      <span className="flex flex-col gap-0.5 md:gap-1.5">
-                        <span className={cn(eyebrowClass, "hidden md:block")}>{generation.label}</span>
-                        <span className="font-heading text-base font-bold text-[#17212B] md:text-2xl">
-                          <span className="md:hidden">{generation.label} </span>
-                          <span className="font-sans font-medium text-[#5A6672] md:font-heading md:font-bold md:text-[#17212B]">
-                            {generation.displayRange}
-                          </span>
-                        </span>
-                        <span className={cn("hidden text-sm leading-relaxed md:line-clamp-3", bodyTextClass)}>
-                          {generation.intro.split(". ")[0].replace(/\.$/, "")}.
-                        </span>
-                        <span
-                          className={cn(
-                            "text-[13px] md:mt-auto md:pt-2",
-                            count > 0 ? "font-semibold text-[#166534]" : mutedTextClass
-                          )}
-                        >
-                          {count > 0 ? `${count} researched ${count === 1 ? "pick" : "picks"}` : "Picks coming soon"}
-                        </span>
-                      </span>
-                      <ChevronRight className={cn("h-5 w-5 shrink-0 md:hidden", mutedTextClass)} aria-hidden="true" />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+            <GenerationCards generations={getGenerationCards(make.slug, model.slug)} className="mt-4" />
           </section>
 
           {/* Top picks by generation: every tab's content is in the HTML */}

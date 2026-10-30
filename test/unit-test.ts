@@ -191,6 +191,11 @@ assert(hasError(errorsAfter((c) => { c.products[0].category = 'bed-covers' }), '
 
 const queries = createCatalogQueries(fixture, makes)
 const sections3 = queries.getGenerationSections('toyota', 'tacoma', '3rd-gen')
+const cards = queries.getGenerationCards('toyota', 'tacoma')
+assert(cards.map((c) => c.slug).join() === makes[0].models[0].generations.map((g) => g.slug).join(), 'generation cards follow the model\'s generations')
+assert(cards.find((c) => c.slug === '3rd-gen')?.pickCount === sections3.reduce((n, s) => n + s.picks.length, 0), 'a generation card counts every researched pick')
+assert(cards.find((c) => c.slug === '3rd-gen')?.href === '/vehicles/toyota/tacoma/3rd-gen', 'a generation card links to its page')
+assert(queries.getGenerationCards('toyota', 'nope').length === 0, 'an unknown model has no generation cards')
 assert(sections3.map((s) => s.productType.slug).join() === 'bed-racks,seat-covers', 'generation sections follow product-type order')
 const bedRacks = queries.getProductTypePage('toyota', 'tacoma', 'bed-racks')
 assert(bedRacks?.sections.map((s) => s.generation.slug).join() === '4th-gen,3rd-gen', 'product-type page lists the newest generation first')

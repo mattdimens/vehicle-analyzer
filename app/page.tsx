@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { VehicleAnalyzer } from "@/components/home/vehicle-analyzer"
 import { RelatedPages } from "@/components/ui/related-pages"
+import { BrowseByVehicle } from "@/components/home/browse-by-vehicle"
 import { FromTheBlog } from "@/components/home/from-the-blog"
 import type { BlogCardData } from "@/components/home/from-the-blog"
 import { getAllPosts } from "@/lib/blog"
@@ -57,6 +58,7 @@ export default function Home() {
       <VehicleAnalyzer
         showCategories={true}
         catalogStats={catalogStats}
+        browseSection={<BrowseByVehicle />}
         blogSection={<FromTheBlog posts={blogPosts} />}
         relatedContent={
           <RelatedPages

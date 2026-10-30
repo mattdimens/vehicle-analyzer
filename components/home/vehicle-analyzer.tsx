@@ -18,7 +18,6 @@ import { pageBackgroundClass } from "@/components/results/tokens"
 
 import { HowItWorks, type HowItWorksStep } from "@/components/home/how-it-works"
 import { ProductCategories } from "@/components/home/product-categories"
-import { BrowseByVehicle } from "@/components/home/browse-by-vehicle"
 import { TrustStrip } from "@/components/home/trust-strip"
 import { CatalogStatsBar } from "@/components/home/catalog-stats-bar"
 import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
@@ -63,6 +62,8 @@ interface VehicleAnalyzerProps {
     relatedContent?: React.ReactNode
     ctaModule?: React.ReactNode
     blogSection?: React.ReactNode
+    /** Homepage "Browse by vehicle" section, rendered on the server (it reads the catalog) */
+    browseSection?: React.ReactNode
     /** Catalog stats for the homepage stats bar (only when showCategories=true) */
     catalogStats?: { totalProducts: number; totalCategories: number; totalGenerations: number }
     /** Analytics entry_point value for photo_analysis_started (e.g. 'truck_bed_covers') */
@@ -75,7 +76,7 @@ interface VehicleAnalyzerProps {
     uploadAside?: React.ReactNode
 }
 
-export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, catalogStats, entryPoint = 'homepage', uploadAside }: VehicleAnalyzerProps) {
+export function VehicleAnalyzer({ title, description, promptContext, showCategories = false, detectedProductsTitle, analysisMode: analysisModeProp = "vehicle", howItWorksSteps, howItWorksHeading, useCaseCards, useCaseHeading, useCaseSubtitle, categoryLabel, educationalContent, faqContent, breadcrumbs, relatedContent, ctaModule, blogSection, browseSection, catalogStats, entryPoint = 'homepage', uploadAside }: VehicleAnalyzerProps) {
     const router = useRouter()
     // Set once a part record exists and we're on our way to /r/{id}
     const navigatingRef = useRef(false)
@@ -645,7 +646,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
 
                 {/* Homepage: Browse by Vehicle + affiliate disclosure directly below hero */}
                 {showCategories && <AffiliateDisclosure />}
-                {showCategories && <BrowseByVehicle />}
+                {browseSection}
 
                 <HowItWorks steps={howItWorksSteps} heading={howItWorksHeading} className={cn(showCategories && "bg-transparent")} />
 

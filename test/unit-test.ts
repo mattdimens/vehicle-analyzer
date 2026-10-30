@@ -9,7 +9,7 @@ import { AnalysisResultsSchema, PartIdentificationSchema } from '../lib/schemas'
 import { apiErrorMessage, RATE_LIMIT_MESSAGE, thrownErrorMessage } from '../lib/api-errors'
 import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/click-filter'
 import { merchants, normalizeAsin } from '../lib/affiliate/merchants'
-import { buildGoUrl, getAllMakes } from '../data/vehicles/index'
+import { buildGoUrl, completeSpecRows, generationForYear, getAllMakes, modelYears } from '../data/vehicles/index'
 import { productTypes } from '../data/vehicles/product-types'
 import { catalog, createCatalogQueries, getGenerationSections, orderPicks, placeholderLinkLabel, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
@@ -291,6 +291,16 @@ assert(JSON.stringify(truckFromParams(new URLSearchParams('cab=Double+Cab&bed=9-
 assert(truckFromParams(new URLSearchParams('utm_source=x'), tacomaConfigs) === null, 'no handoff without cab or bed')
 assert(hasError(errorsAfter((c) => { c.picks[0].picks.forEach((p) => { const prod = c.products.find((x) => x.id === p.productId)!; prod.fitment[0].cab = ['Doubel Cab'] }) }), 'is not one of 3rd Gen\'s cabs'), 'rejects a cab the generation filter does not offer')
 assert(hasError(errorsAfter((c) => { const prod = c.products.find((x) => x.id === 'g')!; prod.fitment[0].bed = ['5 ft'] }), 'is not one of 3rd Gen\'s beds'), 'rejects a bed the generation filter does not offer')
+
+console.log('\nmodel hub years and specs')
+const tacomaGens = makes.find((m) => m.slug === 'toyota')!.models.find((m) => m.slug === 'tacoma')!.generations
+const years = modelYears(tacomaGens)
+assert(years[0] === 2026 && years[years.length - 1] === 1995 && years.length === 32, 'model years run newest first, 2026 to 1995')
+assert(generationForYear(tacomaGens, 2019)?.slug === '3rd-gen' && generationForYear(tacomaGens, 2016)?.slug === '3rd-gen' && generationForYear(tacomaGens, 2015)?.slug === '2nd-gen', 'a year finds its generation, boundaries included')
+assert(generationForYear(tacomaGens, 1990) === undefined, 'a year outside every generation finds none')
+assert(completeSpecRows(tacomaGens).length === 0, 'no comparison row shows until every Tacoma generation has it')
+const fullSpecs = tacomaGens.map((g) => ({ ...g, specs: { cabs: 'A', beds: 'B', engines: g.slug === '1st-gen' ? ' ' : 'C' } }))
+assert(completeSpecRows(fullSpecs).map((r) => r.key).join() === 'cabs,beds', 'rows with a value for every generation show, in table order; blanks count as missing')
 
 console.log('\nbuildPartSearch')
 const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }

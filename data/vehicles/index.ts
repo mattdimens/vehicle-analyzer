@@ -59,6 +59,39 @@ export function getGenerationBySlug(
   return { ...result, generation }
 }
 
+// ── Years ──────────────────────────────────────────────────────────────
+
+/** Every model year the generations cover, newest first. */
+export function modelYears(generations: VehicleGeneration[]): number[] {
+  const years = new Set<number>()
+  for (const g of generations) {
+    for (let y = g.yearStart; y <= g.yearEnd; y++) years.add(y)
+  }
+  return Array.from(years).sort((a, b) => b - a)
+}
+
+/** The generation a model year belongs to. */
+export function generationForYear(
+  generations: VehicleGeneration[],
+  year: number
+): VehicleGeneration | undefined {
+  return generations.find((g) => year >= g.yearStart && year <= g.yearEnd)
+}
+
+// ── Generation specs ───────────────────────────────────────────────────
+
+export const SPEC_ROWS = [
+  { key: "cabs", label: "Cabs" },
+  { key: "beds", label: "Beds" },
+  { key: "engines", label: "Engines" },
+  { key: "carriesOver", label: "What carries over" },
+] as const
+
+/** The comparison rows every generation has a value for, in table order. */
+export function completeSpecRows(generations: VehicleGeneration[]) {
+  return SPEC_ROWS.filter((row) => generations.every((g) => g.specs?.[row.key]?.trim()))
+}
+
 // ── Route enumeration (for generateStaticParams & sitemap) ─────────────
 
 export interface VehicleRoute {

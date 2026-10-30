@@ -22,7 +22,7 @@ export interface GenerationLink {
 interface GenerationHeroProps {
   breadcrumb: BreadcrumbItem[]
   /** Phones show this one link instead of the breadcrumb, e.g. "All Tacoma accessories" */
-  back: { href: string; label: string }
+  back?: { href: string; label: string }
   /** e.g. "Toyota Tacoma · 3rd Gen" */
   eyebrow: string
   h1: string
@@ -31,6 +31,8 @@ interface GenerationHeroProps {
   generations?: { label: string; links: GenerationLink[] }
   /** Right column from 1024px */
   aside?: React.ReactNode
+  /** Under 1024px, show the aside under the intro instead of hiding it */
+  asideOnMobile?: boolean
 }
 
 /** "First sentence." and the rest, for the phone intro. */
@@ -40,20 +42,22 @@ function splitIntro(intro: string): [string, string] {
 }
 
 /** The light, compact hero of the vehicle pages. */
-export function GenerationHero({ breadcrumb, back, eyebrow, h1, intro, generations, aside }: GenerationHeroProps) {
+export function GenerationHero({ breadcrumb, back, eyebrow, h1, intro, generations, aside, asideOnMobile }: GenerationHeroProps) {
   const [first, rest] = splitIntro(intro)
 
   return (
     <section className="w-full border-b border-[#D5DEE5] bg-[#F4F7F9]">
       <div className="container max-w-6xl py-5 md:py-8">
         <BreadcrumbNav items={breadcrumb} variant="light" className="mb-5 hidden md:block" />
-        <Link
-          href={back.href}
-          className={cn("-ml-1 mb-3 inline-flex min-h-10 items-center gap-1.5 px-1 text-sm font-semibold md:hidden", bodyTextClass)}
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          {back.label}
-        </Link>
+        {back && (
+          <Link
+            href={back.href}
+            className={cn("-ml-1 mb-3 inline-flex min-h-10 items-center gap-1.5 px-1 text-sm font-semibold md:hidden", bodyTextClass)}
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            {back.label}
+          </Link>
+        )}
 
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-10">
           <div className="min-w-0">
@@ -99,7 +103,7 @@ export function GenerationHero({ breadcrumb, back, eyebrow, h1, intro, generatio
             )}
           </div>
 
-          {aside && <div className="mt-6 hidden lg:mt-0 lg:block">{aside}</div>}
+          {aside && <div className={cn("mt-6 lg:mt-0 lg:block", !asideOnMobile && "hidden")}>{aside}</div>}
         </div>
       </div>
     </section>

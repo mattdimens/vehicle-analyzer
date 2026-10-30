@@ -13,6 +13,11 @@ const roleLabels: Record<Exclude<PickRole, "best-for">, string> = {
   premium: "Premium pick",
 }
 
+/** "Best overall", "Best budget", "Premium pick" or the best-for label. */
+export function pickBadge(pick: Pick): string | undefined {
+  return pick.role === "best-for" ? pick.label : roleLabels[pick.role]
+}
+
 const priceBands: Record<PriceBand, { symbol: string; label: string }> = {
   budget: { symbol: "$", label: "Budget price" },
   mid: { symbol: "$$", label: "Mid-range price" },
@@ -49,8 +54,7 @@ interface CatalogProductCardProps {
  * is the slot the Amazon image fills once the amazon_items cache exists.
  */
 export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection }: CatalogProductCardProps) {
-  const badge =
-    eyebrow ?? (pick ? (pick.role === "best-for" ? pick.label : roleLabels[pick.role]) : undefined)
+  const badge = eyebrow ?? (pick ? pickBadge(pick) : undefined)
   const entries = fitmentFor(product, vehicle.make, vehicle.model, vehicle)
   const fitment = formatFitment(entries, vehicle.modelName)
   const price = priceBands[product.priceBand]

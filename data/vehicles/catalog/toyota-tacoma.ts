@@ -781,5 +781,34 @@ export const toyotaTacoma: VehicleCatalog = {
         "On 2024 and later trucks, the TRD Pro's IsoDynamic front seats take none of these covers, and hybrids have their own rear seat, so buy a set that names the hybrid.",
       ],
     },
+    {
+      make: "toyota",
+      model: "tacoma",
+      category: "floor-mats",
+      intro:
+        "Tacoma floor mats are cut for one generation, cab and transmission, so a set for a 2016-2023 Double Cab won't fit a 2005-2015 or a 2024 and later truck. These are the liners Tacoma owners recommend, with fitment checked against each brand's listing.",
+      buyingNotes: [
+        "Mats don't carry over between generations. Sets are sold for 2005-2015, 2016-2023 or 2024 and later trucks, so check the years on the listing.",
+        "Most sets are cut for the Double Cab with an automatic. A manual truck's driver footwell is shaped differently, and the Access Cab and XtraCab have a different floor, so those need their own set.",
+        "WeatherTech's liners don't cover every year: its 2nd gen set fits 2012-2015 and its 3rd gen set fits 2018-2023. For a 2005-2011 or a 2016-2017 truck, pick one of the TPE sets, which fit the whole generation.",
+        "On 2024 and later trucks the hybrid has its own floor. LASFIT and 3W sell separate hybrid sets, so buy the one that names your powertrain.",
+        "WeatherTech's 2nd and 3rd gen liners aren't made for vinyl floors. If your truck has a vinyl floor instead of carpet, check the listing first.",
+        "TPE mats often arrive folded. Lay them flat for a day before you fit them, so the edges sit against the floor.",
+      ],
+    },
+    {
+      make: "toyota",
+      model: "tacoma",
+      category: "running-boards",
+      intro:
+        "Tacoma running boards bolt to the factory rocker mounts, and the same boards fit every 2005-2023 Double Cab, so 2nd and 3rd gen owners shop from one list. 2024 and later trucks need boards made for the 4th gen. These are the boards Tacoma owners recommend, with fitment checked against each brand's listing.",
+      buyingNotes: [
+        "Boards are sized by cab. The Double Cab takes the longest board; an Access Cab (2005-2023) or XtraCab (2024 and later) needs the shorter size.",
+        "The same boards fit the 2nd and 3rd gen, 2005 to 2023. A 2024 and later truck needs a 4th gen version, even from the same brand.",
+        "These are steps for getting in and out, not rock sliders, even when a listing calls them sliders. They hang below the rockers and can't take the truck's weight on rocks, so they cost side clearance off road.",
+        "Pick a shape for how you climb in. An oval tube is the slimmest, a wide flat board gives you the most room to stand, and a drop step puts a lower step under each door but hangs lowest.",
+        "They bolt to the factory mounts with no drilling. Owners report about an hour, and some did it with two people, one holding the board while the other starts the bolts.",
+      ],
+    },
   ],
 }

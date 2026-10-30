@@ -183,7 +183,9 @@ For each vehicle, generation and product type, show 3 to 5 real products, each w
 - A listing with 4.5★ or more from 1,000+ ratings counts as owner evidence when forums don't mention the brand, if its Amazon reviews include Tacoma owners confirming the fit, quoted in the PR. Amazon only shows full reviews to signed-in visitors, so this needs a signed-in browser.
 - Lift and leveling kits are skipped for now: only spacer kits pass on Amazon, and owners warn about them.
 
-As of 2026-10-30, 3rd gen Tacoma bed racks, front bumpers and skid plates, wheels, roof racks, headlights, running boards and lift kits are paused. Seat covers and floor mats have picks.
+As of 2026-10-30, 3rd gen Tacoma bed racks, front bumpers and skid plates, wheels, roof racks, headlights and lift kits are paused. Seat covers, floor mats and running boards have picks; the running boards' budget pick (COMNOVA) is the first to use the high-volume rule, with its Tacoma reviews read in Matt's signed-in Chrome.
+
+**Pooled ratings:** many Amazon listings cover several trucks, so the rating count isn't all Tacoma owners. Note in the PR how many reviews mention the vehicle (Amazon's review keyword filter).
 
 ### 4.4 Fitment fields to record
 

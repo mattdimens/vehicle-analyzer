@@ -37,22 +37,25 @@ export function ComparisonTable({
     rows,
 }: {
     about: string
-    columns: string | string[]
-    rows: string | string[][]
+    columns: string
+    rows: string
 }) {
-    // next-mdx-remote RSC doesn't evaluate inline JS expressions in MDX,
-    // so columns/rows may arrive as JSON strings. Parse them if needed.
+    // next-mdx-remote blocks JS expressions in MDX, so columns and rows must be
+    // JSON strings: columns='["A", "B"]' (write an apostrophe as &apos;). Written
+    // any other way they arrive empty, so stop the build rather than lose the table.
     let parsedColumns: string[]
     let parsedRows: string[][]
 
     try {
-        parsedColumns = typeof columns === 'string' ? JSON.parse(columns) : columns
-        parsedRows = typeof rows === 'string' ? JSON.parse(rows) : rows
+        parsedColumns = JSON.parse(columns)
+        parsedRows = JSON.parse(rows)
     } catch {
-        return null
+        throw new Error(`ComparisonTable "${about}": columns and rows must be JSON strings`)
     }
 
-    if (!parsedColumns || !parsedRows) return null
+    if (parsedRows.some((row) => row.length !== parsedColumns.length)) {
+        throw new Error(`ComparisonTable "${about}": every row needs ${parsedColumns.length} cells`)
+    }
 
     return (
         <div

@@ -77,8 +77,8 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+        {/* Desktop Nav: from 1100px, the narrowest width where it clears the sign-in button */}
+        <nav className="hidden min-[1100px]:flex items-center space-x-6 text-sm font-medium">
           <Link
             href="/#upload-zone"
             className="text-muted-foreground transition-colors hover:text-primary"
@@ -131,7 +131,7 @@ export function SiteHeader() {
         </nav>
 
         {/* Desktop CTA & Auth */}
-        <div className="hidden md:flex items-center justify-end flex-1 gap-4">
+        <div className="hidden min-[1100px]:flex items-center justify-end flex-1 gap-4">
           {session ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="focus:outline-none flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -193,7 +193,7 @@ export function SiteHeader() {
         </div>
 
         {/* Mobile Menu Trigger */}
-        <div className="md:hidden flex items-center gap-2">
+        <div className="min-[1100px]:hidden flex items-center gap-2">
           {session ? (
             <Avatar className="h-8 w-8 border border-border/50">
               {userInitial ? (

@@ -1,10 +1,15 @@
 import type { Metadata } from "next"
 import { getProductTypePages } from "@/data/vehicles/catalog"
 import type { ProductTypePageData } from "@/data/vehicles/catalog"
-import { fitmentCheckedLabel } from "@/data/vehicles/catalog/fitment"
+import { fitmentCheckedLabel, fitmentFor } from "@/data/vehicles/catalog/fitment"
+import type { TruckConfigs } from "@/data/vehicles/types"
 import { getPostBySlug } from "@/lib/blog"
 import { VehicleHero } from "@/components/vehicles/vehicle-hero"
 import { CatalogSection } from "@/components/vehicles/catalog-section"
+import { PageNav } from "@/components/vehicles/page-nav"
+import { TruckFilterProvider } from "@/components/vehicles/truck-filter"
+import type { FitSection } from "@/components/vehicles/truck-filter"
+import { TruckBarDesktop, TruckRow } from "@/components/vehicles/truck-bar"
 import { ProductTypeLinks } from "@/components/vehicles/product-type-links"
 import { RelatedGuides } from "@/components/vehicles/related-guides"
 import type { GuideLink } from "@/components/vehicles/related-guides"
@@ -113,6 +118,32 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
     })),
   }
 
+  // The "Your truck" filter: each generation section uses its own configs,
+  // and the bar offers every cab and bed any of them has.
+  const fitSections: FitSection[] = sections.map(({ generation, picks }) => ({
+    id: generation.slug,
+    configs: generation.configs,
+    items: picks.map(({ product }) => ({
+      id: product.id,
+      label: `${product.brand} ${product.name}`,
+      priceBand: product.priceBand,
+      fitment: fitmentFor(product, make.slug, model.slug, generation),
+    })),
+  }))
+  const withConfigs = sections.flatMap((s) => (s.generation.configs ? [s.generation.configs] : []))
+  const barConfigs: TruckConfigs | undefined =
+    withConfigs.length > 0
+      ? {
+          cabs: Array.from(new Set(withConfigs.flatMap((c) => c.cabs))),
+          beds: Array.from(new Set(withConfigs.flatMap((c) => c.beds))),
+        }
+      : undefined
+  const navItems = sections.map(({ generation, picks }) => ({
+    id: generation.slug,
+    label: `${generation.label} (${generation.displayRange})`,
+    count: picks.length,
+  }))
+
   return (
     <>
       <script
@@ -136,62 +167,71 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
       {/* Affiliate disclosure - adjacent to product recommendations */}
       <AffiliateDisclosure />
 
-      <section className="w-full bg-white py-14 md:py-16">
-        <div className="container max-w-5xl space-y-14">
-          {/* Jump to a generation */}
-          <nav aria-label="Generations" className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground">Jump to:</span>
-            {sections.map(({ generation }) => (
-              <a
+      <TruckFilterProvider
+        make={make.slug}
+        model={model.slug}
+        page="product_type"
+        configs={barConfigs}
+        sections={fitSections}
+      >
+        {/* Sticky bar: the truck filter (when a generation has configs) and a chip per generation */}
+        <PageNav
+          items={navItems}
+          variant="bar"
+          top={
+            barConfigs ? (
+              <>
+                <TruckRow className="lg:hidden" />
+                <TruckBarDesktop embedded className="hidden lg:block" />
+              </>
+            ) : undefined
+          }
+        />
+
+        <section className="w-full bg-white py-14 md:py-16">
+          <div className="container max-w-5xl space-y-14">
+            <div className="rounded-xl border border-border bg-gray-50 p-6">
+              <h2 className="font-heading text-lg font-bold text-foreground">
+                What to know before you buy
+              </h2>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground">
+                {guide.buyingNotes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+              {checkedLabel && (
+                <p className="mt-4 text-sm text-muted-foreground">Fitment checked {checkedLabel}.</p>
+              )}
+            </div>
+
+            {sections.map(({ generation, picks, note }) => (
+              <CatalogSection
                 key={generation.slug}
-                href={`#${generation.slug}`}
-                className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-[#E8712B]/40 hover:text-[#E8712B]"
-              >
-                {generation.label} ({generation.displayRange})
-              </a>
+                id={generation.slug}
+                title={`${generation.label} ${model.name} (${generation.displayRange})`}
+                productTypeSlug={productType.slug}
+                itemNoun={productType.name.toLowerCase()}
+                checkedLabel={fitmentCheckedLabel(picks.map((r) => r.product))}
+                note={note}
+                picks={picks}
+                filtered={Boolean(generation.configs)}
+                vehicle={{
+                  make: make.slug,
+                  model: model.slug,
+                  modelName: model.name,
+                  yearStart: generation.yearStart,
+                  yearEnd: generation.yearEnd,
+                  vehicleString: `${generation.displayRange} ${make.name} ${model.name}`,
+                }}
+                more={{
+                  href: `${basePath}/${generation.slug}`,
+                  label: `All ${generation.label} ${model.name} accessories`,
+                }}
+              />
             ))}
-          </nav>
-
-          <div className="rounded-xl border border-border bg-gray-50 p-6">
-            <h2 className="font-heading text-lg font-bold text-foreground">
-              What to know before you buy
-            </h2>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-foreground">
-              {guide.buyingNotes.map((note) => (
-                <li key={note}>{note}</li>
-              ))}
-            </ul>
-            {checkedLabel && (
-              <p className="mt-4 text-sm text-muted-foreground">Fitment checked {checkedLabel}.</p>
-            )}
           </div>
-
-          {sections.map(({ generation, picks, note }) => (
-            <CatalogSection
-              key={generation.slug}
-              id={generation.slug}
-              title={`${generation.label} ${model.name} (${generation.displayRange})`}
-              productTypeSlug={productType.slug}
-              itemNoun={productType.name.toLowerCase()}
-              checkedLabel={fitmentCheckedLabel(picks.map((r) => r.product))}
-              note={note}
-              picks={picks}
-              vehicle={{
-                make: make.slug,
-                model: model.slug,
-                modelName: model.name,
-                yearStart: generation.yearStart,
-                yearEnd: generation.yearEnd,
-                vehicleString: `${generation.displayRange} ${make.name} ${model.name}`,
-              }}
-              more={{
-                href: `${basePath}/${generation.slug}`,
-                label: `All ${generation.label} ${model.name} accessories`,
-              }}
-            />
-          ))}
-        </div>
-      </section>
+        </section>
+      </TruckFilterProvider>
 
       <ProductTypeLinks
         title={`More ${model.name} accessories`}

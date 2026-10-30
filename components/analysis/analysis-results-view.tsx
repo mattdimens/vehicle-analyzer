@@ -23,6 +23,7 @@ import type { AnalysisDetectedProduct, AnalysisRecord } from "@/types/analysis"
 import { getConfidence, getConfidenceBand, type ConfidenceBand } from "@/types/analysis"
 import { formatVehicleType, parseRecommendation, vehicleNoun, vehicleSpecLine, vehicleTitle } from "@/lib/vehicle-result"
 import { getEntryDoor, getPlatform, trackEvent } from "@/lib/analytics"
+import { catalogHrefWithTruck } from "@/data/vehicles/truck-handoff"
 import { cn } from "@/lib/utils"
 
 const BAND_TONE: Record<ConfidenceBand, MatchTone> = { High: "high", Medium: "medium", Low: "low" }
@@ -95,6 +96,8 @@ export function AnalysisResultsView({ record, yearChoice, catalog, verify, onPic
     const showPanel = hasRecommendations || Boolean(yearChoice) || Boolean(catalog)
 
     const trackCatalogClick = () => trackEvent("results_catalog_click", { entry_door: getEntryDoor(), platform: getPlatform() })
+    // The curated-picks page opens already filtered to this truck's cab and bed
+    const catalogHref = catalog ? catalogHrefWithTruck(catalog.href, primary.cabStyle, primary.bedLength) : null
 
     return (
         <div className="flex flex-col gap-3">
@@ -116,7 +119,7 @@ export function AnalysisResultsView({ record, yearChoice, catalog, verify, onPic
                         title={vehicleString}
                         watchRef={detectedRef}
                         action={catalog ? (
-                            <Link href={catalog.href} onClick={trackCatalogClick} className={stickyActionClass}>
+                            <Link href={catalogHref ?? catalog.href} onClick={trackCatalogClick} className={stickyActionClass}>
                                 See {catalog.label} picks
                             </Link>
                         ) : (
@@ -221,7 +224,7 @@ export function AnalysisResultsView({ record, yearChoice, catalog, verify, onPic
 
                         {catalog && (
                             <Link
-                                href={catalog.href}
+                                href={catalogHref ?? catalog.href}
                                 onClick={trackCatalogClick}
                                 className="flex min-h-[52px] w-full flex-col items-center justify-center rounded-xl bg-[#C8460F] px-3 py-2 text-center text-base font-semibold text-white transition-colors hover:bg-[#AD3C0C]"
                             >

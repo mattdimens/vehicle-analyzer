@@ -26,6 +26,8 @@ interface CatalogSectionProps {
   buyingNotes?: { title: string; notes: string[] }
   /** Optional link under the picks, e.g. to the product-type page */
   more?: { href: string; label: string }
+  /** The page has a truck filter with this section in it (keyed by `id`) */
+  filtered?: boolean
 }
 
 /** A product type's (or generation's) 3-5 catalog picks. */
@@ -40,8 +42,8 @@ export function CatalogSection({
   vehicle,
   buyingNotes,
   more,
+  filtered,
 }: CatalogSectionProps) {
-  const hidden = picks.length - 3
   const subline = [
     `${picks.length} ${picks.length === 1 ? "pick" : "picks"}`,
     checkedLabel && `Fitment checked ${checkedLabel}`,
@@ -50,7 +52,7 @@ export function CatalogSection({
     .join(" · ")
 
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 lg:scroll-mt-20">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-[var(--vf-sticky,8rem)]">
       <div className="mb-3 flex items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2F5] text-[#17212B]">
           <ProductTypeIcon slug={productTypeSlug} className="h-5 w-5" />
@@ -70,9 +72,15 @@ export function CatalogSection({
         </p>
       )}
 
-      <PickGrid moreLabel={`Show ${hidden} more ${itemNoun}`}>
+      <PickGrid ids={picks.map((r) => r.product.id)} sectionId={filtered ? id : undefined} noun={itemNoun}>
         {picks.map(({ pick, product }) => (
-          <CatalogProductCard key={product.id} product={product} pick={pick} vehicle={vehicle} />
+          <CatalogProductCard
+            key={product.id}
+            product={product}
+            pick={pick}
+            vehicle={vehicle}
+            fitSection={filtered ? id : undefined}
+          />
         ))}
       </PickGrid>
 

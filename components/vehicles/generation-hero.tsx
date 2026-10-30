@@ -115,11 +115,13 @@ interface PhotoCheckCardProps {
   line: string
   /** e.g. "Identify my Tacoma" */
   buttonLabel: string
+  /** The photo tool to open; the homepage's by default */
+  href?: string
   className?: string
 }
 
 /** Points visitors who don't know their configuration to the photo tool. */
-export function PhotoCheckCard({ title, line, buttonLabel, className }: PhotoCheckCardProps) {
+export function PhotoCheckCard({ title, line, buttonLabel, href = "/#upload-zone", className }: PhotoCheckCardProps) {
   return (
     <aside className={cn(cardClass, "flex flex-col gap-2.5 p-5", className)}>
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF0E9] text-[#9A3412]">
@@ -127,7 +129,7 @@ export function PhotoCheckCard({ title, line, buttonLabel, className }: PhotoChe
       </span>
       <p className="font-heading text-lg font-semibold leading-snug text-[#17212B]">{title}</p>
       <p className={cn("text-sm leading-relaxed", mutedTextClass)}>{line}</p>
-      <Link href="/#upload-zone" className={cn(outlineButtonClass, "mt-1")}>
+      <Link href={href} className={cn(outlineButtonClass, "mt-1")}>
         {buttonLabel}
       </Link>
     </aside>

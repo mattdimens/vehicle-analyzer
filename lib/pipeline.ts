@@ -5,6 +5,7 @@ import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
 import { normalizeYear } from '@/lib/normalize-year'
 import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
+import { getConfidenceBand } from '@/types/analysis'
 
 export function getSupabaseAdmin() {
     return createClient<Database>(
@@ -56,7 +57,8 @@ export async function runPipeline(id: string, imageUrl: string) {
         const result = parseResult.data
         const vehicleDetailsString = `${result.primary.year} ${result.primary.make} ${result.primary.model} ${result.primary.trim}`
         
-        if (result.primary.confidence >= 85) {
+        // Log demand only for identifications the results page shows as a High match
+        if (getConfidenceBand(result.primary.confidence) === 'High') {
             await logDemand(result.primary.make, result.primary.model, result.primary.year)
         }
 

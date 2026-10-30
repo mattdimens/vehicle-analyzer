@@ -55,7 +55,7 @@ Four problems now matter most:
 | L2 | **Corrected:** `lib/env.ts`, `lint_output.txt`, and `test-db.js` were never in `.gitignore` (that line in my first draft came from `git ls-files` output). They are now deleted. |
 | L3 (footer, breadcrumbs), L4, L5, L6, L7, L9, Aug L2 (IDs) | Fixed |
 | M10 | **Fixed.** Schema and RLS policies are committed in `supabase/migrations/20261011000000_remote_schema.sql` (pg_dump of `public`). Verified from the dump: RLS is enabled on all 7 tables; `garage_vehicles`, `identified_parts` and `profiles` have SELECT/INSERT/UPDATE/DELETE policies scoped to `auth.uid()`; the other four tables have no policies (service role only). `analyses` has an `updated_at` trigger. The `model_used` constraint now allows any `gemini-%` model. Follow-up `20261011000100_function_search_path.sql` (pins `search_path` on the two trigger functions) was applied Oct 11. |
-| Still open | M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85), L11 major-version upgrades, blog content |
+| Still open | ~~M7 leftovers (pipeline `logDemand` cutoff hardcoded at 85)~~ fixed Oct 30: demand logging uses `getConfidenceBand()`. L11 major-version upgrades, blog content |
 
 **Follow-up pass (PR "audit follow-ups"):**
 - Lint: **0 errors** (was 49). After the garage sheets were removed, 0 warnings too.

@@ -17,6 +17,7 @@ import { GuideLinks, truckGuides } from "@/components/vehicles/guide-links"
 import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
 import { bodyTextClass, cardClass, mutedTextClass, pageSectionTitleClass } from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
+import { amazonCardsFor } from "@/lib/amazon/cards"
 
 const BASE_URL = "https://visualfitment.com"
 
@@ -56,7 +57,7 @@ export function generationMetadata(props: GenerationPageProps): Metadata {
 
 // ── Page ───────────────────────────────────────────────────────────────
 
-export function GenerationPage(props: GenerationPageProps) {
+export async function GenerationPage(props: GenerationPageProps) {
   const { make, model, generation } = props
   const h1 = generationH1(props)
   const vehicleString = `${generation.displayRange} ${make.name} ${model.name}`
@@ -157,6 +158,10 @@ export function GenerationPage(props: GenerationPageProps) {
   }))
   const filtered = Boolean(configs) && sections.length > 0
 
+  // Fresh Amazon data for the cards, from the amazon_items cache
+  const amazon = await amazonCardsFor(sections.flatMap((s) => s.picks.map((r) => r.product.asin)))
+  const pricesShown = [...amazon.values()].some((a) => a?.kind === "live")
+
   const photoCard = {
     title: configs
       ? `${configs.cabs.join(" or ")}? ${configs.beds.join(" or ")} bed?`
@@ -216,7 +221,7 @@ export function GenerationPage(props: GenerationPageProps) {
 
             <div className="min-w-0">
               {/* Affiliate disclosure - adjacent to product recommendations */}
-              <AffiliateDisclosure variant="inline" className="mb-6 md:mb-8" />
+              <AffiliateDisclosure variant="inline" prices={pricesShown} className="mb-6 md:mb-8" />
 
               <div className="space-y-12 md:space-y-14">
                 {sections.map((s) => (
@@ -230,6 +235,7 @@ export function GenerationPage(props: GenerationPageProps) {
                     note={s.note}
                     picks={s.picks}
                     filtered={filtered}
+                    amazon={amazon}
                     vehicle={{
                       make: make.slug,
                       model: model.slug,

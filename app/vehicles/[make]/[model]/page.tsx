@@ -22,10 +22,15 @@ import {
   pageSectionTitleClass,
 } from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
+import { amazonCardsFor } from "@/lib/amazon/cards"
 
 const BASE_URL = "https://visualfitment.com"
 
 // ── Static generation ──────────────────────────────────────────────────
+
+// Regenerate hourly so the cached Amazon prices on the cards stay within
+// Amazon's 24-hour window.  The pages stay static between regenerations.
+export const revalidate = 3600
 
 export function generateStaticParams() {
   const params: { make: string; model: string }[] = []
@@ -100,6 +105,11 @@ export default async function ModelHubPage({ params }: PageProps) {
   }))
   const pickCount = (sections: (typeof generations)[number]["sections"]) =>
     sections.reduce((n, s) => n + s.picks.length, 0)
+  // Fresh Amazon data for the lead picks, from the amazon_items cache
+  const amazon = await amazonCardsFor(
+    generations.flatMap(({ sections }) => sections.flatMap((s) => (s.picks[0] ? [s.picks[0].product.asin] : [])))
+  )
+  const pricesShown = [...amazon.values()].some((a) => a?.kind === "live")
   const featured = getFeaturedPicks(make.slug, model.slug)
   const defaultTab = featured?.generation.slug ?? model.generations[0]?.slug ?? ""
 
@@ -275,6 +285,7 @@ export default async function ModelHubPage({ params }: PageProps) {
                           <li key={productType.slug}>
                             <CompactPickCard
                               product={picks[0].product}
+                              amazon={amazon.get(picks[0].product.asin)}
                               eyebrow={[productType.name, pickBadge(picks[0].pick)].filter(Boolean).join(" · ")}
                               vehicle={{
                                 make: make.slug,
@@ -364,7 +375,7 @@ export default async function ModelHubPage({ params }: PageProps) {
 
           <GuideLinks guides={truckGuides} className="max-w-2xl" />
 
-          <AffiliateDisclosure variant="inline" />
+          <AffiliateDisclosure variant="inline" prices={pricesShown} />
         </div>
       </div>
     </>

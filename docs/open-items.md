@@ -10,20 +10,19 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
-| 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 2 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
-| 3 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #2 is paying off. Run both together. |
-| 4 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
-| 5 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
-| 6 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #2's research. |
-| 7 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
-| 8 | Amazon data on the cards | Claude | After 10 qualifying sales in 30 days | Blocked: the Creators API won't return data until then. Needs its own brief first. |
+| 1 | Production migration, `CRON_SECRET` and merge for the Amazon cache ([PR #44](https://github.com/mattdimens/vehicle-analyzer/pull/44)) | Matt | Now | Cards show live price, image and stock as soon as production has the table. Steps are in the PR. |
+| 2 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
+| 3 | Product research for all four Tacoma generations, starting with a sixth 3rd Gen seat cover | Claude, Matt approves each PR | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. No bed covers and no RealTruck brands (Matt works at RealTruck); see [plan 4.3](vehicle-pages-plan.md#43-selection-rules). |
+| 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #3 is paying off. Run both together. |
+| 5 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
+| 6 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
+| 7 | Cabs and beds for the 4th, 2nd and 1st Gen | Matt | With each generation's first picks | The filter only matters once a generation has researched picks, so add them alongside #3's research. |
+| 8 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
 
 ## Waiting on Matt
 
 - [ ] **Tacoma generation facts** for the hub's "How the generations differ" table: cabs, beds, engines, what carries over, for each generation. A row only shows when all four generations have it. Current values and TODOs: `specs` in [data/vehicles/toyota.ts](../data/vehicles/toyota.ts).
 - [ ] **Cabs and beds for the 4th, 2nd and 1st Gen** (`configs` in `toyota.ts`), to turn on the "Your truck" filter on those pages.
-- [ ] **Product research**, by the process in [plan section 4](vehicle-pages-plan.md#4-product-research-process). Next: a sixth 3rd Gen seat cover, so `/vehicles/toyota/tacoma/seat-covers` gets published (it needs 6 products), then bed covers for the 3rd and 4th Gen. 3rd Gen headlights are paused (no candidate met the rating bar).
 - [ ] **Privacy contact address.** Set `CONTACT_EMAIL` in [app/privacy/page.tsx](../app/privacy/page.tsx); the email line appears on its own ([REVIEW.md](../REVIEW.md), manual step 1).
 
 ## Scheduled checks
@@ -34,7 +33,8 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Code
 
-- [ ] **Amazon data on the cards:** image, price with time, stock, and the Sort control. Needs its own brief once the `amazon_items` cache table is designed ([plan 6.4](vehicle-pages-plan.md#64-supabase-later-the-amazon-data-cache) and [8.3](vehicle-pages-plan.md#83-build-steps)). The Creators API needs 10 qualifying sales in 30 days first.
+- [ ] **Product research** for the 3rd, 4th, 2nd and 1st Gen Tacoma, by the process in [plan section 4](vehicle-pages-plan.md#4-product-research-process). Claude researches and checks each Amazon listing, then opens one PR per generation and product type for Matt to approve. Next: a sixth 3rd Gen seat cover, so `/vehicles/toyota/tacoma/seat-covers` gets published (it needs 6 products). 3rd Gen headlights are paused (no candidate met the rating bar). No bed and tonneau covers, and no RealTruck-owned brands.
+- [ ] **Amazon data on the cards:** in review, [PR #44](https://github.com/mattdimens/vehicle-analyzer/pull/44). The `amazon_items` cache, a 6-hourly refresh, and price, image and stock on the cards. Still to build after it: the Sort control and a weekly report of unavailable listings ([plan 8.3](vehicle-pages-plan.md#83-build-steps), step 5).
 - [ ] **ESLint 10 and TypeScript 7**, held back. ESLint 10 runs, but `eslint-config-next`'s import, jsx-a11y and react plugins don't support it yet. TypeScript 7 builds, but `typescript-eslint` 8 can't lint with it. Retry each once its plugins support it.
 
 ## Done recently

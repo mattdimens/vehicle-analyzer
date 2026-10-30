@@ -14,6 +14,10 @@ import { ProductTypePage, productTypeMetadata } from "./product-type-page"
 
 // ── Static generation ──────────────────────────────────────────────────
 
+// Regenerate hourly so the cached Amazon prices on the cards stay within
+// Amazon's 24-hour window.  The pages stay static between regenerations.
+export const revalidate = 3600
+
 export function generateStaticParams() {
   const params: { make: string; model: string; slug: string }[] = []
   for (const make of getAllMakes()) {

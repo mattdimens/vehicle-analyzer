@@ -172,6 +172,7 @@ For each vehicle, generation and product type, show 3 to 5 real products, each w
 - The manufacturer confirms fitment for the exact year range and configuration. Record exclusions.
 - At least one owner source recommends it, and owners don't report a recurring problem.
 - No more than 2 products from one brand in a section. Budget, mid and premium are all represented.
+- **No bed and tonneau covers, and no RealTruck-owned brands, in any category.** Matt works at RealTruck, so this avoids a conflict of interest (decided 2026-10-30). RealTruck's brands, from [realtruck.com/our-brands](https://realtruck.com/our-brands) on 2026-10-30: Alloy USA, AMP Research, A.R.E., AVS, Backrack, BAK, Bedrug, Belmor, Bushwacker, Extang, Gator, Go Rhino, Havoc, Husky Liners, Ionic, Lund, N-Fab, Omix, Pace Edwards, Rampage, Retrax, RoadWorks, Roll-N-Lock, Rugged Liner, Rugged Ridge, Superlift, Stampede, Tonno Pro, Truxedo and UnderCover.
 
 **Check stock and rating first.** They rule out the most candidates and take minutes: `scripts/amazon-lookup.ts` gives stock, and the rating has to be read from the Amazon page because the API doesn't return it. In October 2026, a full round of 3rd gen Tacoma headlight research ended with every in-stock candidate at 3.6 to 3.8 stars or unrated, so the product type was paused.
 
@@ -274,9 +275,9 @@ Move when any of these is true:
 
 ## 8. Amazon Creators API (long term)
 
-### 8.1 Status (updated 2026-10-27)
+### 8.1 Status (updated 2026-10-30)
 
-- **Credentials work; product data is waiting on sales.** Matt created Creators API credentials on 2026-10-27. The first lookup that day signed in, then got `AssociateNotEligible` back from GetItems. The week of Oct 18 to 24 had 10 ordered items, but only 9 shipped and 1 was returned, so the account was probably at 8 or 9 qualifying sales. The same lookup works once Amazon counts 10.
+- **Live.** Lookups return product data as of 2026-10-29 (price, availability, image, seller), so the account reached 10 qualifying sales. On 2026-10-27 the same lookup got `AssociateNotEligible`. The `amazon_items` cache ([section 6.4](#64-supabase-later-the-amazon-data-cache)) and the price on product cards are being built (2026-10-30).
 - PA-API 5.0 is retired. Amazon's documentation says calls now return 403, and the Creators API is the successor ([Amazon Creators API docs](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/introduction), [deprecation notice](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation)).
 - **Keeping access:** the account needs at least 10 qualifying sales in the past 30 days. Third-party guides say a qualifying sale has shipped, came through our tag and wasn't returned, and that access is suspended while sales are below the bar and comes back when they recover. The client reports this as `AssociateNotEligible`.
 - **How a call works** (from Amazon's Node.js SDK): get a token from Login with Amazon (`https://api.amazon.com/auth/o2/token`, client credentials, scope `creatorsapi::default`) for version 3.1 credentials. Older 2.1 credentials use a Cognito endpoint instead. Then POST to `https://creatorsapi.amazon/catalog/v1/getItems` with an `x-marketplace: www.amazon.com` header, the partner tag, up to 10 ASINs and the resources wanted.
@@ -300,8 +301,8 @@ Yes, for keeping data fresh. Not for choosing products.
 
 1. **Done:** register in Associates Central and get credentials. Store them in Vercel (Production and Preview) and `.env.local` as server-only variables. Never use the `NEXT_PUBLIC_` prefix. `.env.example` lists them.
 2. **Done:** `lib/amazon/creators-api.ts`, server-only like `lib/analysis-stages.ts`, and `scripts/amazon-lookup.ts`, which prints title, brand, part number, price, availability, seller and URL for a list of ASINs as a table that pastes into the research Sheet. Use it on every candidate row before approval.
-3. **After the first catalog import:** add the `amazon_items` migration ([section 6.4](#64-supabase-later-the-amazon-data-cache)), plus a Vercel Cron job that refreshes every 6 to 24 hours.
-4. Product cards show "$129.99 at Amazon (as of Oct 21, 2:00 PM)", the Amazon image and availability. Price and image are hidden when the cache is older than 24 hours. Show the timestamp always: the policies reportedly require one next to any price refreshed less often than hourly.
+3. **Built 2026-10-30:** the `amazon_items` migration ([section 6.4](#64-supabase-later-the-amazon-data-cache)), plus a Vercel Cron job (`/api/cron/amazon-items`, every 6 hours) and `scripts/amazon-refresh.ts` to run the same refresh by hand.
+4. **Built 2026-10-30:** product cards show "$129.99 at Amazon · as of Oct 21, 2:00 PM ET", the Amazon image and availability. Vehicle pages regenerate hourly to pick up new data. Price and image are hidden when the cache is older than 24 hours. Show the timestamp always: the policies reportedly require one next to any price refreshed less often than hourly.
 5. A weekly report lists ASINs that have been unavailable for 3 or more days, for replacement. Those links fall back to search automatically.
 6. Optional: use `SearchItems` to feed new candidates into the research Sheet for human vetting. Never publish them automatically.
 7. Design for losing API access. If sales drop under the threshold, cards fall back to editorial content with no price or image.

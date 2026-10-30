@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self'",
               // GA4 hosts per Google's CSP guide (includes Google Signals / doubleclick)
-              "img-src 'self' blob: data: https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com",
+              "img-src 'self' blob: data: https://*.supabase.co https://m.media-amazon.com https://images-na.ssl-images-amazon.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com",
               "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://*.googletagmanager.com https://*.g.doubleclick.net https://*.google.com",
               "frame-ancestors 'none'",
             ].join("; "),

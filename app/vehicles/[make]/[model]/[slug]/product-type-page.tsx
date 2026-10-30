@@ -17,6 +17,7 @@ import type { GuideLink } from "@/components/vehicles/guide-links"
 import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
 import { bodyTextClass, cardClass, mutedTextClass } from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
+import { amazonCardsFor } from "@/lib/amazon/cards"
 
 const BASE_URL = "https://visualfitment.com"
 
@@ -55,7 +56,7 @@ export function productTypeMetadata(data: ProductTypePageData): Metadata {
 
 // ── Page ───────────────────────────────────────────────────────────────
 
-export function ProductTypePage({ data }: ProductTypePageProps) {
+export async function ProductTypePage({ data }: ProductTypePageProps) {
   const { make, model, productType, guide, sections } = data
   const h1 = productTypeH1(data)
   const basePath = `/vehicles/${make.slug}/${model.slug}`
@@ -148,6 +149,9 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
     buttonLabel: `Identify my ${model.name}`,
     href: `${productType.toolHref ?? "/"}#upload-zone`,
   }
+  // Fresh Amazon data for the cards, from the amazon_items cache
+  const amazon = await amazonCardsFor(sections.flatMap((s) => s.picks.map((r) => r.product.asin)))
+  const pricesShown = [...amazon.values()].some((a) => a?.kind === "live")
   const navItems = sections.map(({ generation, picks }) => ({
     id: generation.slug,
     label: `${generation.label} (${generation.displayRange})`,
@@ -198,7 +202,7 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
         <div className="w-full bg-white">
           <div className="container max-w-6xl pb-16 pt-4 md:pt-8">
             {/* Affiliate disclosure - adjacent to product recommendations */}
-            <AffiliateDisclosure variant="inline" className="mb-6 md:mb-8" />
+            <AffiliateDisclosure variant="inline" prices={pricesShown} className="mb-6 md:mb-8" />
 
             <div className="space-y-12 md:space-y-14">
               <section aria-labelledby="buying-notes-title" className={cn(cardClass, "p-5 md:p-6")}>
@@ -226,6 +230,7 @@ export function ProductTypePage({ data }: ProductTypePageProps) {
                   note={note}
                   picks={picks}
                   filtered={Boolean(generation.configs)}
+                  amazon={amazon}
                   vehicle={{
                     make: make.slug,
                     model: model.slug,

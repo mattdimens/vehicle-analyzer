@@ -91,6 +91,18 @@ export interface VehicleGeneration {
    * confirms every answer.  No FAQPage markup without his sign-off.
    */
   faqs?: { q: string; a: string }[]
+  /**
+   * Cab styles and bed lengths sold in this generation, written exactly as
+   * Fitment.cab and Fitment.bed are ("Double Cab", "5-ft").  The "Your
+   * truck" filter only shows when a generation has them.
+   */
+  configs?: TruckConfigs
+}
+
+/** The cab and bed choices for a generation's "Your truck" filter. */
+export interface TruckConfigs {
+  cabs: string[]
+  beds: string[]
 }
 
 // ── Model ──────────────────────────────────────────────────────────────

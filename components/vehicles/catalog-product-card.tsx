@@ -1,10 +1,11 @@
-import { ChevronDown, ExternalLink, TriangleAlert, Truck } from "lucide-react"
+import { ChevronDown, ExternalLink, TriangleAlert } from "lucide-react"
 import { buildGoUrl } from "@/data/vehicles/index"
 import { fitmentFor, formatFitment } from "@/data/vehicles/catalog/fitment"
 import type { YearRange } from "@/data/vehicles/catalog/fitment"
 import type { CatalogProduct, Pick, PickRole, PriceBand } from "@/data/vehicles/types"
 import { AFFILIATE_LINK_PROPS, bodyTextClass, cardClass, mutedTextClass, primaryButtonClass } from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
+import { FitLine } from "./fit-line"
 
 const roleLabels: Record<Exclude<PickRole, "best-for">, string> = {
   "best-overall": "Best overall",
@@ -37,6 +38,8 @@ interface CatalogProductCardProps {
   eyebrow?: string
   /** The vehicle and years the card is shown for */
   vehicle: CardVehicle
+  /** The section's id in the truck filter, so the fitment line can name the visitor's truck */
+  fitSection?: string
 }
 
 /**
@@ -45,13 +48,11 @@ interface CatalogProductCardProps {
  * a card with a 150px tile from 768px, where they are always open.  The tile
  * is the slot the Amazon image fills once the amazon_items cache exists.
  */
-export function CatalogProductCard({ product, pick, eyebrow, vehicle }: CatalogProductCardProps) {
+export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection }: CatalogProductCardProps) {
   const badge =
     eyebrow ?? (pick ? (pick.role === "best-for" ? pick.label : roleLabels[pick.role]) : undefined)
-  const fitment = formatFitment(
-    fitmentFor(product, vehicle.make, vehicle.model, vehicle),
-    vehicle.modelName
-  )
+  const entries = fitmentFor(product, vehicle.make, vehicle.model, vehicle)
+  const fitment = formatFitment(entries, vehicle.modelName)
   const price = priceBands[product.priceBand]
   const goUrl = buildGoUrl({
     categorySlug: product.category,
@@ -100,12 +101,7 @@ export function CatalogProductCard({ product, pick, eyebrow, vehicle }: CatalogP
         {product.brand} {product.name}
       </h3>
 
-      {fitment && (
-        <p className={cn("col-span-2 flex gap-1.5 text-[13px] font-medium leading-snug", bodyTextClass)}>
-          <Truck className="mt-px h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{fitment}</span>
-        </p>
-      )}
+      {fitment && <FitLine text={fitment} entries={entries} sectionId={fitSection} />}
 
       {/* Phones: one disclosure after the button.  768px and up: always open, above it. */}
       <details className="vf-open-md group col-span-2 order-last border-t border-[#EDF1F4] pt-2.5 md:order-none md:border-0 md:pt-0">

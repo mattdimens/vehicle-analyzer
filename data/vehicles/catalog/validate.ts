@@ -112,8 +112,25 @@ export function validateCatalog(
       if (product.category !== s.category) {
         errors.push(`${where}: ${product.id} is a ${product.category} product`)
       }
-      if (fitmentFor(product, s.make, s.model, generation).length === 0) {
+      const entries = fitmentFor(product, s.make, s.model, generation)
+      if (entries.length === 0) {
         errors.push(`${where}: ${product.id} has no fitment for ${generation.displayRange}`)
+      }
+      // A cab or bed the filter doesn't offer would hide the product for everyone who picks a truck
+      if (generation.configs) {
+        const { cabs, beds } = generation.configs
+        for (const f of entries) {
+          for (const cab of f.cab ?? []) {
+            if (!cabs.includes(cab)) {
+              errors.push(`${where}: ${product.id} cab "${cab}" is not one of ${generation.label}'s cabs (${cabs.join(", ")})`)
+            }
+          }
+          for (const bed of f.bed ?? []) {
+            if (!beds.includes(bed)) {
+              errors.push(`${where}: ${product.id} bed "${bed}" is not one of ${generation.label}'s beds (${beds.join(", ")})`)
+            }
+          }
+        }
       }
       if (pick.role === "best-for" && !pick.label?.trim()) {
         errors.push(`${where}: best-for pick ${product.id} needs a label`)

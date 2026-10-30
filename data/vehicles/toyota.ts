@@ -256,6 +256,7 @@ export const toyota: VehicleMake = {
           intro:
             "The third-generation Tacoma ran for eight model years, making it the most common Tacoma on the road today. Its 3.5L V6 and available crawl control made it a favorite for both daily driving and weekend trail use, with a massive aftermarket catalog to match.",
           categories: buildCategories("3rd Gen"),
+          configs: { cabs: ["Access Cab", "Double Cab"], beds: ["5-ft", "6-ft"] },
           faqs: [
             {
               q: "Which seat covers fit an Access Cab?",

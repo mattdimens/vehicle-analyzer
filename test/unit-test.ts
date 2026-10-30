@@ -13,7 +13,8 @@ import { buildGoUrl, getAllMakes } from '../data/vehicles/index'
 import { productTypes } from '../data/vehicles/product-types'
 import { catalog, createCatalogQueries, getGenerationSections, orderPicks, placeholderLinkLabel, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
-import { fitmentCheckedLabel, fitmentFor, formatFitment } from '../data/vehicles/catalog/fitment'
+import { describeTruck, fitmentCheckedLabel, fitmentFor, fitsTruck, formatFitment, normalizeTruck, truckFitLine, withArticle } from '../data/vehicles/catalog/fitment'
+import { catalogHrefWithTruck, configsForPath, truckFromParams } from '../data/vehicles/truck-handoff'
 import type { CatalogProduct, Pick, VehicleCatalog } from '../data/vehicles/types'
 import { buildExactPartSearch, buildPartGoUrl, buildPartSearch, buildTypedPartSearch, buildVehicleItemSearch, partSearchVehicle, sanitizePartQuery, sanitizeTypedPartNumber } from '../lib/part-search'
 import { getPartDisplayBand } from '../config/analysis'
@@ -242,6 +243,54 @@ assert(placeholderLinkLabel('Premium grille insert') === 'Grille insert', 'drops
 assert(placeholderLinkLabel('Fender flares') === 'Fender flares', 'leaves other titles alone')
 assert(placeholderLinkLabel('Budget') === 'Budget', 'a bare word is not a prefix')
 assert(thirdGen.faqs !== undefined && thirdGen.faqs.length === 3 && thirdGen.faqs.every((f) => f.q.endsWith('?') && f.a.length > 0), '3rd Gen has three fitment questions with answers')
+
+console.log('\nfitsTruck')
+const tacomaYears = { yearStart: 2016, yearEnd: 2023 }
+const anyCab = fixtureProduct('any-cab', { fitment: [{ make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023, notes: 'Front seats.' }] })
+const doubleOnly = fixtureProduct('double-only', { fitment: [{ make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023, cab: ['Double Cab'], notes: 'Front and rear.' }] })
+const sixFoot = fixtureProduct('six-foot', { fitment: [{ make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023, bed: ['6-ft'] }] })
+const twoEntries = fixtureProduct('two-entries', { fitment: [
+    { make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023, cab: ['Double Cab'], bed: ['5-ft'] },
+    { make: 'toyota', model: 'tacoma', yearStart: 2016, yearEnd: 2023, cab: ['Access Cab'], bed: ['6-ft'], excludeTrims: ['TRD Pro'] },
+    { make: 'toyota', model: 'tacoma', yearStart: 2005, yearEnd: 2015, cab: ['Regular Cab'] },
+] })
+const fit = (p: CatalogProduct, truck: { cab?: string; bed?: string }) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, truck)
+assert([anyCab, doubleOnly, sixFoot, twoEntries].every((p) => fit(p, {}).fits), 'no truck chosen: everything fits')
+assert(fit(doubleOnly, { cab: 'Double Cab' }).fits && JSON.stringify(fit(doubleOnly, { cab: 'Access Cab' })) === JSON.stringify({ fits: false, reason: 'Double Cab only' }), 'cab only: a Double Cab product fits a Double Cab, not an Access Cab')
+assert(fit(sixFoot, { bed: '6-ft' }).fits && JSON.stringify(fit(sixFoot, { bed: '5-ft' })) === JSON.stringify({ fits: false, reason: '6-ft bed only' }), 'bed only: a 6-ft product does not fit a 5-ft bed')
+assert(fit(doubleOnly, { cab: 'Double Cab', bed: '6-ft' }).fits && !fit(sixFoot, { cab: 'Access Cab', bed: '5-ft' }).fits, 'cab and bed: each limit has to match')
+assert(fit(twoEntries, { cab: 'Access Cab', bed: '6-ft' }).fits && fit(twoEntries, { cab: 'Double Cab', bed: '5-ft' }).fits, 'two fitment entries: either one is enough')
+assert(JSON.stringify(fit(twoEntries, { cab: 'Access Cab', bed: '5-ft' })) === JSON.stringify({ fits: false, reason: '6-ft bed only' }), 'two entries: the reason names the bed that goes with the cab')
+assert(JSON.stringify(fit(twoEntries, { cab: 'Regular Cab' })) === JSON.stringify({ fits: false, reason: 'Double Cab or Access Cab only' }), 'entries outside the years are ignored')
+assert(fit(anyCab, { cab: 'Access Cab', bed: '5-ft' }).fits, 'a product with no cab or bed limits fits every truck')
+assert(truckFitLine(fitmentFor(anyCab, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab' }) === 'Fits your Access Cab. Front seats.', 'fit line names the cab, then the notes')
+assert(truckFitLine(fitmentFor(twoEntries, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab', bed: '6-ft' }) === 'Fits your Access Cab, 6-ft bed. Not for TRD Pro.', 'fit line uses only the entries that fit')
+assert(truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), {}) === null && truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab' }) === null, 'no fit line without a truck or when it does not fit')
+assert(describeTruck({ cab: 'Double Cab', bed: '6-ft' }) === 'Double Cab with a 6-ft bed' && withArticle('Access Cab') === 'an Access Cab' && withArticle(describeTruck({ bed: '5-ft' })) === 'a 5-ft bed', 'truck descriptions read naturally')
+const realSeatCovers = getGenerationSections('toyota', 'tacoma', '3rd-gen')[0].picks.map((r) => r.product)
+assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Access Cab' }).fits).length === 1, '3rd Gen: one seat cover fits an Access Cab')
+assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Double Cab' }).fits).length === 5, '3rd Gen: all five fit a Double Cab')
+
+console.log('\nnormalizeTruck')
+const tacomaConfigs = { cabs: ['Access Cab', 'Double Cab'], beds: ['5-ft', '6-ft'] }
+const norm = (cab: string | null, bed: string | null) => JSON.stringify(normalizeTruck(tacomaConfigs, cab, bed))
+assert(norm('Double Cab', '5-ft') === JSON.stringify({ cab: 'Double Cab', bed: '5-ft' }), 'exact values pass through')
+assert(norm('double-cab', null) === JSON.stringify({ cab: 'Double Cab' }) && norm('ACCESS', null) === JSON.stringify({ cab: 'Access Cab' }), 'cab: case, punctuation and a missing "Cab"')
+assert(norm(null, '60.5" (Short)') === JSON.stringify({ bed: '5-ft' }) && norm(null, '73.7 in') === JSON.stringify({ bed: '6-ft' }), 'bed: inches round to feet')
+assert(norm(null, '6 ft') === JSON.stringify({ bed: '6-ft' }) && norm(null, "5'") === JSON.stringify({ bed: '5-ft' }), 'bed: feet in other spellings')
+assert(norm(null, 'Short bed') === JSON.stringify({ bed: '5-ft' }) && norm(null, 'Long') === JSON.stringify({ bed: '6-ft' }), 'bed: short and long with two lengths')
+assert(norm('SuperCrew', '8 ft') === '{}' && norm('Crew Cab', '') === '{}' && norm(null, null) === '{}', 'anything that does not match is dropped')
+
+console.log('\ntruck handoff')
+assert(JSON.stringify(configsForPath('/vehicles/toyota/tacoma/3rd-gen')) === JSON.stringify(tacomaConfigs), '3rd Gen has Access and Double Cab, 5-ft and 6-ft beds')
+assert(configsForPath('/vehicles/toyota/tacoma/4th-gen') === undefined, 'generations without configs have none')
+assert(catalogHrefWithTruck('/vehicles/toyota/tacoma/3rd-gen', 'Double Cab', '60.5" (Short)') === '/vehicles/toyota/tacoma/3rd-gen?cab=Double+Cab&bed=5-ft', 'photo link carries the normalized cab and bed')
+assert(catalogHrefWithTruck('/vehicles/toyota/tacoma/3rd-gen', 'SuperCrew', null) === '/vehicles/toyota/tacoma/3rd-gen', 'no params when nothing matches')
+assert(catalogHrefWithTruck('/vehicles/toyota/tacoma/4th-gen', 'Double Cab', '5-ft') === '/vehicles/toyota/tacoma/4th-gen', 'no params for a generation without configs')
+assert(JSON.stringify(truckFromParams(new URLSearchParams('cab=Double+Cab&bed=9-ft'), tacomaConfigs)) === JSON.stringify({ cab: 'Double Cab' }), 'page keeps only handoff values in the configs')
+assert(truckFromParams(new URLSearchParams('utm_source=x'), tacomaConfigs) === null, 'no handoff without cab or bed')
+assert(hasError(errorsAfter((c) => { c.picks[0].picks.forEach((p) => { const prod = c.products.find((x) => x.id === p.productId)!; prod.fitment[0].cab = ['Doubel Cab'] }) }), 'is not one of 3rd Gen\'s cabs'), 'rejects a cab the generation filter does not offer')
+assert(hasError(errorsAfter((c) => { const prod = c.products.find((x) => x.id === 'g')!; prod.fitment[0].bed = ['5 ft'] }), 'is not one of 3rd Gen\'s beds'), 'rejects a bed the generation filter does not offer')
 
 console.log('\nbuildPartSearch')
 const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }

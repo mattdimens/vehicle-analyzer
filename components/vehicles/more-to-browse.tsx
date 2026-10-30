@@ -25,7 +25,7 @@ export function MoreToBrowse({ id, title, searchScope, categories, vehicleString
   if (categories.length === 0) return null
 
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 lg:scroll-mt-20">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-[var(--vf-sticky,8rem)]">
       <h2 id={`${id}-title`} className={pageSectionTitleClass}>
         {title}
       </h2>

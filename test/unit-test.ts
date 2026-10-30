@@ -326,7 +326,8 @@ assert(card?.kind === 'live' && card.priceDisplay === '$272.97' && card.inStock 
 assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T17:00:01Z')) === null, 'a row older than 23 hours shows nothing (pages are served up to an hour after they render)')
 assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T16:59:00Z'))?.kind === 'live', 'a row just under 23 hours old still shows')
 assert(amazonCardData(undefined) === null, 'no row shows nothing')
-assert(amazonCardData(asRow(missing), new Date('2026-10-30T19:00:00Z'))?.kind === 'unavailable', 'a fresh not_found row shows as unavailable')
+assert(amazonCardData(asRow(missing), new Date('2026-10-30T19:00:00Z')) === null, 'a not_found row shows the editorial card (the API hides some listings, e.g. WeatherTech)')
+assert(amazonCardData(asRow(toAmazonItemRow('B0X', { ...liveItem, price: null }, fetchedAt)), new Date('2026-10-30T19:00:00Z'))?.kind === 'unavailable', 'a listing returned without an offer shows as unavailable')
 
 console.log('\nbuildPartSearch')
 const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }

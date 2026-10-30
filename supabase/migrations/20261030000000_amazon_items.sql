@@ -10,7 +10,8 @@
 
 CREATE TABLE IF NOT EXISTS public.amazon_items (
     asin text PRIMARY KEY,
-    -- ok: in stock with a price; unavailable: listed but no offer; not_found: Amazon returned nothing
+    -- ok: in stock with a price; unavailable: listed but no offer or out of stock;
+    -- not_found: the API returned nothing (also when the brand keeps the listing out of the API)
     status text NOT NULL CHECK (status IN ('ok', 'unavailable', 'not_found')),
     title text,
     brand text,

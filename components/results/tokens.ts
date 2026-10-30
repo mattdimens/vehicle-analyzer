@@ -6,6 +6,11 @@
 
 export const AFFILIATE_LINK_PROPS = { target: "_blank", rel: "nofollow sponsored noopener" } as const
 
+/**
+ * The off-white page behind the cards (results pages, homepage). Orange text
+ * directly on it uses #9A3412: #C8460F only reaches AA on white cards.
+ */
+export const pageBackgroundClass = "bg-[#EEF3F6]"
 export const cardClass = "rounded-2xl border border-[#D5DEE5] bg-white p-4"
 /** Category label above a result title ("Engine", "Pickup truck"). */
 export const eyebrowClass = "text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]"

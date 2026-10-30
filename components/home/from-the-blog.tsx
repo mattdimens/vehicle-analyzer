@@ -4,6 +4,8 @@ import { useRef, useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { supportedVehicles } from "@/data/vehicles/supported-vehicles"
+import { cardClass, mutedTextClass } from "@/components/results/tokens"
+import { cn } from "@/lib/utils"
 
 export interface BlogCardData {
     slug: string
@@ -82,10 +84,10 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
     }
 
     return (
-        <section className="w-full bg-white py-16 md:py-20">
+        <section className="w-full py-16 md:py-20">
             <div className="container max-w-6xl">
                 <div className="mb-12 flex items-end justify-between">
-                    <h2 className="font-heading text-4xl font-bold text-black md:text-5xl">
+                    <h2 className="font-heading text-4xl font-bold text-[#17212B] md:text-5xl">
                         From the <span className="text-primary italic">Blog</span>
                     </h2>
 
@@ -127,7 +129,7 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
                         <Link
                             key={post.slug}
                             href={`/blog/${post.slug}`}
-                            className="blog-carousel-card group flex flex-col rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/50 overflow-hidden snap-start shrink-0"
+                            className={cn(cardClass, "blog-carousel-card group flex flex-col p-0 transition-colors hover:border-[#17212B] overflow-hidden snap-start shrink-0")}
                             style={{ width: "min(100%, 360px)" }}
                         >
                             {/* Hero image */}
@@ -153,13 +155,13 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
                                 <span className="text-[11px] font-semibold uppercase tracking-wider text-primary mb-2">
                                     {post.category}
                                 </span>
-                                <h3 className="font-heading text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                                <h3 className="font-heading text-lg font-semibold mb-2 text-[#17212B] group-hover:text-[#C8460F] transition-colors line-clamp-2">
                                     {post.title}
                                 </h3>
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
+                                <p className={cn("text-sm line-clamp-2 mb-3 flex-1", mutedTextClass)}>
                                     {post.subtitle}
                                 </p>
-                                <span className="text-xs text-muted-foreground/70">
+                                <span className={cn("text-xs", mutedTextClass)}>
                                     {post.readTime} min read
                                 </span>
                             </div>
@@ -175,7 +177,7 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
                             onClick={() => scrollToIndex(i)}
                             className={`h-2 rounded-full transition-all ${i === activeIndex
                                     ? "w-6 bg-primary"
-                                    : "w-2 bg-border hover:bg-muted-foreground/40"
+                                    : "w-2 bg-[#B9C5CF] hover:bg-[#5A6672]"
                                 }`}
                             aria-label={`Go to article ${i + 1}`}
                         />
@@ -184,16 +186,16 @@ export function FromTheBlog({ posts }: FromTheBlogProps) {
 
                 {/* Bottom Links */}
                 <div className="mt-10 text-center flex flex-col gap-3">
-                    <p className="text-sm text-muted-foreground">
+                    <p className={cn("text-sm", mutedTextClass)}>
                         Shopping for a specific truck? Start with our{" "}
-                        <Link href={shopBaseUrl} className="text-primary font-medium hover:text-primary/80 transition-colors">
+                        <Link href={shopBaseUrl} className="text-[#9A3412] font-medium hover:text-[#7C2D12] transition-colors">
                             {flagship.make} {flagship.model} accessories guides
                         </Link>{" "}
                         by generation.
                     </p>
                     <Link
                         href="/blog"
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-block"
+                        className="text-sm font-medium text-[#9A3412] hover:text-[#7C2D12] transition-colors inline-block"
                     >
                         Read more on the blog →
                     </Link>

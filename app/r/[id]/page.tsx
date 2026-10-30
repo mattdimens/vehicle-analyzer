@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { Metadata } from 'next'
 import { AnalysisView } from '@/components/analysis/analysis-view'
+import { pageBackgroundClass } from '@/components/results/tokens'
 import { getSupabaseAdmin } from '@/lib/pipeline'
 import type { AnalysisKind } from '@/types/analysis'
 
@@ -28,7 +29,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
     // Picks the part or vehicle loading screen before the first fetch returns
     const kind = await getAnalysisKind(id)
     return (
-        <div className="min-h-screen bg-[#EEF3F6] pb-12 pt-4 md:pt-7">
+        <div className={`min-h-screen ${pageBackgroundClass} pb-12 pt-4 md:pt-7`}>
             <div className="container">
                 <AnalysisView id={id} initialKind={kind ?? undefined} />
             </div>

@@ -17,23 +17,26 @@ import { cn } from "@/lib/utils"
 
 export type SamplePage = "homepage" | "part_identifier"
 
-/** A small uppercase label on the green hero, above a card. */
-export function HeroEyebrow({ children, className }: { children: ReactNode; className?: string }) {
+/** "dark" sits on the green hero of the sub-pages, "light" on the page background. */
+type HeroTone = "dark" | "light"
+
+/** A small uppercase label on the hero, above a card. */
+export function HeroEyebrow({ children, tone = "dark", className }: { children: ReactNode; tone?: HeroTone; className?: string }) {
     return (
-        <p className={cn("text-xs font-semibold uppercase tracking-[0.08em] text-white/80", className)}>
+        <p className={cn("text-xs font-semibold uppercase tracking-[0.08em]", tone === "dark" ? "text-white/80" : "text-[#9A3412]", className)}>
             {children}
         </p>
     )
 }
 
 /** "Sample result", above the sample card. */
-export function SampleEyebrow({ className }: { className?: string }) {
-    return <HeroEyebrow className={className}>Sample result</HeroEyebrow>
+export function SampleEyebrow({ tone, className }: { tone?: HeroTone; className?: string }) {
+    return <HeroEyebrow tone={tone} className={className}>Sample result</HeroEyebrow>
 }
 
-/** Under the card, on the green hero, so nobody takes the sample for their own result. */
-export function SampleCaption({ className }: { className?: string }) {
-    return <p className={cn("text-xs text-white/75", className)}>Example from one uploaded photo</p>
+/** Under the card, on the hero, so nobody takes the sample for their own result. */
+export function SampleCaption({ tone = "dark", className }: { tone?: HeroTone; className?: string }) {
+    return <p className={cn("text-xs", tone === "dark" ? "text-white/75" : "text-[#5A6672]", className)}>Example from one uploaded photo</p>
 }
 
 /** The whole card: one link to the full sample result. */

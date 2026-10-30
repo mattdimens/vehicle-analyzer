@@ -106,14 +106,17 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
   }, [router])
 
   const selectBaseClass =
-    "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
-  const labelClass = "block text-xs font-semibold text-white/60 mb-1.5 uppercase tracking-wider"
+    "h-11 w-full rounded-lg border border-[#B9C5CF] bg-white px-3 text-sm font-medium text-[#17212B] shadow-xs transition-colors hover:bg-[#F4F7F9] focus:outline-none focus:ring-2 focus:ring-ring appearance-none cursor-pointer"
+  const labelClass = "block text-xs font-semibold text-[#5A6672] mb-1.5 uppercase tracking-wider"
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="font-heading text-xl md:text-2xl font-bold text-white mb-6">
-        Or pick your vehicle
-      </h2>
+      {/* On /r/ pages the surrounding card has its own heading */}
+      {location === 'hero' && (
+        <h2 className="font-heading text-xl md:text-2xl font-bold text-[#17212B] mb-6">
+          Or pick your vehicle
+        </h2>
+      )}
 
       <div className="space-y-4 flex-1">
         {/* Make */}
@@ -188,8 +191,8 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
 
       {/* Fallback message for unsupported vehicles */}
       {fallbackMessage && (
-        <div className="mt-4 rounded-lg bg-white/10 border border-white/20 p-4">
-          <p className="text-sm text-white/90 leading-relaxed">
+        <div className="mt-4 rounded-lg bg-[#F4F7F9] border border-[#D5DEE5] p-4">
+          <p className="text-sm text-[#2B3742] leading-relaxed">
             We have not built the {fallbackMessage.make} {fallbackMessage.model} catalog yet,
             but our analyzer can identify your vehicle and find compatible parts right now.
           </p>
@@ -197,7 +200,7 @@ export function VehicleSelector({ location = 'hero' }: VehicleSelectorProps) {
             onClick={handleScrollToPhotoTool}
             variant="outline"
             size="sm"
-            className="mt-3 border-white/30 text-white hover:bg-white/10"
+            className="mt-3 border-[#17212B] bg-white text-[#17212B]"
           >
             <Upload className="w-4 h-4 mr-2" />
             Analyze My Photo Instead

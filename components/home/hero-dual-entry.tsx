@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { Upload, Camera, Send, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { cardClass, mutedTextClass } from "@/components/results/tokens"
 import { VehicleSelector } from "@/components/home/vehicle-selector"
 import { apiErrorMessage, readJson, thrownErrorMessage } from "@/lib/api-errors"
 
@@ -138,10 +139,10 @@ export function HeroDualEntry() {
       <div className="max-w-5xl w-full">
         {/* Page heading */}
         <div className="text-center mb-10">
-          <h1 className="font-heading text-3xl md:text-5xl font-bold text-white">
+          <h1 className="font-heading text-3xl md:text-5xl font-bold text-[#17212B]">
             Find vehicle fitment, parts, &amp; accessories from an image
           </h1>
-          <p className="mt-6 max-w-2xl mx-auto text-lg text-white/80">
+          <p className={cn("mt-6 max-w-2xl mx-auto text-lg", mutedTextClass)}>
             Snap a photo of any vehicle and get a detailed breakdown of specs,
             visible mods, and compatible accessories with links to buy.
           </p>
@@ -150,12 +151,12 @@ export function HeroDualEntry() {
         {/* Two-panel grid: mobile photo-first, desktop photo-left */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Vehicle Selector Panel (mobile: second, desktop: second) */}
-          <div className="order-2 md:order-2 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm p-6">
+          <div className={cn(cardClass, "order-2 md:order-2 p-6")}>
             <VehicleSelector />
           </div>
 
           {/* Photo Tool Panel (mobile: first, desktop: first) */}
-          <div id="upload-zone" className="order-1 md:order-1 scroll-mt-20 rounded-2xl border bg-card shadow-lg overflow-hidden">
+          <div id="upload-zone" className={cn(cardClass, "order-1 md:order-1 scroll-mt-20 overflow-hidden p-0")}>
             <div
               {...(!attachedFile ? getRootProps() : {})}
               role="button"
@@ -231,7 +232,7 @@ export function HeroDualEntry() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full h-12 text-base font-medium border-2 border-dashed border-primary/20 hover:bg-primary/5 rounded-xl text-primary"
+                      className="w-full h-12 text-base font-medium border-2 border-dashed border-primary/20 bg-white hover:bg-primary/5 rounded-xl text-primary"
                       onClick={(e) => {
                         e.stopPropagation()
                         open()
@@ -264,7 +265,7 @@ export function HeroDualEntry() {
             </div>
 
             {/* Bottom bar with CTA button and part identifier link */}
-            <div className="flex flex-col items-center gap-3 p-4 border-t bg-muted/50 rounded-b-2xl">
+            <div className="flex flex-col items-center gap-3 p-4 border-t border-[#D5DEE5] bg-[#F4F7F9] rounded-b-2xl">
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -284,11 +285,11 @@ export function HeroDualEntry() {
                 )}
               </Button>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className={cn("text-xs text-center", mutedTextClass)}>
                 Identifying a single part instead?{" "}
                 <Link
                   href="/part-identifier"
-                  className="text-primary hover:text-primary/80 font-medium underline underline-offset-2"
+                  className="text-[#9A3412] hover:text-[#7C2D12] font-medium underline underline-offset-2"
                 >
                   Use the Part Identifier
                 </Link>

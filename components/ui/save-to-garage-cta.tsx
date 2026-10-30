@@ -80,12 +80,12 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
     const content = getContent()
 
     return (
-        <section className={cn("w-full bg-[#003223] py-8 md:py-12", className)}>
+        <section className={cn("w-full border-y border-[#D5DEE5] bg-white py-8 md:py-12", className)}>
             <div className="container max-w-6xl text-center flex flex-col items-center px-4">
-                <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mb-6">
+                <h2 className="font-heading text-4xl md:text-5xl font-bold text-[#17212B] mb-6">
                     {content.headline}
                 </h2>
-                <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-lg text-[#2B3742] mb-8 max-w-2xl mx-auto leading-relaxed">
                     {content.subtext}
                 </p>
 
@@ -105,16 +105,16 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
                         </button>
 
                         {isExpanded && (
-                            <div className="mt-6 text-left space-y-3 animate-in slide-in-from-top-2 fade-in duration-200 bg-white/5 p-6 rounded-xl border border-white/10">
-                                <div className="flex items-start gap-3 text-base text-white/90">
+                            <div className="mt-6 text-left space-y-3 animate-in slide-in-from-top-2 fade-in duration-200 bg-[#F4F7F9] p-6 rounded-xl border border-[#D5DEE5]">
+                                <div className="flex items-start gap-3 text-base text-[#2B3742]">
                                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                                     <span>Save identified vehicles and parts in one place</span>
                                 </div>
-                                <div className="flex items-start gap-3 text-base text-white/90">
+                                <div className="flex items-start gap-3 text-base text-[#2B3742]">
                                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                                     <span>Build a collection of your rides and dream builds</span>
                                 </div>
-                                <div className="flex items-start gap-3 text-base text-white/90">
+                                <div className="flex items-start gap-3 text-base text-[#2B3742]">
                                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                                     <span>Quickly re-find parts and fitment info anytime</span>
                                 </div>
@@ -135,7 +135,7 @@ export function SaveToGarageCTA({ placement, categoryName, className }: SaveToGa
                     <Button
                         variant="ghost"
                         size="lg"
-                        className="w-full sm:w-auto text-white/60 hover:text-white hover:bg-white/10"
+                        className="w-full sm:w-auto text-[#5A6672] hover:text-[#17212B] hover:bg-[#F4F7F9]"
                         onClick={handleDismiss}
                     >
                         Maybe later

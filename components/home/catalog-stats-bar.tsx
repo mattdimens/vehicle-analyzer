@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Package, Grid3X3, Layers } from "lucide-react"
+import { cardClass, mutedTextClass } from "@/components/results/tokens"
+import { cn } from "@/lib/utils"
 
 interface CatalogStatsBarProps {
   totalProducts: number
@@ -54,11 +56,11 @@ function AnimatedStat({
 
   return (
     <div className="flex flex-col items-center gap-2 px-4">
-      <Icon className="w-6 h-6 text-white/60" />
-      <div className="text-2xl md:text-3xl font-bold text-white font-heading tabular-nums">
+      <Icon className={cn("w-6 h-6", mutedTextClass)} />
+      <div className="text-2xl md:text-3xl font-bold text-[#17212B] font-heading tabular-nums">
         {animate ? count.toLocaleString() : "0"}
       </div>
-      <div className="text-xs md:text-sm text-white/60 font-medium text-center">
+      <div className={cn("text-xs md:text-sm font-medium text-center", mutedTextClass)}>
         {stat.label}
       </div>
     </div>
@@ -122,19 +124,21 @@ export function CatalogStatsBar({
   if (stats.length === 0) return null
 
   return (
-    <section ref={ref} className="w-full bg-[#003223] py-16">
+    <section ref={ref} className="w-full py-16">
       <div className="container max-w-5xl">
-        <p className="text-[11px] uppercase tracking-[0.08em] text-white/30 font-medium text-center mb-6">
-          Our Catalog
-        </p>
-        <div className={`grid grid-cols-1 ${columns} gap-8 md:gap-4`}>
-          {stats.map((stat) => (
-            <AnimatedStat
-              key={stat.label}
-              stat={stat}
-              animate={hasAnimated}
-            />
-          ))}
+        <div className={cn(cardClass, "p-6 md:p-10")}>
+          <p className={cn("text-[11px] uppercase tracking-[0.08em] font-medium text-center mb-6", mutedTextClass)}>
+            Our Catalog
+          </p>
+          <div className={`grid grid-cols-1 ${columns} gap-8 md:gap-4`}>
+            {stats.map((stat) => (
+              <AnimatedStat
+                key={stat.label}
+                stat={stat}
+                animate={hasAnimated}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>

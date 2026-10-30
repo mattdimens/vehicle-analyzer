@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, ChevronDown, Info } from "lucide-react"
 import type { ResolvedPick } from "@/data/vehicles/catalog"
+import type { AmazonCardData } from "@/lib/amazon/cache"
 import { bodyTextClass, cardClass, mutedTextClass, pageSectionTitleClass } from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
 import { CatalogProductCard } from "./catalog-product-card"
@@ -28,6 +29,8 @@ interface CatalogSectionProps {
   more?: { href: string; label: string }
   /** The page has a truck filter with this section in it (keyed by `id`) */
   filtered?: boolean
+  /** Fresh Amazon data by ASIN, from the amazon_items cache */
+  amazon?: Map<string, AmazonCardData | null>
 }
 
 /** A product type's (or generation's) 3-5 catalog picks. */
@@ -43,6 +46,7 @@ export function CatalogSection({
   buyingNotes,
   more,
   filtered,
+  amazon,
 }: CatalogSectionProps) {
   const subline = [
     `${picks.length} ${picks.length === 1 ? "pick" : "picks"}`,
@@ -80,6 +84,7 @@ export function CatalogSection({
             pick={pick}
             vehicle={vehicle}
             fitSection={filtered ? id : undefined}
+            amazon={amazon?.get(product.asin)}
           />
         ))}
       </PickGrid>

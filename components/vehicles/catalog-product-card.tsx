@@ -3,7 +3,15 @@ import { buildGoUrl } from "@/data/vehicles/index"
 import { fitmentFor, formatFitment } from "@/data/vehicles/catalog/fitment"
 import type { YearRange } from "@/data/vehicles/catalog/fitment"
 import type { CatalogProduct, Pick, PickRole, PriceBand } from "@/data/vehicles/types"
-import { AFFILIATE_LINK_PROPS, bodyTextClass, cardClass, mutedTextClass, primaryButtonClass } from "@/components/results/tokens"
+import type { AmazonCardData } from "@/lib/amazon/cache"
+import {
+  AFFILIATE_LINK_PROPS,
+  bodyTextClass,
+  cardClass,
+  mutedTextClass,
+  outlineButtonClass,
+  primaryButtonClass,
+} from "@/components/results/tokens"
 import { cn } from "@/lib/utils"
 import { FitLine } from "./fit-line"
 
@@ -35,6 +43,28 @@ export interface CardVehicle extends YearRange {
   vehicleString: string
 }
 
+/**
+ * The card's Amazon link: the product page, or a search for similar products
+ * when Amazon says the listing can't be bought right now.
+ */
+export function productGoUrl(product: CatalogProduct, vehicle: CardVehicle, amazon?: AmazonCardData | null): string {
+  return buildGoUrl({
+    categorySlug: product.category,
+    vehicleString: vehicle.vehicleString,
+    brand: product.brand,
+    productTitle: product.name,
+    asin: amazon?.kind === "unavailable" ? undefined : product.asin,
+  })
+}
+
+/** Amazon's image for the tile.  Linked from Amazon, never stored or optimized here. */
+export function AmazonImage({ src, className }: { src: string; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Amazon's image URL as the API returns it; a copy through next/image would store it
+    <img src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={cn("h-full w-full object-contain", className)} />
+  )
+}
+
 interface CatalogProductCardProps {
   product: CatalogProduct
   /** Shows the pick's role as a badge */
@@ -45,26 +75,28 @@ interface CatalogProductCardProps {
   vehicle: CardVehicle
   /** The section's id in the truck filter, so the fitment line can name the visitor's truck */
   fitSection?: string
+  /** Amazon data from the amazon_items cache, when it's fresh */
+  amazon?: AmazonCardData | null
 }
 
 /**
  * A researched catalog product.  One component, two layouts: a row with a
  * 76px tile on phones, where why and the catch sit behind one disclosure, and
- * a card with a 150px tile from 768px, where they are always open.  The tile
- * is the slot the Amazon image fills once the amazon_items cache exists.
+ * a card with a 150px tile from 768px, where they are always open.
+ *
+ * With fresh Amazon data the tile shows Amazon's image, and the card shows the
+ * price with its time and the stock; when Amazon can't sell it, the button
+ * becomes a search for similar products.  Without fresh data it's the
+ * editorial card, with a price band instead of a price.
  */
-export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection }: CatalogProductCardProps) {
+export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection, amazon }: CatalogProductCardProps) {
   const badge = eyebrow ?? (pick ? pickBadge(pick) : undefined)
   const entries = fitmentFor(product, vehicle.make, vehicle.model, vehicle)
   const fitment = formatFitment(entries, vehicle.modelName)
-  const price = priceBands[product.priceBand]
-  const goUrl = buildGoUrl({
-    categorySlug: product.category,
-    vehicleString: vehicle.vehicleString,
-    brand: product.brand,
-    productTitle: product.name,
-    asin: product.asin,
-  })
+  const band = priceBands[product.priceBand]
+  const live = amazon?.kind === "live" ? amazon : null
+  const unavailable = amazon?.kind === "unavailable"
+  const goUrl = productGoUrl(product, vehicle, amazon)
 
   return (
     <article
@@ -73,15 +105,16 @@ export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection
         "grid h-full grid-cols-[76px_minmax(0,1fr)] content-start gap-x-3 gap-y-3 p-3.5 md:flex md:flex-col md:gap-2.5 md:p-4"
       )}
     >
-      {/* Image tile: brand name until the Amazon image is cached */}
+      {/* Image tile: Amazon's image when the data is fresh, otherwise the brand name */}
       <div
         aria-hidden="true"
         className={cn(
-          "row-span-2 flex h-[76px] items-center justify-center rounded-[10px] bg-[#EEF2F5] px-1 text-center text-[9px] font-bold uppercase leading-tight tracking-[0.08em] md:h-[150px] md:rounded-xl md:text-[11px]",
+          "row-span-2 flex h-[76px] items-center justify-center overflow-hidden rounded-[10px] px-1 text-center text-[9px] font-bold uppercase leading-tight tracking-[0.08em] md:h-[150px] md:rounded-xl md:text-[11px]",
+          live?.imageUrl ? "border border-[#EDF1F4] bg-white p-1.5 md:p-3" : "bg-[#EEF2F5]",
           mutedTextClass
         )}
       >
-        {product.brand}
+        {live?.imageUrl ? <AmazonImage src={live.imageUrl} /> : product.brand}
       </div>
 
       <div className="flex items-start justify-between gap-2 self-end md:self-stretch">
@@ -92,18 +125,39 @@ export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection
         ) : (
           <span />
         )}
-        <span
-          className={cn("text-[13px] font-bold", mutedTextClass)}
-          title={price.label}
-          aria-label={price.label}
-        >
-          {price.symbol}
-        </span>
+        {!live && (
+          <span
+            className={cn("text-[13px] font-bold", mutedTextClass)}
+            title={band.label}
+            aria-label={band.label}
+          >
+            {band.symbol}
+          </span>
+        )}
       </div>
 
       <h3 className="self-start font-heading text-base font-semibold leading-snug tracking-normal text-[#17212B] md:text-[17px]">
         {product.brand} {product.name}
       </h3>
+
+      {live && (
+        <div className="col-span-2 flex flex-col gap-0.5">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="font-heading text-[22px] font-bold leading-tight text-[#17212B]">{live.priceDisplay}</span>
+            <span className={cn("text-xs", mutedTextClass)}>at Amazon · as of {live.asOf}</span>
+          </p>
+          {live.stockMessage && (
+            <p className={cn("text-[13px] font-semibold", live.inStock ? "text-[#166534]" : bodyTextClass)}>
+              {live.stockMessage}
+            </p>
+          )}
+        </div>
+      )}
+      {unavailable && (
+        <p className="col-span-2 rounded-[10px] bg-[#FFF6DD] px-2.5 py-2 text-[13px] font-semibold text-[#6B4400]">
+          Currently unavailable on Amazon
+        </p>
+      )}
 
       {fitment && <FitLine text={fitment} entries={entries} sectionId={fitSection} />}
 
@@ -131,9 +185,12 @@ export function CatalogProductCard({ product, pick, eyebrow, vehicle, fitSection
       <a
         href={goUrl}
         {...AFFILIATE_LINK_PROPS}
-        className={cn(primaryButtonClass, "col-span-2 min-h-12 text-[15px] md:mt-auto md:px-2 md:text-sm lg:text-[15px]")}
+        className={cn(
+          unavailable ? outlineButtonClass : primaryButtonClass,
+          "col-span-2 min-h-12 text-[15px] md:mt-auto md:px-2 md:text-sm lg:text-[15px]"
+        )}
       >
-        Check price on Amazon
+        {unavailable ? "Search Amazon for similar" : live ? "View on Amazon" : "Check price on Amazon"}
         <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </a>
     </article>

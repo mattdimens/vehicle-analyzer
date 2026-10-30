@@ -23,6 +23,8 @@ import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
 import { formatVehicleType, parseRecommendation, parseYearRange, vehicleNoun, vehicleSpecLine, vehicleTitle } from '../lib/vehicle-result'
 import { isAnalysisInProgress } from '../types/analysis'
+import { amazonCardData, formatAsOf, toAmazonItemRow } from '../lib/amazon/cache'
+import type { AmazonItem } from '../lib/amazon/creators-api'
 
 let passed = 0
 let failed = 0
@@ -301,6 +303,29 @@ assert(generationForYear(tacomaGens, 1990) === undefined, 'a year outside every 
 assert(completeSpecRows(tacomaGens).length === 0, 'no comparison row shows until every Tacoma generation has it')
 const fullSpecs = tacomaGens.map((g) => ({ ...g, specs: { cabs: 'A', beds: 'B', engines: g.slug === '1st-gen' ? ' ' : 'C' } }))
 assert(completeSpecRows(fullSpecs).map((r) => r.key).join() === 'cabs,beds', 'rows with a value for every generation show, in table order; blanks count as missing')
+
+console.log('\namazon_items cache')
+const fetchedAt = new Date('2026-10-30T18:00:00Z')
+const liveItem: AmazonItem = {
+    asin: 'B01MCRLWD5', title: 'Carhartt SeatSaver', brand: 'Covercraft', partNumber: 'SSC2509CAGY',
+    detailPageUrl: 'https://www.amazon.com/dp/B01MCRLWD5?tag=x', imageUrl: 'https://m.media-amazon.com/images/I/x.jpg',
+    price: { amount: 272.97, currency: 'USD', display: '$272.97' }, availability: 'IN_STOCK', availabilityMessage: 'In Stock',
+    merchant: 'Amazon.com', rating: null, ratingsCount: null,
+}
+const liveRow = toAmazonItemRow('B01MCRLWD5', liveItem, fetchedAt)
+assert(liveRow.status === 'ok' && liveRow.price_display === '$272.97' && liveRow.price_amount === 272.97 && liveRow.fetched_at === '2026-10-30T18:00:00.000Z', 'a priced, in-stock item is ok')
+assert(toAmazonItemRow('B0X', { ...liveItem, price: null }, fetchedAt).status === 'unavailable', 'no price is unavailable')
+assert(toAmazonItemRow('B0X', { ...liveItem, availability: 'OUT_OF_STOCK' }, fetchedAt).status === 'unavailable', 'out of stock is unavailable even with a price')
+const missing = toAmazonItemRow('B0MISSING1', undefined, fetchedAt)
+assert(missing.status === 'not_found' && missing.price_display === undefined, 'nothing returned is not_found, with no data')
+assert(formatAsOf('2026-10-30T18:00:00Z') === 'Oct 30, 2:00 PM ET', 'as-of time is shown in Eastern time')
+const asRow = (r: ReturnType<typeof toAmazonItemRow>) => ({ title: null, brand: null, image_url: null, price_amount: null, price_display: null, currency: null, availability: null, availability_message: null, merchant: null, detail_page_url: null, ...r, fetched_at: r.fetched_at ?? '' })
+const card = amazonCardData(asRow(liveRow), new Date('2026-10-31T10:00:00Z'))
+assert(card?.kind === 'live' && card.priceDisplay === '$272.97' && card.inStock && card.asOf === 'Oct 30, 2:00 PM ET', 'fresh ok row shows price, stock and time')
+assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T17:00:01Z')) === null, 'a row older than 23 hours shows nothing (pages are served up to an hour after they render)')
+assert(amazonCardData(asRow(liveRow), new Date('2026-10-31T16:59:00Z'))?.kind === 'live', 'a row just under 23 hours old still shows')
+assert(amazonCardData(undefined) === null, 'no row shows nothing')
+assert(amazonCardData(asRow(missing), new Date('2026-10-30T19:00:00Z'))?.kind === 'unavailable', 'a fresh not_found row shows as unavailable')
 
 console.log('\nbuildPartSearch')
 const injector = { partName: 'Fuel Injector', estimatedVehicle: 'Audi / Volkswagen (FSI/TFSI engines)', amazonSearchTerm: 'Audi VW 2.0 TFSI fuel injector' }

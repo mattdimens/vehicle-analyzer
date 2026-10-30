@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils"
 const DISCLOSURE_TEXT =
     "Some links on Visual Fitment are affiliate links. If you buy through them, we may earn a commission at no extra cost to you."
 
+/** Amazon's required note wherever a price from the Associates program is shown. */
+const PRICE_TEXT =
+    "Prices and availability are accurate as of the date and time shown and are subject to change. The price and availability on Amazon at the time of purchase apply."
+
 /**
  * AffiliateDisclosure
  *
@@ -12,13 +16,22 @@ const DISCLOSURE_TEXT =
  * and vehicle pages.
  *
  * variant="inline": one muted line with no band, for the vehicle pages.
+ * With `prices`, it adds Amazon's note on price and availability timing.
  */
-export function AffiliateDisclosure({ variant = "band", className }: { variant?: "band" | "inline"; className?: string }) {
+export function AffiliateDisclosure({ variant = "band", prices = false, className }: {
+    variant?: "band" | "inline"
+    /** The page shows Amazon prices: add Amazon's price note (inline variant) */
+    prices?: boolean
+    className?: string
+}) {
     if (variant === "inline") {
         return (
             <p className={cn("flex items-start gap-1.5 text-xs leading-snug text-[#5A6672]", className)}>
                 <Info className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>{DISCLOSURE_TEXT}</span>
+                <span>
+                    {DISCLOSURE_TEXT}
+                    {prices && <> {PRICE_TEXT}</>}
+                </span>
             </p>
         )
     }

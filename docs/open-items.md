@@ -11,7 +11,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
 | 1 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 2 | Review and merge Claude's open PRs: #38 (product-type layout), #39 then #40 (dependency upgrades; upload one vehicle and one part photo on #40's preview first), #41 (demand logging) | Matt | Now | Finished work waiting on a merge. #40 is stacked on #39, so merge #39 first. |
+| 2 | Test and merge [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40) (Lucide 1, react-dropzone 20, `@types/node` 22, Gemini SDK 2) | Matt | Now | Finished, but upload one vehicle photo and one part photo on its Vercel preview first: a real upload is the one path Claude couldn't test locally. |
 | 3 | Product research: a sixth 3rd Gen seat cover, then 3rd and 4th Gen bed covers | Matt | Now | The gate needs product-type pages that rank, and none exist yet. A sixth seat cover publishes the first one. Bed covers are the biggest Tacoma demand (7,800 searches a month). |
 | 4 | Four-week check on the redesign, plus re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked. It tells us whether the research in #3 is paying off. Run both together. |
 | 5 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
@@ -36,13 +36,14 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 ## Code
 
 - [ ] **Amazon data on the cards:** image, price with time, stock, and the Sort control. Needs its own brief once the `amazon_items` cache table is designed ([plan 6.4](vehicle-pages-plan.md#64-supabase-later-the-amazon-data-cache) and [8.3](vehicle-pages-plan.md#83-build-steps)). The Creators API needs 10 qualifying sales in 30 days first.
-- [ ] **Product-type page layout:** in review, [PR #38](https://github.com/mattdimens/vehicle-analyzer/pull/38). Light hero, photo card, inline disclosure and footer band, plus one shared guides list.
-- [ ] **Dependency upgrades:** in review. [PR #39](https://github.com/mattdimens/vehicle-analyzer/pull/39) has the in-range updates, React 19.3, and the zod advisory fix. [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40), stacked on #39, has Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2.
+- [ ] **Major-version upgrades:** in review, [PR #40](https://github.com/mattdimens/vehicle-analyzer/pull/40): Lucide 1, react-dropzone 20, `@types/node` 22 and the Gemini SDK 2. Needs a photo upload test on its preview.
 - [ ] **ESLint 10 and TypeScript 7**, held back. ESLint 10 runs, but `eslint-config-next`'s import, jsx-a11y and react plugins don't support it yet. TypeScript 7 builds, but `typescript-eslint` 8 can't lint with it. Retry each once its plugins support it.
-- [ ] **Demand logging cutoff:** in review, [PR #41](https://github.com/mattdimens/vehicle-analyzer/pull/41). It now uses the shared High band (80 or more) instead of a hardcoded 85.
 
 ## Done recently
 
+- 2026-10-30: Product-type page on the light layout, with one shared guides list ([PR #38](https://github.com/mattdimens/vehicle-analyzer/pull/38)).
+- 2026-10-30: Dependency updates within ranges, React 19.3, and the zod advisory fix; `npm audit` is clean ([PR #39](https://github.com/mattdimens/vehicle-analyzer/pull/39)).
+- 2026-10-30: Demand logging uses the shared High band (80 or more) instead of a hardcoded 85 ([PR #41](https://github.com/mattdimens/vehicle-analyzer/pull/41)).
 - 2026-10-30: The unused `variant="preview"` branch in `results-display.tsx` turned out to have been deleted on 2026-10-11 ([PR #5](https://github.com/mattdimens/vehicle-analyzer/pull/5)). `REVIEW.md` N10 still said it was there, and is corrected.
 - 2026-10-30: Search Console indexing requested for the 5 Tacoma URLs and the 5 pages Google didn't seem to know (`/truck-bed-covers`, `/blog`, `/vehicles`, `/vehicles/toyota`, `/blog/running-boards-buying-guide`).
 - 2026-10-30: Vercel Firewall rate-limit rule added for the analysis endpoints ([REVIEW.md](../REVIEW.md), manual step 2).

@@ -363,7 +363,7 @@ order by clicks desc;
 |---|---|---|
 | 0. Diagnose and set up | Week 1 | Done 2026-10-23, except the research Sheet ([section 2.4](#24-what-phase-0-found-2026-10-23)) |
 | 0. Engineering | Weeks 1 and 2 | Catalog types and tests, `[slug]` route with product-type pages, ASIN support in `/go`, `affiliate_clicks.asin` migration, sitemap entries, remove unsupported "fitment-verified" claims |
-| 1. Tacoma pilot | Weeks 2 to 4 | Research 3rd and 4th gen fully, then 2nd gen, light 1st gen. Publish about 9 product-type pages. |
+| 1. Tacoma pilot | Weeks 2 to 4 | Research 3rd and 4th gen fully, then 2nd gen, light 1st gen. Publish about 9 product-type pages. **In progress:** 3rd gen seat covers are live (5 products, one short of a product-type page) and 3rd gen headlights are paused. The vehicle pages redesign shipped 2026-10-30 (PRs #32 to #34). Open work: [open-items.md](open-items.md). |
 | 2. Measure | Weeks 5 to 12 | Check at 4 weeks, decide at 8 ([section 2.3](#23-gate-to-expand-8-weeks-after-launch)). Research Wave 1 in parallel. |
 | 3. Expand | After the gate | Wave 1: Gladiator, 4Runner, Bronco. Wave 2: F-150, Wrangler, Maverick, Tundra, Ram 1500. Wave 3 as tests. About 1 vehicle every 1 to 2 weeks, set by research capacity. Show catalog picks for supported vehicles on `/r/[id]` above the AI's free-text suggestions. |
 | 4. Creators API | Credentials since 2026-10-27; data at 10 qualifying sales | Client and ASIN lookup script done. Price cache and product-card prices after the first catalog import ([section 8.3](#83-build-steps)). |

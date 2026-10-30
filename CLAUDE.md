@@ -7,6 +7,7 @@
 - Package manager is npm (`package-lock.json`). Vercel builds with Node 22.x, so don't rely on newer Node APIs.
 - Before opening a PR, run the checks in the README: `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run build`.
 - Work on a branch and open a PR against `main`. Vercel builds a preview deploy for every PR; use it to check changes that need real data.
+- Open items (waiting on Matt, scheduled checks, code work) live in `docs/open-items.md`. At the end of a session, move what got done to "Done recently" with the date and PR, and add anything new.
 
 ## Secrets and environment
 

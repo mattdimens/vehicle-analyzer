@@ -220,6 +220,11 @@ export const toyota: VehicleMake = {
           intro:
             "Toyota completely redesigned the Tacoma for 2024 with a new TNGA-F platform, a turbocharged 2.4L four-cylinder, and an available i-FORCE MAX hybrid powertrain. The wider body and coil-rear suspension open up new accessory options that previous generations could not support.",
           categories: buildCategories("4th Gen"),
+          specs: {
+            // From the intro above
+            engines: "2.4L turbo four-cylinder, i-FORCE MAX hybrid",
+            // TODO(Matt): cabs, beds, carriesOver
+          },
           popular: [
             {
               title: "Tri-fold tonneau cover",
@@ -257,6 +262,14 @@ export const toyota: VehicleMake = {
             "The third-generation Tacoma ran for eight model years, making it the most common Tacoma on the road today. Its 3.5L V6 and available crawl control made it a favorite for both daily driving and weekend trail use, with a massive aftermarket catalog to match.",
           categories: buildCategories("3rd Gen"),
           configs: { cabs: ["Access Cab", "Double Cab"], beds: ["5-ft", "6-ft"] },
+          specs: {
+            // Confirmed by Matt with `configs` (Step 2)
+            cabs: "Access Cab, Double Cab",
+            beds: "5-ft, 6-ft",
+            // TODO(Matt): engines.  The intro names the 3.5L V6, but a 2.7L
+            // four-cylinder was also sold, so the V6 alone would mislead.
+            // TODO(Matt): carriesOver
+          },
           faqs: [
             {
               q: "Which seat covers fit an Access Cab?",
@@ -306,6 +319,10 @@ export const toyota: VehicleMake = {
           intro:
             "The second-generation Tacoma introduced the frame and 4.0L V6 that earned Toyota's mid-size truck a reputation for longevity. Even with 100k+ miles on the clock, these trucks respond well to bolt-on accessories that refresh both utility and appearance.",
           categories: buildCategories("2nd Gen"),
+          specs: {
+            // TODO(Matt): cabs, beds, carriesOver.  Engines: the intro names
+            // the 4.0L V6, but a 2.7L four-cylinder was also sold.
+          },
           popular: [
             {
               title: "Tri-fold tonneau cover",
@@ -343,6 +360,9 @@ export const toyota: VehicleMake = {
           intro:
             "The original Tacoma replaced the Toyota Pickup and proved a compact truck could be both capable and reliable. Many first-generation trucks are still on the road, and owners keep them running with a mix of restoration parts and modern bolt-on accessories.",
           categories: buildCategories("1st Gen"),
+          specs: {
+            // TODO(Matt): cabs, beds, engines, carriesOver
+          },
           popular: [
             {
               title: "Premium headlight upgrade",

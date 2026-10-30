@@ -1,22 +1,27 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getAllMakes, getModelBySlug } from "@/data/vehicles/index"
-import {
-  getFeaturedPicks,
-  getProductTypePages,
-  remainingPlaceholders,
-  withoutResearched,
-} from "@/data/vehicles/catalog"
-import { VehicleHero } from "@/components/vehicles/vehicle-hero"
-import { GenerationSelector } from "@/components/vehicles/generation-selector"
-import { CategorySection } from "@/components/vehicles/category-section"
-import { CatalogProductCard } from "@/components/vehicles/catalog-product-card"
-import { ProductTypeLinks } from "@/components/vehicles/product-type-links"
-import { PopularPicks } from "@/components/vehicles/popular-picks"
-import { RelatedGuides } from "@/components/vehicles/related-guides"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
+import { getAllMakes, getModelBySlug, modelYears } from "@/data/vehicles/index"
+import { productTypes } from "@/data/vehicles/product-types"
+import { getFeaturedPicks, getGenerationSections, getProductTypePages } from "@/data/vehicles/catalog"
+import { GenerationHero } from "@/components/vehicles/generation-hero"
+import { YearPicker } from "@/components/vehicles/year-picker"
+import { GenerationTabs } from "@/components/vehicles/generation-tabs"
+import { CompactPickCard } from "@/components/vehicles/compact-pick-card"
+import { pickBadge } from "@/components/vehicles/catalog-product-card"
+import { GenerationSpecs } from "@/components/vehicles/generation-specs"
+import { ProductTypeIcon } from "@/components/vehicles/product-type-icon"
 import type { GuideLink } from "@/components/vehicles/related-guides"
-import { BreadcrumbNav } from "@/components/ui/breadcrumb-nav"
 import { AffiliateDisclosure } from "@/components/ui/affiliate-disclosure"
+import {
+  bodyTextClass,
+  cardClass,
+  eyebrowClass,
+  mutedTextClass,
+  pageSectionTitleClass,
+} from "@/components/results/tokens"
+import { cn } from "@/lib/utils"
 
 const BASE_URL = "https://visualfitment.com"
 
@@ -92,13 +97,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // ── Page ───────────────────────────────────────────────────────────────
 
+/** "Bed & Tonneau Covers" -> "bed and tonneau covers" */
+const inSentence = (name: string) => name.replace(/&/g, "and").toLowerCase()
+
+/** "a, b and c" */
+function listInSentence(items: string[]): string {
+  return items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`
+}
+
 export default async function ModelHubPage({ params }: PageProps) {
   const { make: makeSlug, model: modelSlug } = await params
   const result = getModelBySlug(makeSlug, modelSlug)
   if (!result) notFound()
 
   const { make, model } = result
-  const vehicleString = `${make.name} ${model.name}`
   const basePath = `/vehicles/${make.slug}/${model.slug}`
 
   const breadcrumbItems = [
@@ -107,34 +119,40 @@ export default async function ModelHubPage({ params }: PageProps) {
     { label: `${model.name} Accessories` },
   ]
 
-  // Merge all generation popular picks for the model-level module
-  const allPopular = model.generations.flatMap((g) => g.popular)
-
-  // Merge categories across generations for a model-level overview.
-  // Group by slug, combine products (deduped by title).
-  const categoryMap = new Map<
-    string,
-    { slug: string; name: string; products: typeof model.generations[0]["categories"][0]["products"] }
-  >()
-  for (const gen of model.generations) {
-    for (const cat of gen.categories) {
-      if (!categoryMap.has(cat.slug)) {
-        categoryMap.set(cat.slug, { slug: cat.slug, name: cat.name, products: [...cat.products] })
-      }
-      // Categories have identical products across gens for the pilot,
-      // so we don't duplicate. In the future, this merge becomes smarter.
-    }
-  }
-  const mergedCategories = Array.from(categoryMap.values())
-
-  // Once a generation has researched picks, the hub leads with one pick per
-  // product type (from the most researched generation).  The placeholders
-  // stay below, minus the ones those product types replace.
+  // Researched picks per generation (newest first), and the tab to open on:
+  // the most researched generation
+  const generations = model.generations.map((generation) => ({
+    generation,
+    href: `${basePath}/${generation.slug}`,
+    sections: getGenerationSections(make.slug, model.slug, generation.slug),
+  }))
+  const pickCount = (sections: (typeof generations)[number]["sections"]) =>
+    sections.reduce((n, s) => n + s.picks.length, 0)
   const featured = getFeaturedPicks(make.slug, model.slug)
-  const researched = new Set(featured?.items.map((i) => i.productType.slug) ?? [])
-  const placeholders = remainingPlaceholders(mergedCategories, researched)
-  const popular = withoutResearched(allPopular, researched)
-  const productTypePages = getProductTypePages(make.slug, model.slug)
+  const defaultTab = featured?.generation.slug ?? model.generations[0]?.slug ?? ""
+
+  // Shop by type: product types with picks on any generation
+  const productTypePages = new Set(getProductTypePages(make.slug, model.slug).map((t) => t.slug))
+  const typeTiles = productTypes.flatMap((type) => {
+    const withPicks = generations.flatMap(({ generation, sections }) => {
+      const section = sections.find((s) => s.productType.slug === type.slug)
+      return section ? [{ generation, count: section.picks.length }] : []
+    })
+    if (withPicks.length === 0) return []
+    const busiest = [...withPicks].sort((a, b) => b.count - a.count)[0].generation
+    return [
+      {
+        type,
+        count: withPicks.reduce((n, g) => n + g.count, 0),
+        generationLabels: withPicks.map((g) => g.generation.label),
+        href: productTypePages.has(type.slug)
+          ? `${basePath}/${type.slug}`
+          : `${basePath}/${busiest.slug}#cat-${type.slug}`,
+      },
+    ]
+  })
+  const researchedTypes = new Set(typeTiles.map((t) => t.type.slug))
+  const nextTypes = productTypes.filter((t) => !researchedTypes.has(t.slug)).slice(0, 5)
 
   // JSON-LD: BreadcrumbList
   const breadcrumbJsonLd = {
@@ -157,24 +175,30 @@ export default async function ModelHubPage({ params }: PageProps) {
     ],
   }
 
-  // JSON-LD: ItemList of product names. No Product/Offer markup: we don't sell
-  // these items, and Offers without a price are invalid for Google.
-  const allProducts = [
-    ...(featured?.items ?? []).map(({ resolved }) => `${resolved.product.brand} ${resolved.product.name}`),
-    ...placeholders.flatMap((cat) => cat.products.map((p) => p.title)),
-  ]
-
-  const itemListJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: model.h1,
-    numberOfItems: allProducts.length,
-    itemListElement: allProducts.map((name, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name,
-    })),
-  }
+  // JSON-LD: ItemList of the researched products on this page (the lead
+  // picks), and none when there are none.  No Product/Offer markup: we don't
+  // sell these items, and Offers without a price are invalid for Google.
+  const productNames = Array.from(
+    new Set(
+      generations.flatMap(({ sections }) =>
+        sections.flatMap((s) => (s.picks[0] ? [`${s.picks[0].product.brand} ${s.picks[0].product.name}`] : []))
+      )
+    )
+  )
+  const itemListJsonLd =
+    productNames.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: model.h1,
+          numberOfItems: productNames.length,
+          itemListElement: productNames.map((name, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name,
+          })),
+        }
+      : null
 
   return (
     <>
@@ -182,88 +206,212 @@ export default async function ModelHubPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
-      />
-
-      <BreadcrumbNav items={breadcrumbItems} />
-
-      <VehicleHero
-        h1={model.h1}
-        intro={model.intro}
-        ctaLabel={`Upload a photo of your ${model.name} to confirm what fits`}
-        ctaHref="/#upload-zone"
-      />
-
-      {/* Generation selector */}
-      <GenerationSelector
-        generations={model.generations}
-        basePath={basePath}
-      />
-
-      <ProductTypeLinks
-        title={`Shop ${model.name} accessories by type`}
-        productTypes={productTypePages}
-        basePath={basePath}
-      />
-
-      {/* Affiliate disclosure - adjacent to product recommendations */}
-      <AffiliateDisclosure />
-
-      {featured && (
-        /* Top pick per product type from the most researched generation */
-        <section className="w-full bg-white py-14 md:py-16">
-          <div className="container max-w-5xl">
-            <h2 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
-              {`Top picks for the ${featured.generation.label} ${model.name} (${featured.generation.displayRange})`}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Pick your generation above for every product we recommend.
-            </p>
-            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {featured.items.map(({ productType, resolved }) => (
-                <CatalogProductCard
-                  key={productType.slug}
-                  product={resolved.product}
-                  eyebrow={productType.name}
-                  vehicle={{
-                    make: make.slug,
-                    model: model.slug,
-                    modelName: model.name,
-                    yearStart: featured.generation.yearStart,
-                    yearEnd: featured.generation.yearEnd,
-                    vehicleString: `${featured.generation.displayRange} ${make.name} ${model.name}`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Placeholder category sections */}
-      {placeholders.length > 0 && (
-        <section className={`w-full bg-white pb-14 md:pb-16 ${featured ? "" : "pt-14 md:pt-16"}`}>
-          <div className="container max-w-5xl space-y-14">
-            {placeholders.map((cat) => (
-              <CategorySection key={cat.slug} category={cat} vehicleString={vehicleString} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Popular picks */}
-      {popular.length > 0 && (
-        <PopularPicks
-          modelNamePlural={`${model.name}s`}
-          items={popular.slice(0, 6)}
-          vehicleString={vehicleString}
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
         />
       )}
 
-      {/* Related guides */}
-      <RelatedGuides guides={tacomaGuides} />
+      <GenerationHero
+        breadcrumb={breadcrumbItems}
+        eyebrow={make.name}
+        h1={model.h1}
+        intro={model.intro}
+        asideOnMobile
+        aside={
+          <YearPicker
+            modelName={model.name}
+            years={modelYears(model.generations)}
+            generations={generations.map(({ generation, href }) => ({
+              slug: generation.slug,
+              label: generation.label,
+              yearStart: generation.yearStart,
+              yearEnd: generation.yearEnd,
+              displayRange: generation.displayRange,
+              href,
+            }))}
+            fallbackHref="#generations"
+          />
+        }
+      />
+
+      <div className="w-full bg-white">
+        <div className="container max-w-6xl space-y-12 pb-16 pt-8 md:space-y-14 md:pt-10">
+          {/* Shop by generation: plain links, so the page works without JavaScript */}
+          <section id="generations" aria-labelledby="generations-title" className="scroll-mt-20">
+            <h2 id="generations-title" className={pageSectionTitleClass}>
+              Shop by generation
+            </h2>
+            <ul className="mt-4 grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
+              {generations.map(({ generation, href, sections }) => {
+                const count = pickCount(sections)
+                return (
+                  <li key={generation.slug}>
+                    <Link
+                      href={href}
+                      className={cn(
+                        cardClass,
+                        "group flex h-full items-center justify-between gap-3 p-4 transition-colors hover:border-[#17212B] md:flex-col md:items-stretch md:justify-start md:gap-1.5 md:p-5"
+                      )}
+                    >
+                      <span className="flex flex-col gap-0.5 md:gap-1.5">
+                        <span className={cn(eyebrowClass, "hidden md:block")}>{generation.label}</span>
+                        <span className="font-heading text-base font-bold text-[#17212B] md:text-2xl">
+                          <span className="md:hidden">{generation.label} </span>
+                          <span className="font-sans font-medium text-[#5A6672] md:font-heading md:font-bold md:text-[#17212B]">
+                            {generation.displayRange}
+                          </span>
+                        </span>
+                        <span className={cn("hidden text-sm leading-relaxed md:line-clamp-3", bodyTextClass)}>
+                          {generation.intro.split(". ")[0].replace(/\.$/, "")}.
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[13px] md:mt-auto md:pt-2",
+                            count > 0 ? "font-semibold text-[#166534]" : mutedTextClass
+                          )}
+                        >
+                          {count > 0 ? `${count} researched ${count === 1 ? "pick" : "picks"}` : "Picks coming soon"}
+                        </span>
+                      </span>
+                      <ChevronRight className={cn("h-5 w-5 shrink-0 md:hidden", mutedTextClass)} aria-hidden="true" />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+
+          {/* Top picks by generation: every tab's content is in the HTML */}
+          <section aria-labelledby="top-picks-title">
+            <h2 id="top-picks-title" className={pageSectionTitleClass}>
+              Top picks by generation
+            </h2>
+            <GenerationTabs
+              label={`${model.name} generation`}
+              defaultSlug={defaultTab}
+              className="mt-4"
+              tabs={generations.map(({ generation, href, sections }) => ({
+                slug: generation.slug,
+                label: generation.label,
+                panel:
+                  sections.length > 0 ? (
+                    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+                      {sections.map(({ productType, picks }) =>
+                        picks[0] ? (
+                          <li key={productType.slug}>
+                            <CompactPickCard
+                              product={picks[0].product}
+                              eyebrow={[productType.name, pickBadge(picks[0].pick)].filter(Boolean).join(" · ")}
+                              vehicle={{
+                                make: make.slug,
+                                model: model.slug,
+                                modelName: model.name,
+                                yearStart: generation.yearStart,
+                                yearEnd: generation.yearEnd,
+                                vehicleString: `${generation.displayRange} ${make.name} ${model.name}`,
+                              }}
+                            />
+                          </li>
+                        ) : null
+                      )}
+                      <li>
+                        <Link
+                          href={href}
+                          className={cn(
+                            cardClass,
+                            "flex h-full min-h-14 flex-col justify-center gap-1 border-dashed p-4 transition-colors hover:border-[#17212B]"
+                          )}
+                        >
+                          <span className="font-heading text-[17px] font-bold text-[#17212B]">
+                            See every {generation.label} pick
+                          </span>
+                          <span className={cn("text-sm", mutedTextClass)}>
+                            {generation.configs
+                              ? "Filter by your cab and bed, and read the fitment catches."
+                              : "Read the fitment notes and the catches owners report."}
+                          </span>
+                        </Link>
+                      </li>
+                    </ul>
+                  ) : (
+                    <div className={cn(cardClass, "flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between md:p-5")}>
+                      <p className={cn("text-[15px] leading-relaxed", bodyTextClass)}>
+                        We&apos;re still researching products for the {generation.label}. Its page has Amazon searches for your years until then.
+                      </p>
+                      <Link
+                        href={href}
+                        className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[15px] font-semibold text-[#17212B] underline-offset-2 hover:text-[#9A3412] hover:underline"
+                      >
+                        Browse {generation.label} accessories
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    </div>
+                  ),
+              }))}
+            />
+          </section>
+
+          {/* Shop by type */}
+          {typeTiles.length > 0 && (
+            <section aria-labelledby="by-type-title">
+              <h2 id="by-type-title" className={pageSectionTitleClass}>
+                Shop by type
+              </h2>
+              <ul className="mt-4 grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-4">
+                {typeTiles.map(({ type, count, generationLabels, href }) => (
+                  <li key={type.slug}>
+                    <Link
+                      href={href}
+                      className={cn(cardClass, "flex min-h-16 items-center gap-3 p-3.5 transition-colors hover:border-[#17212B]")}
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F7F9] text-[#17212B]">
+                        <ProductTypeIcon slug={type.slug} className="h-5 w-5" />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="text-[15px] font-semibold text-[#17212B]">{type.name}</span>
+                        <span className={cn("text-[13px]", mutedTextClass)}>
+                          {count} {count === 1 ? "pick" : "picks"} · {generationLabels.join(", ")}
+                        </span>
+                      </span>
+                      <ChevronRight className={cn("h-5 w-5 shrink-0", mutedTextClass)} aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {nextTypes.length > 0 && (
+                <p className={cn("mt-3 text-sm leading-relaxed", mutedTextClass)}>
+                  Researching next: {listInSentence(nextTypes.map((t) => inSentence(t.name)))}.
+                </p>
+              )}
+            </section>
+          )}
+
+          <GenerationSpecs title={`How the ${model.name} generations differ`} generations={model.generations} />
+
+          <section aria-labelledby="guides-title" className="max-w-2xl">
+            <h2 id="guides-title" className="font-heading text-lg font-bold text-[#17212B]">
+              Guides
+            </h2>
+            <ul className="mt-2">
+              {tacomaGuides.map((guide) => (
+                <li key={guide.slug} className="border-t border-[#EDF1F4] first:border-t-0">
+                  <Link
+                    href={`/blog/${guide.slug}`}
+                    className="flex min-h-12 items-center justify-between gap-3 text-[15px] font-medium text-[#17212B] hover:text-[#9A3412]"
+                  >
+                    {guide.title}
+                    <ChevronRight className={cn("h-4 w-4 shrink-0", mutedTextClass)} aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <AffiliateDisclosure variant="inline" />
+        </div>
+      </div>
     </>
   )
 }

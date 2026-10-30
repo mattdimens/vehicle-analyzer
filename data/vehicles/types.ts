@@ -97,6 +97,24 @@ export interface VehicleGeneration {
    * truck" filter only shows when a generation has them.
    */
   configs?: TruckConfigs
+  /**
+   * Facts for the model hub's "How the generations differ" table.  Matt
+   * signs off on every value; a row only shows once every generation of
+   * the model has it.
+   */
+  specs?: GenerationSpecs
+}
+
+/** One generation's column in the model hub's comparison table. */
+export interface GenerationSpecs {
+  /** e.g. "Access Cab, Double Cab" */
+  cabs?: string
+  /** e.g. "5-ft, 6-ft" */
+  beds?: string
+  /** e.g. "2.4L turbo four-cylinder, i-FORCE MAX hybrid" */
+  engines?: string
+  /** What fits from or to the neighboring generations */
+  carriesOver?: string
 }
 
 /** The cab and bed choices for a generation's "Your truck" filter. */

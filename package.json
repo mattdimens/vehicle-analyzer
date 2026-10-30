@@ -10,7 +10,7 @@
     "test": "tsx test/unit-test.ts && tsx test/part-identification-test.ts && tsx test/analysis-fixture-test.ts && tsx test/resolver-fixture-test.ts && tsx test/creators-api-test.ts"
   },
   "dependencies": {
-    "@google/genai": "^1.42.0",
+    "@google/genai": "^2.32.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

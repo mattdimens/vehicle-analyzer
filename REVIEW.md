@@ -38,7 +38,7 @@ Four problems now matter most:
 | N7 | **Fixed in code.** The extension comes from the MIME type. **Still needed:** bucket MIME and size limits. |
 | N8 | **Fixed.** One shared browser client; `lib/supabase.ts` and `@supabase/ssr` removed |
 | N9 | **Fixed.** The schema keeps `vehicle_present`, `confidence_score`, alt text, `yearRange`, and `trim`; category pages show a "no vehicle" error |
-| N10 | **Corrected:** the `>= 90` labels sat in `results-display.tsx`'s `variant="preview"` branch, which no caller uses. The live view shows raw percentages. Labels and part colors now use `getConfidenceBand()` anyway (part `medium` cutoff moved from 50 to 55, so `part_identification_completed` outcomes shift slightly). The dead preview branch (which also hardcodes Tacoma links) is still there; deleting it was not approved in this pass. |
+| N10 | **Corrected:** the `>= 90` labels sat in `results-display.tsx`'s `variant="preview"` branch, which no caller uses. The live view shows raw percentages. Labels and part colors now use `getConfidenceBand()` anyway (part `medium` cutoff moved from 50 to 55, so `part_identification_completed` outcomes shift slightly). The dead preview branch (which also hardcoded Tacoma links) was deleted Oct 11 in the follow-up PR (#5). |
 | N11 | **Fixed.** Heroes went from 3.5/4.9 MB PNGs to 290/430 KB JPGs with `fetchPriority="high"`; blog fonts moved to `next/font`. The homepage sample card was loading the same 4.9 MB PNG from Supabase and now uses local `/images/sample-result.jpg` (L3). |
 | N12 | **Fixed.** The pipeline and routes stamp `updated_at` on every write |
 | N13 | **Fixed.** `/r` reports completion only for runs it watched, including retries. Category pages fire `analysis_completed` with a new `entry_point` param. |

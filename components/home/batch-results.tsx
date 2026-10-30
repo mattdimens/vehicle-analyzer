@@ -183,7 +183,7 @@ export function BatchResults({ items, detectedProductsTitle }: BatchResultsProps
                                     {/* Col 4: Action */}
                                     <div className="col-span-1 md:col-span-1 flex justify-end w-full md:w-auto mt-4 md:mt-0">
                                         <Button
-                                            className="w-full md:w-auto bg-transparent text-[#003223] border border-[#003223] hover:bg-[#003223] hover:text-white"
+                                            className="w-full md:w-auto bg-transparent text-[#17212B] border border-[#17212B] hover:bg-[#17212B] hover:text-white"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 toggleExpand(item.id)

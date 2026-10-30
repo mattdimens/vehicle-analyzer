@@ -17,26 +17,23 @@ import { cn } from "@/lib/utils"
 
 export type SamplePage = "homepage" | "part_identifier"
 
-/** "dark" sits on the green hero of the sub-pages, "light" on the page background. */
-type HeroTone = "dark" | "light"
-
 /** A small uppercase label on the hero, above a card. */
-export function HeroEyebrow({ children, tone = "dark", className }: { children: ReactNode; tone?: HeroTone; className?: string }) {
+export function HeroEyebrow({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <p className={cn("text-xs font-semibold uppercase tracking-[0.08em]", tone === "dark" ? "text-white/80" : "text-[#9A3412]", className)}>
+        <p className={cn("text-xs font-semibold uppercase tracking-[0.08em] text-[#9A3412]", className)}>
             {children}
         </p>
     )
 }
 
 /** "Sample result", above the sample card. */
-export function SampleEyebrow({ tone, className }: { tone?: HeroTone; className?: string }) {
-    return <HeroEyebrow tone={tone} className={className}>Sample result</HeroEyebrow>
+export function SampleEyebrow({ className }: { className?: string }) {
+    return <HeroEyebrow className={className}>Sample result</HeroEyebrow>
 }
 
 /** Under the card, on the hero, so nobody takes the sample for their own result. */
-export function SampleCaption({ tone = "dark", className }: { tone?: HeroTone; className?: string }) {
-    return <p className={cn("text-xs", tone === "dark" ? "text-white/75" : "text-[#5A6672]", className)}>Example from one uploaded photo</p>
+export function SampleCaption({ className }: { className?: string }) {
+    return <p className={cn("text-xs text-[#5A6672]", className)}>Example from one uploaded photo</p>
 }
 
 /** The whole card: one link to the full sample result. */
@@ -53,7 +50,7 @@ export function SampleCardLink({ href, ariaLabel, page, className, children }: {
             aria-label={ariaLabel}
             onClick={() => trackEvent("sample_result_click", { page, platform: getPlatform(), entry_door: getEntryDoor() })}
             className={cn(
-                "group block rounded-2xl bg-white text-[#17212B] no-underline shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-shadow hover:shadow-[0_14px_40px_rgba(0,0,0,0.32)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70",
+                "group block rounded-2xl border border-[#D5DEE5] bg-white text-[#17212B] no-underline transition-colors hover:border-[#17212B] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#17212B]/30",
                 className
             )}
         >

@@ -559,7 +559,7 @@ export function VehicleAnalyzer({ title, description, promptContext, showCategor
     return (
         <div className={cn("flex min-h-screen flex-col", showCategories && pageBackgroundClass)}>
             <div className="flex-1">
-                <div className={cn(!showCategories && "bg-[#003223]")}>
+                <div className={cn(!showCategories && pageBackgroundClass)}>
                     {/* Homepage: dual-entry hero (photo tool + vehicle selector) */}
                     {showCategories ? (
                         <>

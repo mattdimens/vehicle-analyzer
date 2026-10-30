@@ -15,10 +15,10 @@ export function HeroSection({
             className="flex w-full flex-col items-center justify-center px-4 pt-24 pb-8 text-center"
         >
             <div className="max-w-4xl w-full flex flex-col items-center">
-                <h1 className="font-heading text-3xl md:text-5xl font-bold text-white">
+                <h1 className="font-heading text-3xl md:text-5xl font-bold text-[#17212B]">
                     {title}
                 </h1>
-                <p className="mt-6 max-w-2xl mx-auto text-lg text-white/80">
+                <p className="mt-6 max-w-2xl mx-auto text-lg text-[#5A6672]">
                     {description}
                 </p>
             </div>

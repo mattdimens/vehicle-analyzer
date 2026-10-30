@@ -236,7 +236,7 @@ assert(rolePicks[0].pick.productId === 'for-1', 'orderPicks leaves its input alo
 assert(orderPicks([]).length === 0, 'no picks, no order')
 assert(queries.getGenerationSections('toyota', 'tacoma', '4th-gen')[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'generation sections list picks in role order')
 assert(queries.getProductTypePage('toyota', 'tacoma', 'bed-racks')?.sections[0].picks.map((r) => r.product.id).join() === 'd,e,f', 'product-type pages list picks in role order')
-assert(getGenerationSections('toyota', 'tacoma', '3rd-gen')[0].picks.map((r) => r.pick.role).join() === 'best-overall,budget,best-for,best-for,best-for', '3rd Gen seat covers: best overall, then budget, then best-for')
+assert(getGenerationSections('toyota', 'tacoma', '3rd-gen').find((s) => s.productType.slug === 'seat-covers')!.picks.map((r) => r.pick.role).join() === 'best-overall,budget,best-for,best-for,best-for', '3rd Gen seat covers: best overall, then budget, then best-for')
 assert(sections3.find((s) => s.productType.slug === 'bed-racks')?.guide?.buyingNotes.length === 3, 'a section carries its product-type guide')
 assert(sections3.find((s) => s.productType.slug === 'seat-covers')?.guide === undefined, 'a section without a guide has none')
 
@@ -270,7 +270,7 @@ assert(truckFitLine(fitmentFor(anyCab, 'toyota', 'tacoma', tacomaYears), { cab: 
 assert(truckFitLine(fitmentFor(twoEntries, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab', bed: '6-ft' }) === 'Fits your Access Cab, 6-ft bed. Not for TRD Pro.', 'fit line uses only the entries that fit')
 assert(truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), {}) === null && truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab' }) === null, 'no fit line without a truck or when it does not fit')
 assert(describeTruck({ cab: 'Double Cab', bed: '6-ft' }) === 'Double Cab with a 6-ft bed' && withArticle('Access Cab') === 'an Access Cab' && withArticle(describeTruck({ bed: '5-ft' })) === 'a 5-ft bed', 'truck descriptions read naturally')
-const realSeatCovers = getGenerationSections('toyota', 'tacoma', '3rd-gen')[0].picks.map((r) => r.product)
+const realSeatCovers = getGenerationSections('toyota', 'tacoma', '3rd-gen').find((s) => s.productType.slug === 'seat-covers')!.picks.map((r) => r.product)
 assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Access Cab' }).fits).length === 1, '3rd Gen: one seat cover fits an Access Cab')
 assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Double Cab' }).fits).length === 5, '3rd Gen: all five fit a Double Cab')
 

@@ -11,7 +11,7 @@ import { classifyClick, isBotUserAgent, truncateHeader } from '../lib/affiliate/
 import { merchants, normalizeAsin } from '../lib/affiliate/merchants'
 import { buildGoUrl, completeSpecRows, generationForYear, getAllMakes, modelYears } from '../data/vehicles/index'
 import { productTypes } from '../data/vehicles/product-types'
-import { catalog, createCatalogQueries, getGenerationSections, orderPicks, placeholderLinkLabel, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
+import { catalog, createCatalogQueries, getGenerationSections, getProductTypePage, orderPicks, placeholderLinkLabel, remainingPlaceholders, withoutResearched } from '../data/vehicles/catalog'
 import { validateCatalog } from '../data/vehicles/catalog/validate'
 import { describeTruck, fitmentCheckedLabel, fitmentFor, fitsTruck, formatFitment, normalizeTruck, truckFitLine, withArticle } from '../data/vehicles/catalog/fitment'
 import { catalogHrefWithTruck, configsForPath, truckFromParams } from '../data/vehicles/truck-handoff'
@@ -270,6 +270,8 @@ assert(truckFitLine(fitmentFor(anyCab, 'toyota', 'tacoma', tacomaYears), { cab: 
 assert(truckFitLine(fitmentFor(twoEntries, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab', bed: '6-ft' }) === 'Fits your Access Cab, 6-ft bed. Not for TRD Pro.', 'fit line uses only the entries that fit')
 assert(truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), {}) === null && truckFitLine(fitmentFor(doubleOnly, 'toyota', 'tacoma', tacomaYears), { cab: 'Access Cab' }) === null, 'no fit line without a truck or when it does not fit')
 assert(describeTruck({ cab: 'Double Cab', bed: '6-ft' }) === 'Double Cab with a 6-ft bed' && withArticle('Access Cab') === 'an Access Cab' && withArticle(describeTruck({ bed: '5-ft' })) === 'a 5-ft bed', 'truck descriptions read naturally')
+assert(getProductTypePage('toyota', 'tacoma', 'floor-mats')?.sections.map((s) => s.generation.slug).join() === '4th-gen,3rd-gen,2nd-gen', 'Tacoma floor mats page covers the 4th, 3rd and 2nd Gen')
+assert(getProductTypePage('toyota', 'tacoma', 'running-boards')?.sections.length === 3, 'Tacoma running boards page covers three generations')
 const realSeatCovers = getGenerationSections('toyota', 'tacoma', '3rd-gen').find((s) => s.productType.slug === 'seat-covers')!.picks.map((r) => r.product)
 assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Access Cab' }).fits).length === 1, '3rd Gen: one seat cover fits an Access Cab')
 assert(realSeatCovers.filter((p) => fitsTruck(p, 'toyota', 'tacoma', tacomaYears, { cab: 'Double Cab' }).fits).length === 5, '3rd Gen: all five fit a Double Cab')

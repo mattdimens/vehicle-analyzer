@@ -12,6 +12,7 @@ import { AnalysisProgress } from "./analysis-progress"
 import type { AnalysisKind, AnalysisRecord } from "@/types/analysis"
 import { getConfidenceBand, getPartIdentification, isAnalysisInProgress, isPartRecord } from "@/types/analysis"
 import { apiErrorMessage, readJson } from "@/lib/api-errors"
+import { analysisErrorCopy, classifyAnalysisError } from "@/lib/analysis-errors"
 
 const stateCardClass = cn(cardClass, "flex flex-col items-center gap-2 px-5 py-8 text-center sm:p-8")
 /** A fade for the result when it replaces the loading screen. */
@@ -234,6 +235,10 @@ export function AnalysisView({ id, initialKind = "vehicle" }: { id: string; init
 
     const { image_url } = record
     const isPart = isPartRecord(record)
+    // What went wrong, from the stored error message; a failed retry's own
+    // message wins because it is newer
+    const errorKind = classifyAnalysisError(record.error_details ?? "")
+    const errorLine = retryError ?? analysisErrorCopy(errorKind)
 
     if (running) {
         return <AnalysisProgress kind={kind} record={record} slow={isSlow} />
@@ -249,7 +254,7 @@ export function AnalysisView({ id, initialKind = "vehicle" }: { id: string; init
                         <RefreshCw className="h-4 w-4" aria-hidden="true" />
                         Try again
                     </button>
-                    {retryError && <p className="text-sm text-[#9B1C1C]">{retryError}</p>}
+                    <p role="status" className="text-sm text-[#9B1C1C]">{errorLine}</p>
                     <Link
                         href="/part-identifier"
                         className="flex min-h-11 items-center text-sm font-semibold text-[#9A3412] underline-offset-2 hover:text-[#7C2D12] hover:underline"
@@ -275,7 +280,10 @@ export function AnalysisView({ id, initialKind = "vehicle" }: { id: string; init
                         <RefreshCw className="h-4 w-4" aria-hidden="true" />
                         Try again
                     </button>
-                    {retryError && <p className="text-sm text-[#9B1C1C]">{retryError}</p>}
+                    {/* The heading already says it was our fault, so only a known cause adds anything */}
+                    {(retryError || (errorKind !== "unknown" && errorKind !== "bad_output")) && (
+                        <p role="status" className="text-sm text-[#9B1C1C]">{errorLine}</p>
+                    )}
                     <div className="mt-4 w-full max-w-md border-t border-[#E4EBF0] pt-6 text-left">
                         <p className="mb-3 text-sm font-semibold text-[#17212B]">Or pick your vehicle</p>
                         <VehicleSelector location="degraded_state" />

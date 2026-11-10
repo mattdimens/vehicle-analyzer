@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/pipeline'
 import { UrlValidationError } from '@/lib/url-validation'
 import { fetchValidatedImages } from '@/lib/request-images'
 import { AnalysisResultsSchema } from '@/lib/schemas'
+import { analysisErrorStatus, classifyAnalysisError, publicAnalysisError } from '@/lib/analysis-errors'
 
 export const maxDuration = 60
 
@@ -30,10 +31,11 @@ export async function POST(request: NextRequest) {
         // 3. Scout + Sniper cascade (prompt lives in lib/analysis-stages.ts) ---
         const fitmentRes = await runFitmentAnalysis(imageParts, promptContext)
         if (!fitmentRes.success) {
-            console.error('Fitment analysis failed:', fitmentRes.error)
+            const kind = classifyAnalysisError(fitmentRes.error)
+            console.error(`Fitment analysis failed [${kind}]:`, fitmentRes.error)
             return NextResponse.json(
-                { success: false, error: fitmentRes.error },
-                { status: 502 }
+                { success: false, error: publicAnalysisError(fitmentRes.error, 'Analysis failed, please try again.') },
+                { status: analysisErrorStatus(kind) }
             )
         }
 
@@ -72,13 +74,14 @@ export async function POST(request: NextRequest) {
             data: finalResult,
         })
     } catch (err) {
-        console.error('/api/analyze error:', err)
+        const kind = classifyAnalysisError(err)
+        console.error(`/api/analyze error [${kind}]:`, err)
         return NextResponse.json(
             {
                 success: false,
-                error: 'Analysis failed, please try again.',
+                error: publicAnalysisError(err, 'Analysis failed, please try again.'),
             },
-            { status: 500 }
+            { status: kind === 'unknown' ? 500 : analysisErrorStatus(kind) }
         )
     }
 }

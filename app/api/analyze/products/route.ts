@@ -3,6 +3,7 @@ import { detectAndRefineProducts } from '@/lib/analysis-stages'
 import { attachProductsToLatestResult } from '@/lib/analysis-results-log'
 import { fetchValidatedImages } from '@/lib/request-images'
 import { UrlValidationError } from '@/lib/url-validation'
+import { analysisErrorStatus, classifyAnalysisError, publicAnalysisError } from '@/lib/analysis-errors'
 
 // Detection + parallel refinement (each may escalate to the Pro model)
 export const maxDuration = 60
@@ -30,15 +31,23 @@ export async function POST(request: NextRequest) {
     try {
         const result = await detectAndRefineProducts(images.parts, vehicleDetails, promptContext)
         if (!result.success) {
-            console.error('Product detection failed:', result.error)
-            return NextResponse.json({ success: false, error: 'Product detection failed, please try again.' }, { status: 502 })
+            const kind = classifyAnalysisError(result.error)
+            console.error(`Product detection failed [${kind}]:`, result.error)
+            return NextResponse.json(
+                { success: false, error: publicAnalysisError(result.error, 'Product detection failed, please try again.') },
+                { status: analysisErrorStatus(kind) }
+            )
         }
 
         await attachProductsToLatestResult(images.urls[0], result.data)
 
         return NextResponse.json({ success: true, data: result.data })
     } catch (err) {
-        console.error('/api/analyze/products error:', err)
-        return NextResponse.json({ success: false, error: 'Product detection failed, please try again.' }, { status: 500 })
+        const kind = classifyAnalysisError(err)
+        console.error(`/api/analyze/products error [${kind}]:`, err)
+        return NextResponse.json(
+            { success: false, error: publicAnalysisError(err, 'Product detection failed, please try again.') },
+            { status: kind === 'unknown' ? 500 : analysisErrorStatus(kind) }
+        )
     }
 }

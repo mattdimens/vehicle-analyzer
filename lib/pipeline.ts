@@ -6,6 +6,7 @@ import { normalizeYear } from '@/lib/normalize-year'
 import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 import { getConfidenceBand } from '@/types/analysis'
+import { classifyAnalysisError } from '@/lib/analysis-errors'
 
 export function getSupabaseAdmin() {
     return createClient<Database>(
@@ -91,7 +92,7 @@ export async function runPipeline(id: string, imageUrl: string) {
         }).eq('id', id)
 
     } catch (err) {
-        console.error('Pipeline error for', id, err)
+        console.error(`Pipeline error [${classifyAnalysisError(err)}] for`, id, err)
         await supabase.from('analyses').update({
             status: 'error',
             error_details: err instanceof Error ? err.message : String(err),
@@ -137,7 +138,7 @@ export async function runPartPipeline(id: string, imageUrl: string) {
             updated_at: now(),
         }).eq('id', id)
     } catch (err) {
-        console.error('Part pipeline error for', id, err)
+        console.error(`Part pipeline error [${classifyAnalysisError(err)}] for`, id, err)
         await supabase.from('analyses').update({
             status: 'error',
             error_details: err instanceof Error ? err.message : String(err),

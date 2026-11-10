@@ -3,6 +3,7 @@ import { runPartIdentification } from '@/lib/analysis-stages'
 import { getSupabaseAdmin } from '@/lib/pipeline'
 import { fetchValidatedImages } from '@/lib/request-images'
 import { UrlValidationError } from '@/lib/url-validation'
+import { analysisErrorStatus, classifyAnalysisError, publicAnalysisError } from '@/lib/analysis-errors'
 
 export const maxDuration = 60
 
@@ -40,10 +41,11 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, data: identification })
     } catch (err) {
-        console.error('/api/analyze/part error:', err)
+        const kind = classifyAnalysisError(err)
+        console.error(`/api/analyze/part error [${kind}]:`, err)
         const message = err instanceof Error && err.message.startsWith('The AI returned')
             ? err.message
-            : 'Part identification failed, please try again.'
-        return NextResponse.json({ success: false, error: message }, { status: 502 })
+            : publicAnalysisError(err, 'Part identification failed, please try again.')
+        return NextResponse.json({ success: false, error: message }, { status: analysisErrorStatus(kind) })
     }
 }

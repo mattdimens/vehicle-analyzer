@@ -23,6 +23,7 @@ import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
 import { formatVehicleType, parseRecommendation, parseYearRange, vehicleNoun, vehicleSpecLine, vehicleTitle } from '../lib/vehicle-result'
 import { isAnalysisInProgress } from '../types/analysis'
+import { analysisErrorCopy, analysisErrorStatus, classifyAnalysisError, isOutageKind, publicAnalysisError } from '../lib/analysis-errors'
 import { amazonCardData, formatAsOf, toAmazonItemRow } from '../lib/amazon/cache'
 import type { AmazonItem } from '../lib/amazon/creators-api'
 
@@ -74,6 +75,7 @@ console.log('\napi-errors')
 assert(apiErrorMessage(403, { error: { code: '403' } }, 'x') === RATE_LIMIT_MESSAGE, 'Vercel 403 object -> rate-limit message')
 assert(apiErrorMessage(429, {}, 'x') === RATE_LIMIT_MESSAGE, '429 -> rate-limit message')
 assert(apiErrorMessage(400, { error: 'Bad URL' }, 'x') === 'Bad URL', 'string error passes through')
+assert(apiErrorMessage(429, { error: 'Please wait a few seconds before retrying.' }, 'x') === 'Please wait a few seconds before retrying.', 'our own 429 string passes through')
 assert(apiErrorMessage(500, { error: { nested: true } }, 'fallback') === 'fallback', 'object error -> fallback')
 assert(thrownErrorMessage(new Error('An unexpected response was received from the server.'), 'x').startsWith("We couldn't reach"), 'blocked Server Action -> friendly text')
 
@@ -470,6 +472,32 @@ assert(isAnalysisInProgress('detecting_products'), 'detecting_products is in pro
 assert(!isAnalysisInProgress('complete'), 'complete is not in progress')
 assert(!isAnalysisInProgress('error'), 'error is not in progress')
 assert(!isAnalysisInProgress('') && !isAnalysisInProgress(null) && !isAnalysisInProgress(undefined), 'blank or missing status is not in progress')
+
+console.log('\nclassifyAnalysisError')
+const prepay402 = 'got status: 402 . {"error":{"code":402,"message":"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing.","status":"RESOURCE_EXHAUSTED"}}'
+const prepay429 = '{"error":{"code":429,"message":"Your prepayment credits are depleted. Please go to AI Studio","status":"RESOURCE_EXHAUSTED"}}'
+assert(classifyAnalysisError(new Error(prepay402)) === 'billing', '402 prepay message -> billing')
+assert(classifyAnalysisError(new Error(prepay429)) === 'billing', '429 carrying the prepay message -> billing, not quota')
+assert(classifyAnalysisError(Object.assign(new Error('Payment required'), { status: 402 })) === 'billing', 'status 402 on the error -> billing')
+assert(classifyAnalysisError(new Error('{"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","status":"INVALID_ARGUMENT"}}')) === 'auth', 'invalid key -> auth')
+assert(classifyAnalysisError(new Error('{"error":{"code":403,"message":"Permission denied","status":"PERMISSION_DENIED"}}')) === 'auth', '403 -> auth')
+assert(classifyAnalysisError(new Error('GEMINI_API_KEY is not set')) === 'auth', 'missing key -> auth')
+assert(classifyAnalysisError(new Error('{"error":{"code":404,"message":"models/gemini-9-flash is not found for API version v1beta","status":"NOT_FOUND"}}')) === 'model', 'retired model -> model')
+assert(classifyAnalysisError(new Error('{"error":{"code":429,"message":"Resource has been exhausted (e.g. check quota).","status":"RESOURCE_EXHAUSTED"}}')) === 'quota', 'plain 429 -> quota')
+assert(classifyAnalysisError('Analysis timed out. Please retry.') === 'timeout', 'stale-record message -> timeout')
+assert(classifyAnalysisError(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })) === 'timeout', 'aborted request -> timeout')
+assert(classifyAnalysisError(new Error('The AI returned an unexpected response format. Please try again.')) === 'bad_output', 'validation failure -> bad_output')
+assert(classifyAnalysisError(new Error('Failed to fetch image: Not Found')) === 'unknown', 'image fetch 404 is not a model problem')
+assert(classifyAnalysisError(null) === 'unknown' && classifyAnalysisError('') === 'unknown', 'nothing -> unknown')
+assert(isOutageKind('billing') && isOutageKind('auth') && isOutageKind('model') && !isOutageKind('quota'), 'outage kinds')
+assert(analysisErrorCopy('billing') === "Our identifier is down right now. We're on it. Please check back later today.", 'outage copy')
+assert(analysisErrorCopy('quota') === 'Too many requests. Please wait a minute and try again.', 'quota copy unchanged')
+assert(analysisErrorCopy('timeout') === 'That took too long. Try again, or try a clearer photo.', 'timeout copy')
+assert(analysisErrorCopy('unknown') === 'Something went wrong on our side. Try again in a minute.', 'unknown copy')
+assert(!/—/.test(['billing', 'quota', 'timeout', 'unknown'].map(k => analysisErrorCopy(k as 'billing')).join(' ')), 'no em dashes in copy')
+assert(publicAnalysisError(new Error(prepay402), 'fallback') === analysisErrorCopy('billing'), 'route message hides the raw provider error')
+assert(publicAnalysisError(new Error('weird'), 'fallback') === 'fallback', 'unknown keeps the route fallback')
+assert(analysisErrorStatus('billing') === 503 && analysisErrorStatus('timeout') === 502, 'outage -> 503, others -> 502')
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

@@ -10,9 +10,13 @@ export const RATE_LIMIT_MESSAGE = "Too many requests. Please wait a minute and t
 const SERVER_ACTION_FAILURE = /unexpected response was received from the server/i
 
 export function apiErrorMessage(status: number, body: unknown, fallback: string): string {
-    if (status === 403 || status === 429) return RATE_LIMIT_MESSAGE
     const error = (body as { error?: unknown } | null)?.error
-    return typeof error === "string" && error ? error : fallback
+    const message = typeof error === "string" && error ? error : null
+    // Our own routes send a string (e.g. the retry cooldown's "wait a few
+    // seconds"); the firewall sends an object, so that gets the generic line.
+    if (status === 429 && message) return message
+    if (status === 403 || status === 429) return RATE_LIMIT_MESSAGE
+    return message ?? fallback
 }
 
 /** Read a fetch Response's JSON body without throwing on HTML or empty bodies. */

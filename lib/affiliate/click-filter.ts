@@ -9,9 +9,15 @@
  * /vehicles/* pages, about 95% of all /go hits (Oct 2026). Sending those to
  * Amazon with our tag inflates clicks against near-zero orders, which is the
  * pattern Amazon's invalid-traffic checks look for.
+ *
+ * Nov 2026: a nightly script (9 PM Pacific) sent about 140 clicks a night
+ * with real-browser user agents and a forged Referer of exactly
+ * "https://visualfitment.com". Browsers always send a path ("…com/" at
+ * least), and every link on the site carries a `source`, so its requests had
+ * a bare referer and no source. Amazon counted about 60 a night.
  */
 
-export type ClickFilterReason = "bot_user_agent" | "no_referer" | "external_referer";
+export type ClickFilterReason = "bot_user_agent" | "no_referer" | "bare_referer" | "external_referer" | "no_source";
 
 /** Hosts that count as "our pages" in addition to the host serving the request. */
 const PRODUCTION_HOSTS = new Set(["visualfitment.com", "www.visualfitment.com"]);
@@ -40,10 +46,13 @@ export function classifyClick({
   userAgent,
   referer,
   requestHost,
+  source,
 }: {
   userAgent: string | null | undefined;
   referer: string | null | undefined;
   requestHost: string | null | undefined;
+  /** The link's `source` param. Every link on the site sets one. */
+  source: string | null | undefined;
 }): ClickFilterReason | null {
   if (isBotUserAgent(userAgent)) return "bot_user_agent";
   if (!referer) return "no_referer";
@@ -55,11 +64,15 @@ export function classifyClick({
     return "external_referer";
   }
 
+  // A browser's Referer always has a path after the host, even if only "/"
+  if (!/^https?:\/\/[^/?#]+\//i.test(referer)) return "bare_referer";
+
   const host = (requestHost ?? "").toLowerCase();
-  if (PRODUCTION_HOSTS.has(refererHost) || (host !== "" && refererHost === host)) {
-    return null;
+  if (!PRODUCTION_HOSTS.has(refererHost) && !(host !== "" && refererHost === host)) {
+    return "external_referer";
   }
-  return "external_referer";
+  if (!(source ?? "").trim()) return "no_source";
+  return null;
 }
 
 /** Trims a header value for storage so a hostile client can't send huge rows. */

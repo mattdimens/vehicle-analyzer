@@ -10,9 +10,9 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
-| 1 | Reliability brief Task 1: failure email alerts ([brief](briefs/vf-reliability-brief-nov-2026.md)) | Claude | Soon | Every analysis failed from about 2026-11-04 to 2026-11-10 (Gemini prepay balance at $0) and nobody knew for six days. Task 2 (honest error copy) is in [#61](https://github.com/mattdimens/vehicle-analyzer/pull/61). |
+| 1 | Reliability brief Task 1: failure email alerts ([brief](briefs/vf-reliability-brief-nov-2026.md)) | Claude | Soon | Every analysis failed from about 2026-11-04 to 2026-11-10 (Gemini prepay balance at $0) and nobody knew for six days. Task 2 (honest error copy) shipped in [#61](https://github.com/mattdimens/vehicle-analyzer/pull/61). |
 | 2 | Confirm Gemini auto-reload is on (below $10, add $25) | Matt | Now (2 min) | Buying credits alone doesn't stop the next outage. |
-| 3 | Reliability brief Task 3: run the four bot queries and approve a fix | Matt, then Claude | Before the 2026-11-27 checks | A bot that looks like a real browser got 143 tagged clicks through on Nov 8. Clean click numbers matter for the gate, and a burst of tagged clicks with no orders is what Amazon's invalid-traffic checks look for. |
+| 3 | Check the bot fix: run the daily clicks query from [#62](https://github.com/mattdimens/vehicle-analyzer/pull/62) | Matt | 2026-11-11 | Confirms the 9 PM Pacific burst no longer counts at Amazon. |
 | 4 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
 | 5 | Request indexing for the three Tacoma product-type pages: `/vehicles/toyota/tacoma/seat-covers`, `/floor-mats` and `/running-boards` | Matt | Now for seat covers; the other two once [#52](https://github.com/mattdimens/vehicle-analyzer/pull/52) merges | Product-type pages are what the gate depends on. |
 | 6 | Cabs and beds for the 4th and 2nd Gen | Matt | Now that both have picks | The fit filter only works on a generation with configs. The 1st Gen can wait: it has no picks. |
@@ -37,6 +37,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Scheduled checks
 
+- [ ] **2026-11-11: check the bot fix.** Run the daily query in [#62](https://github.com/mattdimens/vehicle-analyzer/pull/62): the 9 PM Pacific burst should show as `bare_referer` or `no_source`, not `counted`, and Amazon's Nov 11 clicks should drop back to the real count.
 - **For every check below:** analyses failed site-wide from about 2026-11-04 to 2026-11-10. Leave those dates out of any before/after comparison ([reliability brief](briefs/vf-reliability-brief-nov-2026.md)).
 - [ ] **Around 2026-11-27: four weeks after light theme Steps 1 and 2 shipped (2026-10-30):** re-pull the brief's measures. Homepage analysis start rate (baselines: 24% for Aug 15 to Oct 14, plus Oct 26 to the Step 1 ship date), `browse_by_vehicle_click` per homepage session, `vehicle_year_selected` by `page`, and the share of `/vehicles/toyota` sessions that reach a generation page.
 - [ ] **Around 2026-11-27: four-week check on the redesign** (the brief's "How we'll measure success"). GA4 Explore: `affiliate_click` by Link type and Product type, `vehicle_fit_selected` by Fit method, `vehicle_year_selected` count. Search Console: impressions and position for the 5 Tacoma URLs. Supabase: the clicks-by-ASIN query in the brief. The custom dimensions were registered 2026-10-30, so GA4 data starts then.
@@ -45,7 +46,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Code
 
-- [ ] **Reliability brief** ([docs/briefs/vf-reliability-brief-nov-2026.md](briefs/vf-reliability-brief-nov-2026.md)): failure email alerts and a daily safety-net cron (Task 1), stop bot clicks reaching Amazon (Task 3: investigated 2026-11-10, waiting on Matt's query results, then a fix to approve), and why Amazon showed no clicks before 2026-10-15 (Task 4, read-only). Task 2 is in [#61](https://github.com/mattdimens/vehicle-analyzer/pull/61).
+- [ ] **Reliability brief** ([docs/briefs/vf-reliability-brief-nov-2026.md](briefs/vf-reliability-brief-nov-2026.md)): failure email alerts and a daily safety-net cron (Task 1), and why Amazon showed no clicks before 2026-10-15 (Task 4, read-only). Tasks 2 and 3 are done ([#61](https://github.com/mattdimens/vehicle-analyzer/pull/61), [#62](https://github.com/mattdimens/vehicle-analyzer/pull/62)).
 - [ ] **Blog tables on phones.** At 390px, 5 of the 8 comparison tables scroll sideways inside `.comparison-table-wrap` with no sign there's more. The trim table stops at RAM 1500, hiding Tacoma and Tundra. It's a design change, so it needs a look from Matt.
 - [ ] **Pale band above blog pages.** A thin strip of the body background shows between the header and the white blog page.
 - [ ] **Product research**, resumed by Matt on 2026-10-30. Process: [plan section 4](vehicle-pages-plan.md#4-product-research-process), with the 2026-10-30 rule calls in section 4.3 (newer-vehicle bar, product-line record, the high-volume rule read in Matt's signed-in Chrome, no lift kits, no bed covers or RealTruck brands). Live: 3rd and 4th Gen seat covers, and floor mats and running boards for the 2nd, 3rd and 4th Gen. Paused for the 3rd Gen because too few Amazon listings pass: bed racks, bumpers and skid plates, wheels, roof racks, headlights. 2nd Gen seat covers are paused (one set passes). The 1st Gen is paused across the board: two floor mat sets pass (COTAZA B0FGY1T67N and DrCarNow B0FXWFJYZB, Regular Cab and Xtracab), one short of the 3-pick minimum, and no running boards or seat covers reach the rating bar. Tacoma research is done until listings change or Matt makes a rule call on 2-pick sections.
@@ -54,6 +55,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Done recently
 
+- 2026-11-10: Nightly bot clicks on `/go` no longer carry the Amazon tag. The script (9 PM Pacific, about 140 clicks a night, rotating real-browser user agents) forged a Referer of exactly `https://visualfitment.com` and used links with no `source`; both are now filter reasons (`bare_referer`, `no_source`). Matt checked that no real click since 2026-10-20 had either ([#62](https://github.com/mattdimens/vehicle-analyzer/pull/62)).
 - 2026-11-10: Honest error messages when an analysis fails: the error screens and `/api/analyze*` routes say why (outage, rate limit, timeout) instead of nothing or the raw Gemini error, and log lines carry the kind ([#61](https://github.com/mattdimens/vehicle-analyzer/pull/61)).
 - 2026-11-10: Site-wide analysis outage fixed. Google switched the Gemini API account to prepay with a $0 balance around 2026-11-04, so every analysis failed with a 402. Matt bought credits; results work again. Follow-ups are in the reliability brief.
 - 2026-10-30: Blog comparison tables fixed: 7 of the 8, across 6 posts, had never rendered, because `next-mdx-remote` 6 blocks JS expressions in MDX. They use JSON string props now, and a table written the wrong way fails the build ([#58](https://github.com/mattdimens/vehicle-analyzer/pull/58)).

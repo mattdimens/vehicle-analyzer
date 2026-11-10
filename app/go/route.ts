@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
     userAgent,
     referer,
     requestHost: req.headers.get("host"),
+    source,
   });
 
   // 3. Build destination URL

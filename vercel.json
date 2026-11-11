@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/amazon-items",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/analysis-health",
+      "schedule": "0 12 * * *"
     }
   ]
 }

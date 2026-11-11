@@ -23,6 +23,7 @@ import { getUsModels, getUsModelYears } from '../data/vehicles/us-vehicles'
 import { resolveCatalogGeneration, resolveVehicleUrl } from '../data/vehicles/supported-vehicles'
 import { formatVehicleType, parseRecommendation, parseYearRange, vehicleNoun, vehicleSpecLine, vehicleTitle } from '../lib/vehicle-result'
 import { isAnalysisInProgress } from '../types/analysis'
+import { dailyHealthEmail, failureAlertEmail, failuresThatAlert } from '../lib/alert-rules'
 import { analysisErrorCopy, analysisErrorStatus, classifyAnalysisError, isOutageKind, publicAnalysisError } from '../lib/analysis-errors'
 import { amazonCardData, formatAsOf, toAmazonItemRow } from '../lib/amazon/cache'
 import type { AmazonItem } from '../lib/amazon/creators-api'
@@ -504,6 +505,48 @@ assert(!/—/.test(['billing', 'quota', 'timeout', 'unknown'].map(k => analysisE
 assert(publicAnalysisError(new Error(prepay402), 'fallback') === analysisErrorCopy('billing'), 'route message hides the raw provider error')
 assert(publicAnalysisError(new Error('weird'), 'fallback') === 'fallback', 'unknown keeps the route fallback')
 assert(analysisErrorStatus('billing') === 503 && analysisErrorStatus('timeout') === 502, 'outage -> 503, others -> 502')
+
+console.log('\nfailuresThatAlert')
+{
+    const MIN = 60 * 1000
+    const billing = '{"error":{"code":402,"message":"Your prepayment credits are depleted."}}'
+    const keyErr = '{"error":{"code":400,"message":"API key not valid."}}'
+    const odd = 'something odd'
+    const f = (id: string, minute: number, error_details: string) => ({ id, at: minute * MIN, error_details })
+
+    const outage = failuresThatAlert([f('a', 0, billing), f('b', 10, billing), f('c', 300, billing), f('d', 361, billing)])
+    assert(outage.has('a'), 'first billing failure alerts')
+    assert(!outage.has('b') && !outage.has('c'), 'more billing failures within 6 hours stay quiet')
+    assert(outage.has('d'), 'billing failure 6 hours after the last alert alerts again')
+
+    const mixed = failuresThatAlert([f('a', 0, billing), f('b', 1, keyErr)])
+    assert(mixed.has('a') && mixed.has('b'), 'different outage kinds alert separately')
+
+    const cluster = failuresThatAlert([f('a', 0, odd), f('b', 20, odd), f('c', 40, 'Analysis timed out. Please retry.'), f('d', 50, odd)])
+    assert(!cluster.has('a') && !cluster.has('b'), 'one or two failures stay quiet')
+    assert(cluster.has('c'), 'third failure within an hour alerts, whatever the kind')
+    assert(!cluster.has('d'), 'fourth failure in the same hour stays quiet')
+
+    const spread = failuresThatAlert([f('a', 0, odd), f('b', 40, odd), f('c', 100, odd)])
+    assert(spread.size === 0, 'three failures spread over more than an hour stay quiet')
+
+    const duringOutage = failuresThatAlert([f('a', 0, billing), f('b', 1, billing), f('c', 2, billing)])
+    assert(duringOutage.size === 1 && duringOutage.has('a'), 'an outage does not also send a 3-in-an-hour email')
+
+    const tie = failuresThatAlert([f('b', 5, billing), f('a', 5, billing)])
+    assert(tie.size === 1 && tie.has('a'), 'two failures at the same moment send one email')
+
+    const email = failureAlertEmail({ kind: 'billing', failuresLastHour: 4, latestError: 'x'.repeat(400), at: Date.UTC(2026, 10, 10, 23, 0) })
+    assert(email.subject === 'VisualFitment: analyses failing (billing)', 'alert subject')
+    assert(email.text.includes('aistudio.google.com/billing') && email.text.includes('Nov 10, 2026, 6:00 PM ET'), 'alert body has the next step and Eastern time')
+    assert(!email.text.includes('x'.repeat(301)), 'raw error capped at 300 characters')
+    assert(!/—/.test(email.text), 'no em dashes in alert email')
+
+    assert(dailyHealthEmail({ started: 30, completed: 25, failed: 5, latestError: null }) === null, 'healthy day sends nothing')
+    assert(dailyHealthEmail({ started: 0, completed: 0, failed: 0, latestError: null })?.subject === 'VisualFitment: no analyses started in 24 hours', 'nothing started alerts')
+    const none = dailyHealthEmail({ started: 12, completed: 0, failed: 12, latestError: billing })
+    assert(none?.subject === 'VisualFitment: no analyses finished in 24 hours' && none.text.includes('aistudio.google.com/billing'), 'nothing finished alerts with the next step')
+}
 
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed > 0) process.exit(1)

@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
 import { isAnalysisInProgress } from '@/types/analysis'
+import { notifyAnalysisFailure } from '@/lib/alerts'
 
 function getSupabase() {
     return createClient<Database>(
@@ -50,6 +51,8 @@ export async function GET(
                 .select('*')
                 .single()
                 
+            // After the response, so the visitor's poll isn't held up
+            after(() => notifyAnalysisFailure(supabase, id))
             return NextResponse.json({ success: true, data: updatedRecord ?? record })
         }
     }

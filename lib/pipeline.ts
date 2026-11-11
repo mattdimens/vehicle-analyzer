@@ -7,6 +7,7 @@ import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 import { getConfidenceBand } from '@/types/analysis'
 import { classifyAnalysisError } from '@/lib/analysis-errors'
+import { notifyAnalysisFailure } from '@/lib/alerts'
 
 export function getSupabaseAdmin() {
     return createClient<Database>(
@@ -98,6 +99,8 @@ export async function runPipeline(id: string, imageUrl: string) {
             error_details: err instanceof Error ? err.message : String(err),
             updated_at: now(),
         }).eq('id', id)
+        // Runs inside waitUntil, so awaiting it doesn't hold up the visitor
+        await notifyAnalysisFailure(supabase, id)
     }
 }
 
@@ -144,5 +147,7 @@ export async function runPartPipeline(id: string, imageUrl: string) {
             error_details: err instanceof Error ? err.message : String(err),
             updated_at: now(),
         }).eq('id', id)
+        // Runs inside waitUntil, so awaiting it doesn't hold up the visitor
+        await notifyAnalysisFailure(supabase, id)
     }
 }

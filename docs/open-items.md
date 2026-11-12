@@ -50,7 +50,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Done recently
 
-- 2026-11-12: Privacy contact address set: the policy now lists `hello@visualfitment.com`, which forwards to Matt's Gmail through Cloudflare Email Routing (set up by Matt; receive-only, so replies go out from Gmail) ([#PRNUM](https://github.com/mattdimens/vehicle-analyzer/pull/PRNUM)).
+- 2026-11-12: Privacy contact address set: the policy now lists `hello@visualfitment.com`, which forwards to Matt's Gmail through Cloudflare Email Routing (set up by Matt; receive-only, so replies go out from Gmail) ([#66](https://github.com/mattdimens/vehicle-analyzer/pull/66)).
 - 2026-11-12: Two new GA4 events: `part_vehicle_picker_opened` when a visitor taps "+ Add my vehicle" on a part result, and `results_year_selected` when a year chip on a vehicle result saves. Before this, the tap wasn't tracked and year-chip use was only countable in Supabase ([#65](https://github.com/mattdimens/vehicle-analyzer/pull/65)).
 - 2026-11-10: Failure alerts turned on: Resend account and `visualfitment-alerts` key set up by Matt, `RESEND_API_KEY` and `ALERT_EMAIL` in Vercel (Production and Preview), and a test alert from the preview delivered to Matt's inbox. Env var changes only reach new builds, so redeploy after changing them.
 - 2026-11-10: Failure alert emails: an outage (billing, API key, retired model) emails Matt on the first failure, other failures when 3 land within an hour, at most once per 6 hours per problem, plus a daily 7 AM Eastern check for a day with no finished analyses. No new table: the rules replay recent failed `analyses` rows ([#63](https://github.com/mattdimens/vehicle-analyzer/pull/63)). Needs Matt's Resend setup to send.

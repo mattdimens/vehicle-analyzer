@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 // TODO: set a monitored address for privacy and deletion requests. While empty,
 // the contact section points to in-app deletion instead of showing an email.
-const CONTACT_EMAIL = ""
+const CONTACT_EMAIL = "hello@visualfitment.com"
 
 const linkClass = "text-primary underline underline-offset-2 hover:text-primary/80"
 
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             <div className="flex-1 bg-white">
                 <div className="container max-w-3xl mx-auto px-4 py-16 md:py-24">
                     <h1 className="text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-                    <p className="text-sm text-muted-foreground mb-12">Last updated: October 20, 2026</p>
+                    <p className="text-sm text-muted-foreground mb-12">Last updated: November 12, 2026</p>
 
                     <div className="space-y-10 text-[15px] leading-relaxed text-foreground/80">
 

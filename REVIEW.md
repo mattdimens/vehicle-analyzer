@@ -31,7 +31,7 @@ Four problems now matter most:
 |---|---|
 | N1 | **Fixed.** Next 16.4.0, `npm audit fix` |
 | N2 | **Fixed in code.** The Gemini stages moved to server-only `lib/analysis-stages.ts`. Public actions accept validated URLs only, prompt inputs are sanitized, product types are capped at 8, and `/process` has a 10 s cooldown and a 24 h max age. **Still needed:** a Vercel WAF rate-limit rule (see below). |
-| N3 | **Mostly fixed.** The policy is rewritten (GA4, `vf_sid`, Gemini paid tier, Supabase, Amazon, storage). There is no privacy contact address yet: while `CONTACT_EMAIL` ([app/privacy/page.tsx:10](app/privacy/page.tsx:10)) is empty, the page points to in-app deletion in My Garage and says a contact address is coming. Set it as soon as you have one. |
+| N3 | **Fixed.** The policy is rewritten (GA4, `vf_sid`, Gemini paid tier, Supabase, Amazon, storage), and since 2026-11-12 it lists a contact address, `hello@visualfitment.com` (`CONTACT_EMAIL` in [app/privacy/page.tsx:10](app/privacy/page.tsx:10)), which forwards to Matt through Cloudflare Email Routing. |
 | N4 | **Fixed.** `id="upload-zone"` is on the hero photo panel, and the selector fallback navigates to `/#upload-zone` when the tool isn't on the page |
 | N5 | **Fixed.** Vehicle pages emit a plain `ItemList` of names, with no `Product`/`Offer` |
 | N6 | **Fixed.** A failed sniper parse keeps the scout result |
@@ -73,7 +73,7 @@ Four problems now matter most:
    `alter table public.analysis_results drop constraint analysis_results_model_used_check;`
    `alter table public.analysis_results add constraint analysis_results_model_used_check check (model_used is null or model_used like 'gemini-%');`
    This lets analysis logging work again and survives future model upgrades.
-1. When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
+1. ~~Done Nov 12~~ When you have a privacy address, set `CONTACT_EMAIL` in `app/privacy/page.tsx`; the email line appears automatically.
 2. ~~Done Oct 30~~ In Vercel → Firewall, add a rate-limit rule: for example, 20 requests per minute per IP on paths starting `/api/analy`, plus a rule on POST requests with a `Next-Action` header.
 3. ~~Done Oct 11~~ The `vehicle_images` bucket limits are set by migration `20261011000200_auth_trigger_and_storage.sql`: `image/jpeg`, `image/png`, `image/gif` and `image/webp` only, 10 MB per file.
 4. ~~Done Oct 11~~ Run `supabase/migrations/20261011000100_function_search_path.sql` in the SQL Editor. After future schema changes, re-run the `pg_dump` command in the README and `supabase gen types` (command at the top of `types/supabase.ts`).

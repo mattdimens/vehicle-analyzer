@@ -11,18 +11,17 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 | # | Item | Who | When | Why this rank |
 |---|---|---|---|---|
 | 1 | Check the bot fix: run the daily clicks query from [#62](https://github.com/mattdimens/vehicle-analyzer/pull/62) | Matt | 2026-11-11 | Confirms the 9 PM Pacific burst no longer counts at Amazon. |
-| 2 | Privacy contact address | Matt | Now (5 min) | The privacy policy still says a contact address is coming. Google Analytics' terms and the Amazon Associates agreement require accurate privacy disclosure ([REVIEW.md](../REVIEW.md), N3), so it's a small fix with real risk. |
-| 3 | Request indexing for the three Tacoma product-type pages: `/vehicles/toyota/tacoma/seat-covers`, `/floor-mats` and `/running-boards` | Matt | Now for seat covers; the other two once [#52](https://github.com/mattdimens/vehicle-analyzer/pull/52) merges | Product-type pages are what the gate depends on. |
-| 4 | Cabs and beds for the 4th and 2nd Gen | Matt | Now that both have picks | The fit filter only works on a generation with configs. The 1st Gen can wait: it has no picks. |
-| 5 | Four-week check on the redesign, the light theme re-pull, and re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked, and the first with Amazon prices on the cards. Run both together. |
-| 6 | Amazon cache follow-ups: Sort control and a weekly unavailable-listings report | Claude | When convenient | Prices are live, so Sort can show now. The report catches dead listings before visitors do. |
-| 7 | Blog tables on phones: signal that they scroll sideways | Claude | When convenient | 5 of the 8 hide columns until you swipe, and nothing says so. The trim table hides the Tacoma, the pilot truck, at 390px. |
-| 8 | Pale band above blog pages | Claude | When convenient | Cosmetic and small, but visible on every post. |
-| 9 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
-| 10 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
-| 11 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
-| 12 | Rule call: allow a 2-pick section for 1st Gen floor mats | Matt | When convenient | The 1st Gen has 200/mo searches and no picks. Two sets pass; the minimum is three. |
-| 13 | Reliability brief Task 4: why Amazon showed no clicks before 2026-10-15 (read-only) | Claude | When convenient | Explains the gap in Amazon's history; nothing is broken today. |
+| 2 | Request indexing for the three Tacoma product-type pages: `/vehicles/toyota/tacoma/seat-covers`, `/floor-mats` and `/running-boards` | Matt | Now for seat covers; the other two once [#52](https://github.com/mattdimens/vehicle-analyzer/pull/52) merges | Product-type pages are what the gate depends on. |
+| 3 | Cabs and beds for the 4th and 2nd Gen | Matt | Now that both have picks | The fit filter only works on a generation with configs. The 1st Gen can wait: it has no picks. |
+| 4 | Four-week check on the redesign, the light theme re-pull, and re-running the corrected clicks query | Matt and Claude | Around 2026-11-27 | First real read on whether picks get clicked, and the first with Amazon prices on the cards. Run both together. |
+| 5 | Amazon cache follow-ups: Sort control and a weekly unavailable-listings report | Claude | When convenient | Prices are live, so Sort can show now. The report catches dead listings before visitors do. |
+| 6 | Blog tables on phones: signal that they scroll sideways | Claude | When convenient | 5 of the 8 hide columns until you swipe, and nothing says so. The trim table hides the Tacoma, the pilot truck, at 390px. |
+| 7 | Pale band above blog pages | Claude | When convenient | Cosmetic and small, but visible on every post. |
+| 8 | ESLint 10 and TypeScript 7 | Claude | Recheck in December | Held back from the October upgrades until the lint plugins support them (see Code). Nothing breaks while we wait. |
+| 9 | Tacoma generation facts for the hub table | Matt | When convenient | Adds useful content to the hub, but the hub works without it. |
+| 10 | 8-week expansion gate | Matt and Claude | Around 2026-12-25 | Decides whether to expand to Gladiator, 4Runner and Bronco. |
+| 11 | Rule call: allow a 2-pick section for 1st Gen floor mats | Matt | When convenient | The 1st Gen has 200/mo searches and no picks. Two sets pass; the minimum is three. |
+| 12 | Reliability brief Task 4: why Amazon showed no clicks before 2026-10-15 (read-only) | Claude | When convenient | Explains the gap in Amazon's history; nothing is broken today. |
 
 ## Waiting on Matt
 
@@ -30,7 +29,6 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 - [ ] **Tacoma generation facts** for the hub's "How the generations differ" table: cabs, beds, engines, what carries over, for each generation. A row only shows when all four generations have it. Current values and TODOs: `specs` in [data/vehicles/toyota.ts](../data/vehicles/toyota.ts).
 - [ ] **Cabs and beds for the 4th and 2nd Gen** (`configs` in `toyota.ts`), to turn on the "Your truck" filter on those pages. The 1st Gen can wait until it has picks.
 - [ ] **Rule call on 2-pick sections.** 1st Gen floor mats have two passing sets (COTAZA B0FGY1T67N and DrCarNow B0FXWFJYZB, Regular Cab and Xtracab), one short of the 3-pick minimum. Allowing 2 picks would add them.
-- [ ] **Privacy contact address.** Set `CONTACT_EMAIL` in [app/privacy/page.tsx](../app/privacy/page.tsx); the email line appears on its own ([REVIEW.md](../REVIEW.md), manual step 1).
 
 ## Scheduled checks
 
@@ -52,6 +50,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Done recently
 
+- 2026-11-12: Privacy contact address set: the policy now lists `hello@visualfitment.com`, which forwards to Matt's Gmail through Cloudflare Email Routing (set up by Matt; receive-only, so replies go out from Gmail) ([#66](https://github.com/mattdimens/vehicle-analyzer/pull/66)).
 - 2026-11-12: Two new GA4 events: `part_vehicle_picker_opened` when a visitor taps "+ Add my vehicle" on a part result, and `results_year_selected` when a year chip on a vehicle result saves. Before this, the tap wasn't tracked and year-chip use was only countable in Supabase ([#65](https://github.com/mattdimens/vehicle-analyzer/pull/65)).
 - 2026-11-10: Failure alerts turned on: Resend account and `visualfitment-alerts` key set up by Matt, `RESEND_API_KEY` and `ALERT_EMAIL` in Vercel (Production and Preview), and a test alert from the preview delivered to Matt's inbox. Env var changes only reach new builds, so redeploy after changing them.
 - 2026-11-10: Failure alert emails: an outage (billing, API key, retired model) emails Matt on the first failure, other failures when 3 land within an hour, at most once per 6 hours per problem, plus a daily 7 AM Eastern check for a day with no finished analyses. No new table: the rules replay recent failed `analyses` rows ([#63](https://github.com/mattdimens/vehicle-analyzer/pull/63)). Needs Matt's Resend setup to send.

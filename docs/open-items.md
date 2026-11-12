@@ -2,7 +2,7 @@
 
 The one list of what's still to do on Visual Fitment: things waiting on Matt, scheduled checks, and code work. Claude updates it at the end of each session: tick off what got done (move it to "Done recently" with the date and PR), add anything new to its section, and re-rank "Priorities". Detail stays in the linked docs; each item here is one or two lines.
 
-Last updated: 2026-11-10.
+Last updated: 2026-11-12.
 
 ## Priorities
 
@@ -37,7 +37,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 - [ ] **2026-11-11: check the bot fix.** Run the daily query in [#62](https://github.com/mattdimens/vehicle-analyzer/pull/62): the 9 PM Pacific burst should show as `bare_referer` or `no_source`, not `counted`, and Amazon's Nov 11 clicks should drop back to the real count.
 - **For every check below:** analyses failed site-wide from about 2026-11-04 to 2026-11-10. Leave those dates out of any before/after comparison ([reliability brief](briefs/vf-reliability-brief-nov-2026.md)).
 - [ ] **Around 2026-11-27: four weeks after light theme Steps 1 and 2 shipped (2026-10-30):** re-pull the brief's measures. Homepage analysis start rate (baselines: 24% for Aug 15 to Oct 14, plus Oct 26 to the Step 1 ship date), `browse_by_vehicle_click` per homepage session, `vehicle_year_selected` by `page`, and the share of `/vehicles/toyota` sessions that reach a generation page.
-- [ ] **Around 2026-11-27: four-week check on the redesign** (the brief's "How we'll measure success"). GA4 Explore: `affiliate_click` by Link type and Product type, `vehicle_fit_selected` by Fit method, `vehicle_year_selected` count. Search Console: impressions and position for the 5 Tacoma URLs. Supabase: the clicks-by-ASIN query in the brief. The custom dimensions were registered 2026-10-30, so GA4 data starts then.
+- [ ] **Around 2026-11-27: four-week check on the redesign** (the brief's "How we'll measure success"). GA4 Explore: `affiliate_click` by Link type and Product type, `vehicle_fit_selected` by Fit method, `vehicle_year_selected` count. Also `results_year_selected` per vehicle result, and `part_vehicle_picker_opened` against `part_vehicle_selected` with `method = ymm` (both new in [#65](https://github.com/mattdimens/vehicle-analyzer/pull/65), so their data starts when it merges). Search Console: impressions and position for the 5 Tacoma URLs. Supabase: the clicks-by-ASIN query in the brief. The custom dimensions were registered 2026-10-30, so GA4 data starts then.
 - [ ] **Late November: re-run the corrected clicks query** in [plan section 9](vehicle-pages-plan.md#9-first-party-data-to-pull). The first run counted bot traffic from before the 2026-10-20 filter.
 - [ ] **8-week expansion gate** ([plan 2.3](vehicle-pages-plan.md#23-gate-to-expand-8-weeks-after-launch)): check at 4 weeks, decide at 8. Counting from the redesign launch on 2026-10-30, the decision is around 2026-12-25.
 
@@ -52,6 +52,7 @@ Every open item below, in the order to do it. Ranked by what moves the Tacoma pi
 
 ## Done recently
 
+- 2026-11-12: Two new GA4 events: `part_vehicle_picker_opened` when a visitor taps "+ Add my vehicle" on a part result, and `results_year_selected` when a year chip on a vehicle result saves. Before this, the tap wasn't tracked and year-chip use was only countable in Supabase ([#65](https://github.com/mattdimens/vehicle-analyzer/pull/65)).
 - 2026-11-10: Failure alerts turned on: Resend account and `visualfitment-alerts` key set up by Matt, `RESEND_API_KEY` and `ALERT_EMAIL` in Vercel (Production and Preview), and a test alert from the preview delivered to Matt's inbox. Env var changes only reach new builds, so redeploy after changing them.
 - 2026-11-10: Failure alert emails: an outage (billing, API key, retired model) emails Matt on the first failure, other failures when 3 land within an hour, at most once per 6 hours per problem, plus a daily 7 AM Eastern check for a day with no finished analyses. No new table: the rules replay recent failed `analyses` rows ([#63](https://github.com/mattdimens/vehicle-analyzer/pull/63)). Needs Matt's Resend setup to send.
 - 2026-11-10: Gemini auto-reload confirmed on by Matt.

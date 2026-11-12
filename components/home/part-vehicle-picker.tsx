@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from "react"
 import { Check } from "lucide-react"
 import { getUsModels, getUsModelYears, usVehicles } from "@/data/vehicles/us-vehicles"
 import { useGarageVehicleLabels } from "@/hooks/use-garage-vehicle-labels"
+import { getEntryDoor, getPlatform, trackEvent } from "@/lib/analytics"
 import { formatVehicleLabel, type PartVehicleChoice } from "@/lib/part-vehicle"
 import { cn } from "@/lib/utils"
 
@@ -79,7 +80,11 @@ export function PartVehiclePicker({ detected, selected, onSelect }: PartVehicleP
                 {!isPicking && (
                     <button
                         type="button"
-                        onClick={() => setIsPicking(true)}
+                        onClick={() => {
+                            setIsPicking(true)
+                            // Opening the form; a finished pick fires part_vehicle_selected
+                            trackEvent("part_vehicle_picker_opened", { platform: getPlatform(), entry_door: getEntryDoor() })
+                        }}
                         className="min-h-11 rounded-full border border-dashed border-[#8A96A1] bg-white px-3.5 text-sm font-semibold text-[#17212B] transition-colors hover:border-[#17212B]"
                     >
                         + Add my vehicle

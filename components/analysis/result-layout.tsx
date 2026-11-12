@@ -8,6 +8,7 @@ import { analysisConfig } from "@/config/analysis"
 import { resolveCatalogGeneration } from "@/data/vehicles/supported-vehicles"
 import type { AnalysisRecord } from "@/types/analysis"
 import { getConfidence } from "@/types/analysis"
+import { getEntryDoor, getPlatform, trackEvent } from "@/lib/analytics"
 import { parseYearRange, vehicleTitle } from "@/lib/vehicle-result"
 import {
     AiDisclaimer,
@@ -125,6 +126,8 @@ export function ResultLayout({ record, onRecordUpdate }: ResultLayoutProps) {
             onRecordUpdate?.(data.data)
             setSelectedYear(year)
             setYearStatus("idle")
+            // Only once the year is saved, so the count matches the records
+            trackEvent("results_year_selected", { year, platform: getPlatform(), entry_door: getEntryDoor() })
         } catch (err) {
             console.error('Year update failed', err)
             setYearStatus("error")

@@ -12,6 +12,7 @@ import {
   getAI,
   SCOUT_MODEL,
   SNIPER_MODEL,
+  SNIPER_CONFIG,
   CASCADE_CONFIDENCE_THRESHOLD,
   cleanJsonResponse,
   buildSpecificLogicInstruction,
@@ -98,6 +99,7 @@ async function callGemini(model: string, prompt: string, imageParts: ImagePart[]
   const response = await getAI().models.generateContent({
     model,
     contents: [{ role: 'user' as const, parts: [{ text: prompt }, ...imageParts] }],
+    ...(model === SNIPER_MODEL ? { config: SNIPER_CONFIG } : {}),
   })
   return cleanJsonResponse(response.text ?? '')
 }

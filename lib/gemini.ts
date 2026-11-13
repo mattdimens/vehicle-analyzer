@@ -1,10 +1,17 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-export const SCOUT_MODEL = 'gemini-3.6-flash'
-export const SNIPER_MODEL = 'gemini-3.1-pro-preview'
+// Pinned stable IDs, no -latest aliases. Swapped 2026-11-12 after the eval in
+// eval/report-2026-11-13.md (docs/briefs/vf-model-swap-brief-nov-2026.md).
+export const SCOUT_MODEL = 'gemini-3.8-flash'
+export const SNIPER_MODEL = 'gemini-4-carbon'
+// The scout runs at the model's default thinking level, as before. The sniper
+// is capped at MEDIUM: at the default level Carbon sometimes thinks for over
+// two minutes on hard photos, which trips the stale rule on /r/[id]. LOW is not
+// an option: the eval showed it makes Gemini 4 invent vehicles on part photos.
+export const SNIPER_CONFIG = { thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM } } as const
 export const CASCADE_CONFIDENCE_THRESHOLD = 85
 
 // ---------------------------------------------------------------------------

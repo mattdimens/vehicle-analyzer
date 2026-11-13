@@ -310,7 +310,7 @@ export async function refineProduct(
 // ---------------------------------------------------------------------------
 // Part identification (scout + sniper cascade)
 // ---------------------------------------------------------------------------
-const PART_PROMPT =
+export const PART_PROMPT =
   'You are an expert automotive parts specialist. Analyze this image and identify the car part shown. ' +
   'Provide the following information: ' +
   '1. `partName` (string): The specific name of the part (e.g., "Brake Caliper", "Mass Air Flow Sensor", "CV Axle") ' +

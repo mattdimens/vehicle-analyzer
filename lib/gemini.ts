@@ -3,8 +3,12 @@ import { GoogleGenAI } from '@google/genai'
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-export const SCOUT_MODEL = 'gemini-3.6-flash'
-export const SNIPER_MODEL = 'gemini-3.1-pro-preview'
+// Pinned stable IDs, no -latest aliases. Swapped 2026-11-12 after the eval in
+// eval/report-2026-11-13.md (docs/briefs/vf-model-swap-brief-nov-2026.md).
+// Both run at the model's default thinking level: production passes no config,
+// and the eval showed thinkingLevel LOW makes Gemini 4 invent vehicles.
+export const SCOUT_MODEL = 'gemini-3.8-flash'
+export const SNIPER_MODEL = 'gemini-4-carbon'
 export const CASCADE_CONFIDENCE_THRESHOLD = 85
 
 // ---------------------------------------------------------------------------

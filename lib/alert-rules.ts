@@ -73,7 +73,7 @@ export function alertAction(kind: AnalysisErrorKind): string {
         case "auth":
             return "Check the Gemini API key in Vercel environment variables."
         case "model":
-            return "A Gemini model name may have been retired. Check lib/analysis-stages.ts."
+            return "A Gemini model name may have been retired. Check SCOUT_MODEL and SNIPER_MODEL in lib/gemini.ts."
         default:
             return "Check Vercel Logs and search for 'pipeline error'."
     }

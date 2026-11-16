@@ -19,6 +19,20 @@ export type AnalysisErrorKind =
     | "bad_output"
     | "unknown"
 
+/**
+ * Stored on a result (in result_data, or on one detected product) when the
+ * sniper failed and the scout's answer was kept. Old rows don't have it.
+ */
+// A type, not an interface, so results that carry it still fit Supabase's Json type
+export type SniperFallback = {
+    /** Why the sniper's answer wasn't used. */
+    reason: AnalysisErrorKind
+    /** The scout's own confidence before the cap (vehicles: primary.confidence). */
+    scoutConfidence: number
+    /** Vehicles only: the scout's overall confidence_score before the cap. */
+    scoutConfidenceScore?: number
+}
+
 /** Every visitor fails until someone fixes the account, key or model name. */
 export const OUTAGE_KINDS: ReadonlySet<AnalysisErrorKind> = new Set(["billing", "auth", "model"])
 

@@ -50,6 +50,8 @@ export interface AnalysisResultData {
     tieredRecommendations?: { title: string; items: string[] }[]
     confidence_score?: number
     seo_optimized_alt_text?: string
+    /** Set when the sniper failed and this is the scout's answer (confidence capped). */
+    sniperFallback?: SniperFallback
 }
 
 // ── detected_products[] ────────────────────────────────────────────────
@@ -59,6 +61,8 @@ export interface AnalysisDetectedProduct {
     model: string
     reasoning?: string | null
     confidence: number
+    /** Set when the sniper failed and this is the scout's answer (confidence capped). */
+    sniperFallback?: SniperFallback
 }
 
 // ── Top-level analyses row ─────────────────────────────────────────────
@@ -69,6 +73,13 @@ export type AnalysisKind = 'vehicle' | 'part'
  * Statuses of a run that is still going. `verifying` is a part run on its
  * second, slower check (the scout pass was not confident enough).
  */
+/**
+ * A run whose row has not been written for this long is treated as dead
+ * (GET /api/analyses/[id] turns it into an error). The pipelines restamp
+ * updated_at between Gemini calls so a live run never gets this old.
+ */
+export const STALE_AFTER_MS = 120_000
+
 export const IN_PROGRESS_STATUSES = ['identifying', 'verifying', 'detecting_products'] as const
 export type InProgressStatus = (typeof IN_PROGRESS_STATUSES)[number]
 export type AnalysisStatus = InProgressStatus | 'complete' | 'error'
@@ -117,6 +128,7 @@ export function getConfidence(record: AnalysisRecord): number {
 // ── Band label helper ──────────────────────────────────────────────────
 import { analysisConfig } from '@/config/analysis'
 import type { PartIdentification } from '@/app/actions'
+import type { SniperFallback } from '@/lib/analysis-errors'
 
 export type ConfidenceBand = 'High' | 'Medium' | 'Low'
 

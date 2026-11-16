@@ -12,7 +12,7 @@
  * Every failing pipeline replays the same history and sends only if the alert
  * lands on its own row, so two failures finishing at once don't both send.
  */
-import { classifyAnalysisError, isOutageKind, type AnalysisErrorKind } from "./analysis-errors"
+import { classifyAnalysisError, isOutageKind, OUTAGE_KINDS, type AnalysisErrorKind } from "./analysis-errors"
 
 export const CLUSTER_WINDOW_MS = 60 * 60 * 1000
 export const CLUSTER_SIZE = 3
@@ -25,6 +25,8 @@ export interface FailedAnalysis {
     /** When the row became an error (updated_at), in ms. */
     at: number
     error_details: string | null
+    /** Set for a sniper fallback, which has no error_details to classify. */
+    kind?: AnalysisErrorKind
 }
 
 export interface ReplayedFailure extends FailedAnalysis {
@@ -38,7 +40,7 @@ function groupFor(kind: AnalysisErrorKind): string {
 /** Ids of the failures that send an email, replaying the rules in time order. */
 export function failuresThatAlert(failures: FailedAnalysis[]): Set<string> {
     const events: ReplayedFailure[] = failures
-        .map(f => ({ ...f, kind: classifyAnalysisError(f.error_details ?? "") }))
+        .map(f => ({ ...f, kind: f.kind ?? classifyAnalysisError(f.error_details ?? "") }))
         .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))
 
     const lastSent = new Map<string, number>()
@@ -73,7 +75,7 @@ export function alertAction(kind: AnalysisErrorKind): string {
         case "auth":
             return "Check the Gemini API key in Vercel environment variables."
         case "model":
-            return "A Gemini model name may have been retired. Check lib/analysis-stages.ts."
+            return "A Gemini model name may have been retired. Check SCOUT_MODEL and SNIPER_MODEL in lib/gemini.ts."
         default:
             return "Check Vercel Logs and search for 'pipeline error'."
     }
@@ -113,6 +115,48 @@ export function failureAlertEmail({
             `Latest error: ${(latestError ?? "(none recorded)").slice(0, 300)}`,
             "",
             `What to do: ${alertAction(kind)}`,
+            "",
+            "You'll get at most one of these every 6 hours for the same problem.",
+        ].join("\n"),
+    }
+}
+
+/**
+ * The outage reasons recorded as sniper fallbacks on a finished row: in
+ * result_data.sniperFallback (vehicle or part) and on each detected product.
+ */
+export function sniperOutageKinds(resultData: unknown, detectedProducts: unknown): AnalysisErrorKind[] {
+    const holders = [resultData, ...(Array.isArray(detectedProducts) ? detectedProducts : [])]
+    const kinds: AnalysisErrorKind[] = []
+    for (const holder of holders) {
+        const reason = (holder as { sniperFallback?: { reason?: unknown } } | null)?.sniperFallback?.reason
+        if (typeof reason === "string" && OUTAGE_KINDS.has(reason as AnalysisErrorKind)) kinds.push(reason as AnalysisErrorKind)
+    }
+    return kinds
+}
+
+/** Subject and body for a sniper outage: visitors still get results, from the scout alone. */
+export function sniperFallbackEmail({
+    kind,
+    latestError,
+    at,
+}: {
+    kind: AnalysisErrorKind
+    latestError: string | null
+    at: number
+}): { subject: string; text: string } {
+    return {
+        subject: `VisualFitment: second check failing (${kind})`,
+        text: [
+            "The second, slower check (the sniper model) is failing. Visitors still get a result:",
+            "the first model's answer is kept and shown as a Medium match at most.",
+            "",
+            `Kind: ${kind}`,
+            `Time: ${formatEastern(at)}`,
+            `Latest error: ${(latestError ?? "(none recorded)").slice(0, 300)}`,
+            "",
+            `What to do: ${alertAction(kind)}`,
+            "To see how often it happens, search Vercel Logs for 'Sniper fallback'.",
             "",
             "You'll get at most one of these every 6 hours for the same problem.",
         ].join("\n"),

@@ -18,11 +18,40 @@ import {
   sanitizePromptContext,
   sanitizePromptText,
 } from '@/lib/gemini'
+import { classifyAnalysisError, type AnalysisErrorKind, type SniperFallback } from '@/lib/analysis-errors'
 
 export type ImagePart = { inlineData: { data: string; mimeType: string } }
 
 /** Upper bound on product types refined per analysis (each one is 1-2 Gemini calls). */
 export const MAX_PRODUCT_TYPES = 8
+
+/** Per-call limits. A scout timeout fails the stage; a sniper timeout keeps the scout's answer. */
+export const SCOUT_TIMEOUT_MS = 45_000
+export const SNIPER_TIMEOUT_MS = 60_000
+
+/**
+ * When the scout's answer is kept because the sniper failed, its confidence is
+ * capped here: one point under the High band (config/analysis.ts), so the
+ * result shows as a Medium match. The scout was unsure enough to escalate.
+ */
+export const FALLBACK_CONFIDENCE_CAP = 79
+
+/** A sniper call that failed, so the scout's answer was kept. */
+export interface SniperFailure {
+  stage: 'vehicle' | 'product' | 'part'
+  reason: AnalysisErrorKind
+  /** The raw error message, for logs and alert emails. */
+  message: string
+}
+
+export interface CascadeOptions {
+  /** Shown in the fallback log line, usually the analyses row id. */
+  ref?: string
+  /** Awaited right before the Sniper call. A failure here is logged and never fails the stage. */
+  onEscalate?: () => Promise<void>
+  /** Called when the sniper fails and the scout's answer is kept. */
+  onSniperFailure?: (failure: SniperFailure) => void
+}
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -60,6 +89,8 @@ export interface AnalysisResults {
   }[]
   confidence_score?: number
   seo_optimized_alt_text?: string
+  /** Set when the sniper failed and this is the scout's answer (confidence capped). */
+  sniperFallback?: SniperFallback
 }
 
 export interface DetectedProduct {
@@ -68,6 +99,8 @@ export interface DetectedProduct {
   model: string
   confidence: number
   reasoning: string
+  /** Set when the sniper failed and this is the scout's answer (confidence capped). */
+  sniperFallback?: SniperFallback
 }
 
 export interface PartIdentification {
@@ -89,18 +122,81 @@ export interface PartIdentification {
   relatedParts?: string[]
   /** One sentence on what to verify before ordering. */
   buyingCheck?: string | null
+  /** Set when the sniper failed and this is the scout's answer (confidence capped). */
+  sniperFallback?: SniperFallback
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-async function callGemini(model: string, prompt: string, imageParts: ImagePart[]) {
-  const response = await getAI().models.generateContent({
-    model,
-    contents: [{ role: 'user' as const, parts: [{ text: prompt }, ...imageParts] }],
-  })
-  return cleanJsonResponse(response.text ?? '')
+async function callGemini(role: 'scout' | 'sniper', prompt: string, imageParts: ImagePart[]) {
+  const model = role === 'sniper' ? SNIPER_MODEL : SCOUT_MODEL
+  const timeout = role === 'sniper' ? SNIPER_TIMEOUT_MS : SCOUT_TIMEOUT_MS
+  try {
+    const response = await getAI().models.generateContent({
+      model,
+      contents: [{ role: 'user' as const, parts: [{ text: prompt }, ...imageParts] }],
+      // The SDK aborts the request after this many ms (and tells Google the
+      // deadline). It does not retry, so this bounds the whole call.
+      config: { httpOptions: { timeout } },
+    })
+    return cleanJsonResponse(response.text ?? '')
+  } catch (err) {
+    // No abort signal of our own is passed, so an abort is always the timeout
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`Gemini call timed out after ${timeout}ms (${model})`)
+    }
+    throw err
+  }
 }
+
+/** Runs onEscalate without letting it fail the stage. */
+async function announceEscalation(options: CascadeOptions) {
+  if (!options.onEscalate) return
+  try {
+    await options.onEscalate()
+  } catch (err) {
+    console.error('onEscalate failed, continuing with Sniper:', err)
+  }
+}
+
+/**
+ * The sniper call for any cascade. Never throws: a timeout, an API error or
+ * an answer `parse` rejects all come back as a failure, so the caller keeps
+ * the scout's result. Every failure logs one line; search for "Sniper fallback".
+ */
+async function trySniper<T>(
+  stage: SniperFailure['stage'],
+  prompt: string,
+  imageParts: ImagePart[],
+  parse: (raw: unknown) => T | undefined,
+  scoutConfidence: number,
+  options: CascadeOptions,
+  detail?: string
+): Promise<{ ok: true; value: T } | { ok: false; reason: AnalysisErrorKind }> {
+  const started = Date.now()
+  let reason: AnalysisErrorKind
+  let message: string
+  try {
+    const value = parse(tryParseJson(await callGemini('sniper', prompt, imageParts)))
+    if (value !== undefined) return { ok: true, value }
+    reason = 'bad_output'
+    message = 'Sniper answer was not valid JSON in the expected shape'
+  } catch (err) {
+    reason = classifyAnalysisError(err)
+    message = err instanceof Error ? err.message : String(err)
+  }
+  const what = [stage, options.ref, detail && `(${detail})`].filter(Boolean).join(' ')
+  console.warn(`Sniper fallback [${reason}] ${what} after ${Date.now() - started}ms, kept scout answer at confidence ${scoutConfidence}: ${message}`)
+  try {
+    options.onSniperFailure?.({ stage, reason, message })
+  } catch (err) {
+    console.error('onSniperFailure failed:', err)
+  }
+  return { ok: false, reason }
+}
+
+const capConfidence = (confidence: number) => Math.min(confidence, FALLBACK_CONFIDENCE_CAP)
 
 /** JSON.parse that returns undefined instead of throwing. */
 function tryParseJson(text: string): unknown {
@@ -168,12 +264,13 @@ export function buildFitmentPrompt(promptContext?: string): string {
  */
 export async function runFitmentAnalysis(
   imageParts: ImagePart[],
-  promptContext?: string
+  promptContext?: string,
+  options: CascadeOptions = {}
 ): Promise<{ success: true; data: Record<string, unknown>; modelUsed: string } | { success: false; error: string }> {
   try {
     const prompt = buildFitmentPrompt(promptContext)
 
-    const scoutRaw = tryParseJson(await callGemini(SCOUT_MODEL, prompt, imageParts))
+    const scoutRaw = tryParseJson(await callGemini('scout', prompt, imageParts))
     if (!scoutRaw || typeof scoutRaw !== 'object') {
       return { success: false, error: 'The analysis returned an unexpected format, please try again.' }
     }
@@ -184,12 +281,36 @@ export async function runFitmentAnalysis(
     const confidenceScore = typeof finalResult.confidence_score === 'number' ? finalResult.confidence_score : 0
     if (confidenceScore <= CASCADE_CONFIDENCE_THRESHOLD) {
       console.log(`Scout confidence_score ${confidenceScore} ≤ ${CASCADE_CONFIDENCE_THRESHOLD}: escalating to Sniper`)
-      const sniperRaw = tryParseJson(await callGemini(SNIPER_MODEL, prompt, imageParts))
-      if (sniperRaw && typeof sniperRaw === 'object') {
-        finalResult = sniperRaw as Record<string, unknown>
+      await announceEscalation(options)
+      const primary = finalResult.primary && typeof finalResult.primary === 'object'
+        ? (finalResult.primary as Record<string, unknown>)
+        : null
+      const primaryConfidence = typeof primary?.confidence === 'number' ? primary.confidence : confidenceScore
+      const sniper = await trySniper(
+        'vehicle',
+        prompt,
+        imageParts,
+        (raw) => (raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : undefined),
+        primaryConfidence,
+        options
+      )
+      if (sniper.ok) {
+        finalResult = sniper.value
         modelUsed = SNIPER_MODEL
       } else {
-        console.warn('Sniper model returned invalid JSON, keeping Scout result')
+        // Keep the scout's answer, marked and capped. primary.confidence is
+        // what the match label and analyses.confidence read.
+        const fallback: SniperFallback = {
+          reason: sniper.reason,
+          scoutConfidence: primaryConfidence,
+          scoutConfidenceScore: confidenceScore,
+        }
+        finalResult = {
+          ...finalResult,
+          ...(primary ? { primary: { ...primary, confidence: capConfidence(primaryConfidence) } } : {}),
+          confidence_score: capConfidence(confidenceScore),
+          sniperFallback: fallback,
+        }
       }
     }
 
@@ -222,7 +343,7 @@ export async function detectProductTypes(
       'Respond ONLY with a valid, minified JSON array of strings, where each string is a product type. ' +
       'Example: ["Tonneau Cover", "Wheels", "Tires", "Trailer Hitch"]'
 
-    const parsed = z.array(z.string()).safeParse(tryParseJson(await callGemini(SCOUT_MODEL, prompt, imageParts)))
+    const parsed = z.array(z.string()).safeParse(tryParseJson(await callGemini('scout', prompt, imageParts)))
     if (!parsed.success) {
       return { success: true, data: [] }
     }
@@ -245,7 +366,8 @@ export async function refineProduct(
   imageParts: ImagePart[],
   rawProductType: string,
   vehicleDetails: string | null,
-  promptContext?: string
+  promptContext?: string,
+  options: CascadeOptions = {}
 ): Promise<DetectedProduct> {
   const productType = sanitizePromptText(rawProductType, 60) ?? 'Product'
   try {
@@ -268,7 +390,7 @@ export async function refineProduct(
       '", "brand": "Unknown", "model": "Unknown", "confidence": 50, "reasoning": "Insufficient visual details"}.'
 
     // --- Cascading Model: Scout pass (Flash) ---
-    const scoutParse = DetectedProductSchema.safeParse(tryParseJson(await callGemini(SCOUT_MODEL, prompt, imageParts)))
+    const scoutParse = DetectedProductSchema.safeParse(tryParseJson(await callGemini('scout', prompt, imageParts)))
     if (!scoutParse.success) {
       console.error(`Scout product validation failed for ${productType}:`, scoutParse.error.flatten())
       return {
@@ -279,18 +401,33 @@ export async function refineProduct(
         reasoning: 'AI response did not match expected format.',
       }
     }
-    let product = scoutParse.data
+    let product: DetectedProduct = scoutParse.data
 
     // --- Gatekeeper: check Scout confidence (skip if hardcoded unknown fallback) ---
     const isHardcodedUnknown = product.brand === 'Unknown' && product.model === 'Unknown' && product.confidence === 50
 
     if (product.confidence <= CASCADE_CONFIDENCE_THRESHOLD && !isHardcodedUnknown) {
       console.log(`Scout product confidence ${product.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD} for ${productType}: escalating to Sniper`)
-      const sniperParse = DetectedProductSchema.safeParse(tryParseJson(await callGemini(SNIPER_MODEL, prompt, imageParts)))
-      if (sniperParse.success) {
-        product = sniperParse.data // Sniper overrides Scout
+      const sniper = await trySniper(
+        'product',
+        prompt,
+        imageParts,
+        (raw) => {
+          const parsed = DetectedProductSchema.safeParse(raw)
+          return parsed.success ? parsed.data : undefined
+        },
+        product.confidence,
+        options,
+        productType
+      )
+      if (sniper.ok) {
+        product = sniper.value // Sniper overrides Scout
       } else {
-        console.warn(`Sniper product validation failed for ${productType}, keeping Scout result`)
+        product = {
+          ...product,
+          confidence: capConfidence(product.confidence),
+          sniperFallback: { reason: sniper.reason, scoutConfidence: product.confidence },
+        }
       }
     }
 
@@ -331,36 +468,41 @@ export const PART_PROMPT =
 
 export async function runPartIdentification(
   imageParts: ImagePart[],
-  options: {
-    /** Awaited right before the Sniper call. A failure here is logged and never fails the identification. */
-    onEscalate?: () => Promise<void>
-  } = {}
+  options: CascadeOptions = {}
 ): Promise<{ identification: PartIdentification; modelUsed: string }> {
   // --- Cascading Model: Scout pass (Flash) ---
-  const scoutParse = PartIdentificationSchema.safeParse(tryParseJson(await callGemini(SCOUT_MODEL, PART_PROMPT, imageParts)))
+  const scoutParse = PartIdentificationSchema.safeParse(tryParseJson(await callGemini('scout', PART_PROMPT, imageParts)))
   if (!scoutParse.success) {
     console.error('Scout part identification validation failed:', scoutParse.error.flatten())
     throw new Error('The AI returned an unexpected response format. Please try again.')
   }
-  let identification = scoutParse.data
+  let identification: PartIdentification = scoutParse.data
   let modelUsed = SCOUT_MODEL
 
   // --- Gatekeeper: check Scout confidence ---
   if (identification.confidence <= CASCADE_CONFIDENCE_THRESHOLD) {
     console.log(`Scout part confidence ${identification.confidence} ≤ ${CASCADE_CONFIDENCE_THRESHOLD}: escalating to Sniper (Pro)`)
-    if (options.onEscalate) {
-      try {
-        await options.onEscalate()
-      } catch (err) {
-        console.error('onEscalate failed, continuing with Sniper:', err)
-      }
-    }
-    const sniperParse = PartIdentificationSchema.safeParse(tryParseJson(await callGemini(SNIPER_MODEL, PART_PROMPT, imageParts)))
-    if (sniperParse.success) {
-      identification = sniperParse.data
+    await announceEscalation(options)
+    const sniper = await trySniper(
+      'part',
+      PART_PROMPT,
+      imageParts,
+      (raw) => {
+        const parsed = PartIdentificationSchema.safeParse(raw)
+        return parsed.success ? parsed.data : undefined
+      },
+      identification.confidence,
+      options
+    )
+    if (sniper.ok) {
+      identification = sniper.value
       modelUsed = SNIPER_MODEL
     } else {
-      console.warn('Sniper part identification validation failed, keeping Scout result')
+      identification = {
+        ...identification,
+        confidence: capConfidence(identification.confidence),
+        sniperFallback: { reason: sniper.reason, scoutConfidence: identification.confidence },
+      }
     }
   }
 

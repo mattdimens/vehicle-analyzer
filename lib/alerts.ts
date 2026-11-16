@@ -13,12 +13,14 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
-import { classifyAnalysisError } from "./analysis-errors"
+import { classifyAnalysisError, isOutageKind, type AnalysisErrorKind } from "./analysis-errors"
 import {
     ALERT_LOOKBACK_MS,
     CLUSTER_WINDOW_MS,
     failureAlertEmail,
     failuresThatAlert,
+    sniperFallbackEmail,
+    sniperOutageKinds,
     type FailedAnalysis,
 } from "./alert-rules"
 
@@ -89,5 +91,64 @@ export async function notifyAnalysisFailure(supabase: SupabaseClient<Database>, 
         }))
     } catch (err) {
         console.error("[alerts] failure alert check crashed:", err)
+    }
+}
+
+/**
+ * Call after a pipeline finishes an analysis on the scout's answer because the
+ * sniper failed. Only outage reasons (billing, auth, model) email, under the
+ * same rules as failed analyses: the first one sends, then at most one per 6
+ * hours for that kind, counting failed analyses of the same kind too.
+ *
+ * The replay reads the `sniperFallback` markers the pipeline stores on
+ * finished rows, so it needs no table of its own.
+ */
+export async function notifySniperFallback(
+    supabase: SupabaseClient<Database>,
+    id: string,
+    failures: { reason: AnalysisErrorKind; message: string }[]
+): Promise<void> {
+    const outage = failures.find(f => isOutageKind(f.reason))
+    if (!outage) return
+    try {
+        const since = new Date(Date.now() - ALERT_LOOKBACK_MS).toISOString()
+        const [failed, finished] = await Promise.all([
+            supabase
+                .from("analyses")
+                .select("id, error_details, updated_at")
+                .eq("status", "error")
+                .gte("updated_at", since)
+                .order("updated_at", { ascending: true })
+                .limit(1000),
+            supabase
+                .from("analyses")
+                .select("id, result_data, detected_products, updated_at")
+                .eq("status", "complete")
+                .gte("updated_at", since)
+                .order("updated_at", { ascending: true })
+                .limit(1000),
+        ])
+        if (failed.error || !failed.data || finished.error || !finished.data) {
+            console.error("[alerts] could not read recent failures:", failed.error?.message ?? finished.error?.message)
+            return
+        }
+
+        const at = Date.now()
+        const events: FailedAnalysis[] = [
+            ...failed.data
+                .filter(row => row.id !== id)
+                .map(row => ({ id: row.id, at: Date.parse(row.updated_at), error_details: row.error_details })),
+            ...finished.data.flatMap(row => {
+                const kind = sniperOutageKinds(row.result_data, row.detected_products)[0]
+                return kind && row.id !== id ? [{ id: row.id, at: Date.parse(row.updated_at), error_details: null, kind }] : []
+            }),
+            // This run, from memory, so the check doesn't depend on its row being readable yet
+            { id, at, error_details: null, kind: outage.reason },
+        ]
+        if (!failuresThatAlert(events).has(id)) return
+
+        await sendAlertEmail(sniperFallbackEmail({ kind: outage.reason, latestError: outage.message, at }))
+    } catch (err) {
+        console.error("[alerts] sniper fallback alert check crashed:", err)
     }
 }

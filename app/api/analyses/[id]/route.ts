@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
-import { isAnalysisInProgress } from '@/types/analysis'
+import { isAnalysisInProgress, STALE_AFTER_MS } from '@/types/analysis'
 import { notifyAnalysisFailure } from '@/lib/alerts'
 
 function getSupabase() {
@@ -37,7 +37,7 @@ export async function GET(
         const now = Date.now()
         
         // If older than 2 minutes, transition to error
-        if (now - updatedTime > 120_000) {
+        if (now - updatedTime > STALE_AFTER_MS) {
             console.log(`Record ${id} is stale (status: ${record.status}). Auto-transitioning to error.`)
             
             const { data: updatedRecord } = await supabase

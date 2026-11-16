@@ -6,7 +6,9 @@ import { UrlValidationError } from '@/lib/url-validation'
 import { analysisErrorStatus, classifyAnalysisError, publicAnalysisError } from '@/lib/analysis-errors'
 
 // Detection + parallel refinement (each may escalate to the Pro model)
-export const maxDuration = 60
+// Worst case is 45s detection, then a 45s scout plus a 60s sniper per product
+// (run in parallel), so a sniper timeout can still fall back to the scout.
+export const maxDuration = 180
 
 /**
  * POST /api/analyze/products

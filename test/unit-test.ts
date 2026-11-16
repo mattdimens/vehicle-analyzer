@@ -490,6 +490,14 @@ assert(classifyAnalysisError(new Error('{"error":{"code":400,"message":"API key 
 assert(classifyAnalysisError(new Error('{"error":{"code":403,"message":"Permission denied","status":"PERMISSION_DENIED"}}')) === 'auth', '403 -> auth')
 assert(classifyAnalysisError(new Error('GEMINI_API_KEY is not set')) === 'auth', 'missing key -> auth')
 assert(classifyAnalysisError(new Error('{"error":{"code":404,"message":"models/gemini-9-flash is not found for API version v1beta","status":"NOT_FOUND"}}')) === 'model', 'retired model -> model')
+// The shape @google/genai throws for a wrong or retired Gemini 4 ID: an ApiError with
+// status 404 and the JSON body as its message.
+const retiredGemini4 = Object.assign(
+    new Error('{"error":{"code":404,"message":"models/gemini-4-carbon is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models.","status":"NOT_FOUND"}}'),
+    { name: 'ApiError', status: 404 }
+)
+assert(classifyAnalysisError(retiredGemini4) === 'model', 'retired Gemini 4 ID (ApiError 404) -> model')
+assert(classifyAnalysisError(new Error('{"error":{"code":400,"message":"Gemini 3.1 Pro Preview has been deprecated. Migrate to gemini-4-carbon.","status":"FAILED_PRECONDITION"}}')) === 'model', 'deprecation message without a 404 -> model')
 assert(classifyAnalysisError(new Error('{"error":{"code":429,"message":"Resource has been exhausted (e.g. check quota).","status":"RESOURCE_EXHAUSTED"}}')) === 'quota', 'plain 429 -> quota')
 assert(classifyAnalysisError('Analysis timed out. Please retry.') === 'timeout', 'stale-record message -> timeout')
 assert(classifyAnalysisError(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })) === 'timeout', 'aborted request -> timeout')

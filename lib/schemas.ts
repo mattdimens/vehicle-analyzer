@@ -18,6 +18,12 @@ export const AnalysisResultsSchema = z.object({
     vehicle_present: z.boolean().optional().catch(undefined),
     confidence_score: z.number().optional().catch(undefined),
     seo_optimized_alt_text: z.string().optional().catch(undefined),
+    // Set by our own cascade code, never by the model (lib/analysis-stages.ts)
+    sniperFallback: z.object({
+        reason: z.enum(['billing', 'auth', 'model', 'quota', 'timeout', 'bad_output', 'unknown']),
+        scoutConfidence: z.number(),
+        scoutConfidenceScore: z.number().optional(),
+    }).optional().catch(undefined),
     primary: PrimaryVehicleSchema,
     engineDetails: z.string().nullable(),
     otherPossibilities: z.array(z.object({

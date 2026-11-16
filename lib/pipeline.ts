@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/supabase'
-import { runFitmentAnalysis, detectProductTypes, refineProduct, runPartIdentification, type DetectedProduct } from '@/lib/analysis-stages'
+import { runFitmentAnalysis, detectProductTypes, refineProduct, runPartIdentification, type DetectedProduct, type SniperFailure } from '@/lib/analysis-stages'
 import { supportedVehicles } from '@/data/vehicles/supported-vehicles'
 import { normalizeYear } from '@/lib/normalize-year'
 import { fetchImageForGemini } from '@/lib/gemini'
 import { AnalysisResultsSchema } from '@/lib/schemas'
 import { getConfidenceBand } from '@/types/analysis'
 import { classifyAnalysisError } from '@/lib/analysis-errors'
-import { notifyAnalysisFailure } from '@/lib/alerts'
+import { notifyAnalysisFailure, notifySniperFallback } from '@/lib/alerts'
 
 export function getSupabaseAdmin() {
     return createClient<Database>(
@@ -16,14 +16,15 @@ export function getSupabaseAdmin() {
     )
 }
 
-async function logDemand(vehicleMake: string, vehicleModel: string, vehicleYear: string) {
+type Admin = ReturnType<typeof getSupabaseAdmin>
+
+async function logDemand(supabase: Admin, vehicleMake: string, vehicleModel: string, vehicleYear: string) {
     const isSupported = supportedVehicles.some(
         v => v.make.toLowerCase() === vehicleMake.toLowerCase() && v.model.toLowerCase() === vehicleModel.toLowerCase()
     )
     // year is NOT NULL in vehicle_selector_events; ranges log their first year
     const year = normalizeYear(vehicleYear)
     if (!isSupported && year !== null) {
-        const supabase = getSupabaseAdmin()
         const { error } = await supabase.from('vehicle_selector_events').insert({
             make: vehicleMake,
             model: vehicleModel,
@@ -36,16 +37,31 @@ async function logDemand(vehicleMake: string, vehicleModel: string, vehicleYear:
 }
 
 /** Stamp updated_at on every write so stale-record checks work without a DB trigger. */
-const now = () => new Date().toISOString()
+const now = () => new Date(Date.now()).toISOString()
 
-export async function runPipeline(id: string, imageUrl: string) {
-    const supabase = getSupabaseAdmin()
+/**
+ * Restamps updated_at so the 2-minute stale rule (STALE_AFTER_MS) sees a live
+ * run. Called between Gemini calls: one scout (45s) plus one sniper (60s) fits
+ * under the rule, but two scouts and a sniper under one stamp would not.
+ */
+async function keepAlive(supabase: Admin, id: string) {
+    const { error } = await supabase.from('analyses').update({ updated_at: now() }).eq('id', id)
+    if (error) throw new Error(error.message)
+}
+
+/** `supabase` is a parameter only so tests can pass a fake. */
+export async function runPipeline(id: string, imageUrl: string, supabase: Admin = getSupabaseAdmin()) {
+    const sniperFailures: SniperFailure[] = []
+    const cascade = { ref: id, onSniperFailure: (failure: SniperFailure) => { sniperFailures.push(failure) } }
     try {
         await supabase.from('analyses').update({ status: 'identifying', error_details: null, updated_at: now() }).eq('id', id)
         
         const imageParts = [await fetchImageForGemini(imageUrl)]
 
-        const fitmentRes = await runFitmentAnalysis(imageParts)
+        const fitmentRes = await runFitmentAnalysis(imageParts, undefined, {
+            ...cascade,
+            onEscalate: () => keepAlive(supabase, id),
+        })
         if (!fitmentRes.success) {
             throw new Error(fitmentRes.error || 'Failed to analyze vehicle')
         }
@@ -61,7 +77,7 @@ export async function runPipeline(id: string, imageUrl: string) {
         
         // Log demand only for identifications the results page shows as a High match
         if (getConfidenceBand(result.primary.confidence) === 'High') {
-            await logDemand(result.primary.make, result.primary.model, result.primary.year)
+            await logDemand(supabase, result.primary.make, result.primary.model, result.primary.year)
         }
 
         await supabase.from('analyses').update({
@@ -76,8 +92,12 @@ export async function runPipeline(id: string, imageUrl: string) {
 
         if (detectRes.success) {
             const types = detectRes.data
+            // Detection may have used most of a scout timeout already
+            if (types.length > 0) {
+                await keepAlive(supabase, id).catch(err => console.error('keepAlive failed for', id, err))
+            }
             const refinementResults = await Promise.allSettled(
-                types.map(type => refineProduct(imageParts, type, vehicleDetailsString))
+                types.map(type => refineProduct(imageParts, type, vehicleDetailsString, undefined, cascade))
             )
             for (const r of refinementResults) {
                 if (r.status === 'fulfilled') {
@@ -92,6 +112,8 @@ export async function runPipeline(id: string, imageUrl: string) {
             updated_at: now(),
         }).eq('id', id)
 
+        // The visitor has a result; this only emails Matt when the sniper is down
+        await notifySniperFallback(supabase, id, sniperFailures)
     } catch (err) {
         console.error(`Pipeline error [${classifyAnalysisError(err)}] for`, id, err)
         await supabase.from('analyses').update({
@@ -110,8 +132,8 @@ export async function runPipeline(id: string, imageUrl: string) {
  * result_data and its confidence in confidence. It also writes the
  * analysis_results log row /api/analyze/part writes.
  */
-export async function runPartPipeline(id: string, imageUrl: string) {
-    const supabase = getSupabaseAdmin()
+export async function runPartPipeline(id: string, imageUrl: string, supabase: Admin = getSupabaseAdmin()) {
+    const sniperFailures: SniperFailure[] = []
     try {
         await supabase.from('analyses').update({ status: 'identifying', error_details: null, updated_at: now() }).eq('id', id)
 
@@ -119,6 +141,8 @@ export async function runPartPipeline(id: string, imageUrl: string) {
         // The second, slower check gets its own status so /r/[id] can say so.
         // It also restamps updated_at, so the stale check sees the run is alive.
         const { identification, modelUsed } = await runPartIdentification(imageParts, {
+            ref: id,
+            onSniperFailure: failure => { sniperFailures.push(failure) },
             onEscalate: async () => {
                 const { error } = await supabase.from('analyses').update({ status: 'verifying', updated_at: now() }).eq('id', id)
                 if (error) throw new Error(error.message)
@@ -140,6 +164,8 @@ export async function runPartPipeline(id: string, imageUrl: string) {
             confidence: Math.round(identification.confidence),
             updated_at: now(),
         }).eq('id', id)
+
+        await notifySniperFallback(supabase, id, sniperFailures)
     } catch (err) {
         console.error(`Part pipeline error [${classifyAnalysisError(err)}] for`, id, err)
         await supabase.from('analyses').update({

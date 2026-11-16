@@ -82,7 +82,7 @@ Tell me whether the `analyses` table already stores an error message or reason. 
 - **Content:** subject "VisualFitment: analyses failing ({kind})". Body: the kind, how many failures in the last hour, the most recent raw error message (first 300 characters), the time in Eastern, and one line on what to do:
   - `billing`: "Check the Gemini balance at aistudio.google.com/billing."
   - `auth`: "Check the Gemini API key in Vercel environment variables."
-  - `model`: "A Gemini model name may have been retired. Check lib/analysis-stages.ts."
+  - `model`: "A Gemini model name may have been retired. Check SCOUT_MODEL and SNIPER_MODEL in lib/gemini.ts." (path updated Nov 12; the constants live in `lib/gemini.ts`)
   - Others: "Check Vercel Logs and search for 'pipeline error'."
 
 If nothing in the repo sends email yet, recommend a provider with a free tier (Resend is fine), and give me exact steps to create the account, verify a sender, and add the API key plus `ALERT_EMAIL` to Vercel. Add a way for me to trigger a test alert on a preview deployment only (never in production), and tell me how to use it.

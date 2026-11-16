@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdmin, runPartPipeline, runPipeline } from '@/lib/pipeline'
-import { isAnalysisInProgress } from '@/types/analysis'
+import { isAnalysisInProgress, STALE_AFTER_MS } from '@/types/analysis'
 
 // The pipeline runs in this request via waitUntil, so this caps how long an
 // analysis can take (Hobby plan with Fluid compute allows up to 300s). The
@@ -37,7 +37,7 @@ export async function POST(
     if (isAnalysisInProgress(record.status)) {
         const updatedTime = new Date(record.updated_at).getTime()
         const now = Date.now()
-        if (now - updatedTime < 120_000) {
+        if (now - updatedTime < STALE_AFTER_MS) {
             return NextResponse.json({ status: record.status, message: 'Already processing' }, { status: 202 })
         }
     }

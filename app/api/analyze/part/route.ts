@@ -5,7 +5,9 @@ import { fetchValidatedImages } from '@/lib/request-images'
 import { UrlValidationError } from '@/lib/url-validation'
 import { analysisErrorStatus, classifyAnalysisError, publicAnalysisError } from '@/lib/analysis-errors'
 
-export const maxDuration = 60
+// Worst case is a 45s scout plus a 60s sniper (lib/analysis-stages.ts), so the
+// scout's answer can still be returned when the sniper times out.
+export const maxDuration = 120
 
 /**
  * POST /api/analyze/part
